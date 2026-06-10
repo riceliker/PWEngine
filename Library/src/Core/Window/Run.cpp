@@ -4,12 +4,14 @@
 #include "SDL3/SDL_log.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
+#include "SDL3_ttf/SDL_ttf.h"
 #include <cstddef>
 
 namespace PWEngine::Core
 {
     PWEWindow::PWEWindow(string name, PWEWindowDesc desc)
     {
+        TTF_Init();
         SDL_Init(SDL_INIT_VIDEO);
         // Window
         this->window = SDL_CreateWindow(name.c_str(), this->window_resolution.x, this->window_resolution.y, SDL_WINDOW_RESIZABLE);
@@ -29,17 +31,17 @@ namespace PWEngine::Core
         SDL_DestroyWindow(window);
         SDL_DestroyGPUDevice(device);
         SDL_DestroyRenderer(renderer);
+        TTF_Quit();
     }
     void PWEWindow::runMainScene(string name)
     {
         IPWEScene* scene = this->scenes[name];
         if(scene == NULL) SDL_LogError(-1, "Scene name(%s) not found", name.c_str());
         bool is_running = true;
-        bool is_init = false;
         while(is_running)
         {
             event(is_running);
-            render(scene, is_init);   
+            render(scene);   
         }
     }
     void PWEWindow::event(bool is_running)
@@ -50,19 +52,13 @@ namespace PWEngine::Core
                 is_running = false;
         }
     }
-    void PWEWindow::render(IPWEScene* scene, bool is_init)
+    void PWEWindow::render(IPWEScene* scene)
     {
-        if(!is_init) 
-        {
-            scene->init();
-            is_init = true;
-        }
         string name = scene->loop();
         if(name != "")
         {
             scene = scenes[name];
             if(scene) SDL_LogError(-1, "Scene name(%s) not found", name.c_str());
-            is_init = true;
         }
     }
 }

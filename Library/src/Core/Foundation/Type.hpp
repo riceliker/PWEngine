@@ -1,3 +1,7 @@
 #pragma once
 
-#define uint uint32_t
+#include <cstdint>
+
+typedef uint32_t uint;
+
+typedef uint8_t uchar ;

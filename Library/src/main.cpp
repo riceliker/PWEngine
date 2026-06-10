@@ -1,6 +1,7 @@
-#include "Core/Asset/Asset.hpp"
+#include "Core/Foundation/Type.hpp"
+#include "Core/Surface/Surface.hpp"
 #include "Core/Core.hpp"
-#include "Core/Foundation/PWEAutoRect.hpp"
+#include "Core/Foundation/PWERect.hpp"
 #include "Core/Foundation/PWEColor.hpp"
 #include "Core/Foundation/PWEVecMat.hpp"
 #include "Core/Scene/Scene.hpp"
@@ -8,34 +9,33 @@
 #include <cstddef>
 
 
-class TestScene : PWEUIScene
+class TestScene : PWECanvasScene
 {
     public:
-        PWETexture icon_texture;
-        TestScene(PWEWindowInfo info) : PWEUIScene(info)
-        {
-
-        }
-        void init() override
-        {
-            icon_texture = PWETexture::createTextureByPath(this->renderer, "icon.png");
+        PWESurface draw_surface;
+        PWESurface icon_surface;
+        PWEFont jetbrains_mono;
+        PWESurface text_surface;
+        TestScene(PWEWindowInfo info) : PWECanvasScene(info)
+        {   
+            jetbrains_mono = PWEFont("jbm.ttf", 32);
+            icon_surface = PWESurfaceFactory::createSurfaceByImage("icon.png");
+            string msg = "hello";
+            text_surface = PWESurfaceFactory::createSurfaceByText(jetbrains_mono, PWEColor{0,0,0,255}, msg);
+            draw_surface = PWESurfaceFactory::createEmptySurface(PWEVec2T<uint>(100, 100), PWEColor{.r=0, .g=0, .b=0, .a=0});
+            draw_surface.drawRect(PWERectSize2{0, 0, 100, 100}, PWEColor{0, 0, 255, 255});
+            draw_surface.drawRect(PWERectSize2{8 , 8, 84, 84}, PWEColor{0,255, 0, 255});
         }
         string loop() override
         {
             clearCanvas(PWEColor{255, 255, 255, 255});
         
-            staticDrawRect(PWEStaticRect {
-                .is_full = true,
-                .rect = PWEAutoRect( true,
-                    10, 10, 20, 20),
-                .color=PWEColor(0, 255, 0,255),
-            });
+            draw(icon_surface, PWEVec2T<uint>(1,1), PWEVec2T<uint>(64,64));
 
-            staticDrawTexture(PWEStaticTexture {
-                .texture = icon_texture,
-                .pos = PWEAutoRect( true,
-                    100, 100, 256, 256),
-            });
+            draw(text_surface, PWEVec2T<uint>(100, 100));
+
+            draw(draw_surface, PWEVec2T<uint>(300, 300));
+
             submitCanvas();
             return "";
         }

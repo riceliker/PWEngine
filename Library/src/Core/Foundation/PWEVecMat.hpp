@@ -9,10 +9,30 @@ namespace PWEngine::Core
     {
         public:
             T x; T y;
-            PWEVec2T<T>(T obj, T x, T y)
+            PWEVec2T<T>(T x, T y)
             {
                 this->x = x;
                 this->y = y;
+            }
+            bool operator==(const PWEVec2T<T> a) const
+            {
+                return (x == a.x) && (y == a.y);
+            }
+            bool operator!=(const PWEVec2T<T> a) const
+            {
+                return (x != a.x) || (y != a.y);
+            }
+            PWEVec2T<T> operator+(const PWEVec2T<T> a) const
+            {
+                return {x + a.x, y + a.y};
+            }
+            PWEVec2T<T> operator-(const PWEVec2T<T> a) const
+            {
+                return {x - a.x, y - a.y};
+            }
+            PWEVec2T<T> operator-() const
+            {
+                return {-x, -y};
             }
     };
     class PWEVec2

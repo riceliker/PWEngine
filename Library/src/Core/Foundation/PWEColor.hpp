@@ -1,23 +1,24 @@
 #pragma once
 
+#include "SDL3/SDL_pixels.h"
+#include "Core/Foundation/Type.hpp"
 namespace PWEngine::Core 
 {  
-    class PWEColor
+    struct PWEColor
     {
         public:
-            int r; int g; int b; int a;
-            PWEColor(int r, int g, int b, int a)
+            uchar r; uchar g; uchar b; uchar a;
+            SDL_Color forSDL()
             {
-                this->r = to255(r);
-                this->g = to255(g);
-                this->b = to255(b);
-                this->a = to255(a);
+                SDL_Color color{
+                    .r = (Uint8)r, .g = (Uint8)g, .b = (Uint8)b, .a = (Uint8)a
+                };
+                return color;
             }
-            int to255(int x)
+            Uint32 forSDL32()
             {
-                if(0 > x) return 0;
-                if(x > 255) return 255;
-                return x;
+                return SDL_MapRGBA(SDL_GetPixelFormatDetails(SDL_PIXELFORMAT_RGBA8888), NULL, r, g, b, a);
             }
+
     };
 }

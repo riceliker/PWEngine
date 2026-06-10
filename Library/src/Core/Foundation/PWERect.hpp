@@ -1,8 +1,19 @@
 #pragma once
 
+#include "Core/Foundation/Type.hpp"
 #include "Core/Foundation/PWEVecMat.hpp"
+
 namespace PWEngine::Core 
-{
+{ 
+    struct PWERectSize2
+    {
+        uint x; uint y; uint w; uint h;
+    };
+    struct PWERectPos2
+    {
+        uint sx; uint sy; uint ex; uint ey;
+    };
+    [[deprecated]];
     class PWEAutoRect
     {
         private:

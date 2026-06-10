@@ -5,19 +5,15 @@
 
 #pragma once
 #include "Core/Core.hpp"
-#include "Core/Asset/Asset.hpp"
+#include "Core/Surface/Surface.hpp"
 
-#include "Core/Foundation/PWEAutoRect.hpp"
+#include "Core/Foundation/PWERect.hpp"
 #include "Core/Foundation/PWEColor.hpp"
 #include "Core/Foundation/PWEVecMat.hpp"
+#include "Core/Foundation/Type.hpp"
 #include "SDL3/SDL_render.h"
-#include "SDL3/SDL_surface.h"
-#include "glm/ext/vector_float4.hpp"
-#include "glm/ext/vector_float2.hpp"
-#include <span>
 
 using namespace std;
-using namespace glm;
 using namespace PWEngine::Core;
 namespace PWEngine::Core
 {
@@ -38,24 +34,17 @@ namespace PWEngine::Core
         PWEColor color;
         bool is_full;
     } PWEStaticRect;
-    typedef struct
-    {
-        PWETexture texture;
-        PWEAutoRect pos;
-        SDL_ScaleMode scale_mode = SDL_SCALEMODE_LINEAR;
-    } PWEStaticTexture;
     class IPWEScene
     {
         public:
-            virtual void init() = 0;
             virtual string loop() = 0;
     };
-    class PWEUIScene : public IPWEScene
+    class PWECanvasScene : public IPWEScene
     {
         protected:
             SDL_Renderer* renderer;
         public:
-            PWEUIScene(PWEWindowInfo info)
+            PWECanvasScene(PWEWindowInfo info)
             {
                 this->renderer = info.renderer;
 
@@ -71,12 +60,16 @@ namespace PWEngine::Core
             {
                 SDL_RenderPresent(this->renderer);   
             }
-
+            [[deprecated("Use static draw to draw so many object is not suggested, use surface first.")]]
             void staticDrawPoint(PWEStaticPoint point);
+            [[deprecated("Use static draw to draw so many object is not suggested, use surface first.")]]
             void staticDrawLine(PWEStaticLine line);
+            [[deprecated("Use static draw to draw so many object is not suggested, use surface first.")]]
             void staticDrawRect(PWEStaticRect rect);
-            void staticDrawTexture(PWEStaticTexture texture);
 
+
+            void draw(PWESurface surface, PWEVec2T<uint> pos);
+            void draw(PWESurface surface, PWEVec2T<uint> pos, PWEVec2T<uint> size);
 
     };
     

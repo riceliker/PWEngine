@@ -3,13 +3,13 @@
 #include <memory>
 
 namespace PWEngine::Core 
-{
+{   
     template<typename T>
     class PWERefCountPtr
     {
         protected:
             std::shared_ptr<T> ptr;
-           
+            void setPtr(T* ptr) {this->ptr.reset(ptr);}
         public:
             // new 
             PWERefCountPtr<T>() = default;
@@ -36,6 +36,8 @@ namespace PWEngine::Core
             const T* operator->() const { return ptr.get(); }
             T& operator*() { return *ptr; }
             const T& operator*() const { return *ptr; }
+            // must use get()
+            operator T*() const = delete;
             // get count
             long getRefCount() const {return ptr.use_count();}
 
