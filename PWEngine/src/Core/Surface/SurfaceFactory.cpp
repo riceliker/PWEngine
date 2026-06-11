@@ -1,5 +1,5 @@
-#include "Core/Surface/Surface.hpp"
-#include "Core/Foundation/PWEColor.hpp"
+#include "PWECore.hpp"
+#include "SDL3_image/SDL_image.h"
 
 namespace PWEngine::Core 
 {

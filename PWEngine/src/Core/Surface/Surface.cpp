@@ -1,10 +1,6 @@
-#include "Core/Surface/Surface.hpp"
-#include "Core/Foundation/PWERect.hpp"
-#include "Core/Foundation/PWEColor.hpp"
-#include "Core/Foundation/PWEVecMat.hpp"
-#include "SDL3/SDL_stdinc.h"
-#include "SDL3/SDL_surface.h"
+#include "PWECore.hpp"
 
+using namespace PWEngine::Type;
 namespace PWEngine::Core
 {
     PWESurface::PWESurface(PWESurface& surface)

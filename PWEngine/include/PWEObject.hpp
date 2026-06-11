@@ -2,7 +2,7 @@
 
 #include <memory>
 
-namespace PWEngine::Core 
+namespace PWEngine::Type
 {   
     template<typename T>
     class PWERefCountPtr

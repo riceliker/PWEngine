@@ -1,18 +1,23 @@
-#include "Core/Scene/Scene.hpp"
-#include "Core/Window/Window.hpp"
-#include "SDL3/SDL_gpu.h"
-#include "SDL3/SDL_log.h"
-#include "SDL3/SDL_render.h"
-#include "SDL3/SDL_video.h"
-#include "SDL3_ttf/SDL_ttf.h"
-#include <cstddef>
+#include "PWECore.hpp"
 
 namespace PWEngine::Core
 {
+    void ListAllGPU()
+    {
+        SDL_Log("GPU Support List:");
+        int gpu_count = SDL_GetNumGPUDrivers();
+        for (int i = 0; i < gpu_count; i++)
+        {
+            const char* gpu_name = SDL_GetGPUDriver(i);
+            SDL_Log("Find GPU: %s", gpu_name);
+        }
+
+    }
     PWEWindow::PWEWindow(string name, PWEWindowDesc desc)
     {
         TTF_Init();
         SDL_Init(SDL_INIT_VIDEO);
+        ListAllGPU();
         // Window
         this->window = SDL_CreateWindow(name.c_str(), this->window_resolution.x, this->window_resolution.y, SDL_WINDOW_RESIZABLE);
         if (this->window == NULL) SDL_LogError(-1 , "Create window failed. From->PWEWindow:(%s) SDL->(%s)", name.c_str(), SDL_GetError());
@@ -20,6 +25,7 @@ namespace PWEngine::Core
         SDL_SetWindowPosition(this->window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
         // GPU
         this->device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV,true,"vulkan");
+        if (this->device == NULL) SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV,true,"opengl");
         if (this->device == NULL) SDL_LogError(-1 , "Create device failed. From->PWEWindow:(%s) SDL->(%s)", name.c_str(), SDL_GetError());
         if(!SDL_ClaimWindowForGPUDevice(this->device, this->window)) SDL_LogError(-1, "Claimed device and window was failed. From->PWEWindow:(%s) SDL->(%s)", name.c_str(), SDL_GetError());
         // Renderer
@@ -40,18 +46,11 @@ namespace PWEngine::Core
         bool is_running = true;
         while(is_running)
         {
-            event(is_running);
+            eventbus.event(is_running);
             render(scene);   
         }
     }
-    void PWEWindow::event(bool is_running)
-    {
-        SDL_Event event;
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_EVENT_QUIT)
-                is_running = false;
-        }
-    }
+    
     void PWEWindow::render(IPWEScene* scene)
     {
         string name = scene->loop();

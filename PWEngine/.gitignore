@@ -3,6 +3,7 @@
 .xmake/
 build/
 compile_commands.json
+*.tar.gz
 
 # MacOS Cache
 .DS_Store
