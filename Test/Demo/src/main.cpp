@@ -15,7 +15,7 @@ class TestScene : PWECanvasScene
             draw_surface.drawRect(PWERectSize2{0, 0, 800, 200}, PWEColor{0, 0, 0, 255});
             draw_surface.drawRect(PWERectSize2{2 , 2, 796, 196}, PWEColor{255,255, 0, 127});
             jetbrains_mono = PWEFont("jbm.ttf", 32);
-            icon_surface = PWESurfaceFactory::createSurfaceByImage("icon.png");   
+            icon_surface = PWESurfaceFactory::createSurfaceByImage("icon512.png");   
         }
         string loop() override
         {

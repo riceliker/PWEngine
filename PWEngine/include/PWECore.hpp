@@ -134,7 +134,6 @@ namespace PWEngine::Core
             void onKeyHoldRepeat(SDL_Keycode key, SDL_Keymod mod);
             void onKeyRelease(SDL_Keycode key, SDL_Keymod mod);
     };
-    void ListAllGPU();
     class PWEWindow
     {
         typedef struct
@@ -143,6 +142,7 @@ namespace PWEngine::Core
             SDL_RendererLogicalPresentation presentation = SDL_LOGICAL_PRESENTATION_LETTERBOX;
         } PWEWindowDesc;
         private: 
+            void startInfo();
             // config
             PWEVec2T<uint> window_resolution = PWEVec2T<uint>(1280, 720);
             // basic handle

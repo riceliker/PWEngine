@@ -2,22 +2,26 @@
 
 namespace PWEngine::Core
 {
-    void ListAllGPU()
+    void PWEWindow::startInfo()
     {
-        SDL_Log("GPU Support List:");
         int gpu_count = SDL_GetNumGPUDrivers();
+        string gpu_api_info;
         for (int i = 0; i < gpu_count; i++)
         {
             const char* gpu_name = SDL_GetGPUDriver(i);
-            SDL_Log("Find GPU: %s", gpu_name);
+            gpu_api_info.append(gpu_name);
+            gpu_api_info.append(",");
         }
-
+        SDL_Log("PWEngine v0.1.0 (c) 2026-present riceliker & Contributors. Open Source License: LGPL2.0.");
+        SDL_Log("Device Info:");
+        SDL_Log("Graphic API: %s", gpu_api_info.c_str());
+        
     }
     PWEWindow::PWEWindow(string name, PWEWindowDesc desc)
     {
         TTF_Init();
         SDL_Init(SDL_INIT_VIDEO);
-        ListAllGPU();
+        startInfo();
         // Window
         this->window = SDL_CreateWindow(name.c_str(), this->window_resolution.x, this->window_resolution.y, SDL_WINDOW_RESIZABLE);
         if (this->window == NULL) SDL_LogError(-1 , "Create window failed. From->PWEWindow:(%s) SDL->(%s)", name.c_str(), SDL_GetError());
