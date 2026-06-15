@@ -1,6 +1,8 @@
 #include "PWECore.hpp"
+#include "PWESimpleUI.hpp"
 
 using namespace PWEngine::Core;
+using namespace PWEngine::SimpleUI;
 class TestScene : PWECanvasScene
 {
     public:
@@ -15,9 +17,9 @@ class TestScene : PWECanvasScene
             draw_surface.drawRect(PWERectSize2{0, 0, 800, 200}, PWEColor{0, 0, 0, 255});
             draw_surface.drawRect(PWERectSize2{2 , 2, 796, 196}, PWEColor{255,255, 0, 127});
             jetbrains_mono = PWEFont("jbm.ttf", 32);
-            icon_surface = PWESurfaceFactory::createSurfaceByImage("icon512.png");   
+            icon_surface = PWESurfaceFactory::createSurfaceByImage("icon512.png");  
         }
-        string loop() override
+        string loop(SDL_Event event) override
         {
             clearCanvas(PWEColor{255, 255, 255, 255});
             draw(draw_surface, PWEVec2T<uint>(16, 16));
@@ -30,6 +32,12 @@ class TestScene : PWECanvasScene
             return "";
         }
 };
+class BoxModel : public IPWEBasicBox
+{
+    
+    void hover(PWEBasicBoxInfo& info) override;
+    void clicked(PWEBasicBoxInfo& info) override;
+};
 
 
 int main(int argc, char** argv) 
@@ -38,10 +46,13 @@ int main(int argc, char** argv)
         .logic_resolution = PWEVec2(1280, 720)
     });
     
-    TestScene ts = TestScene(win.getInfo());
+    // TestScene ts = TestScene(win.getInfo());
 
-    win.registryScene("test", (IPWEScene*)&ts);
-    win.runMainScene("test");
+    // win.registryScene("test", (IPWEScene*)&ts);
+    // win.runMainScene("test");
+
+    BoxModel bm = BoxModel();
+    //bm.render(PWEBasicBoxInfo info)
     
     return 0;
 }

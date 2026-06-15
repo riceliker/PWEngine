@@ -1,4 +1,6 @@
 #include "PWECore.hpp"
+#include "PWEType.hpp"
+#include "SDL3/SDL_events.h"
 
 namespace PWEngine::Core
 {
@@ -23,6 +25,7 @@ namespace PWEngine::Core
         SDL_Init(SDL_INIT_VIDEO);
         startInfo();
         // Window
+        this->window_resolution = PWEVec2T<uint>((uint)desc.logic_resolution.x, (uint)desc.logic_resolution.y);
         this->window = SDL_CreateWindow(name.c_str(), this->window_resolution.x, this->window_resolution.y, SDL_WINDOW_RESIZABLE);
         if (this->window == NULL) SDL_LogError(-1 , "Create window failed. From->PWEWindow:(%s) SDL->(%s)", name.c_str(), SDL_GetError());
         SDL_ShowWindow(this->window);
@@ -50,18 +53,14 @@ namespace PWEngine::Core
         bool is_running = true;
         while(is_running)
         {
-            eventbus.event(is_running);
-            render(scene);   
-        }
-    }
-    
-    void PWEWindow::render(IPWEScene* scene)
-    {
-        string name = scene->loop();
-        if(name != "")
-        {
-            scene = scenes[name];
-            if(scene) SDL_LogError(-1, "Scene name(%s) not found", name.c_str());
+            SDL_Event event;
+            tie(is_running, event) = eventbus.event(is_running);
+            string name = scene->loop(event);
+            if(name != "")
+            {
+                scene = scenes[name];
+                if(scene) SDL_LogError(-1, "Scene name(%s) not found", name.c_str());
+            }  
         }
     }
 }

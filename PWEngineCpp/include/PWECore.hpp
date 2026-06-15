@@ -1,34 +1,43 @@
+/**
+ * 
+ */
+
 #pragma once
 
 #include "PWEType.hpp"
 #include "PWEObject.hpp"
 
+#include "SDL3/SDL_events.h"
 #include "SDL3/SDL_gpu.h"
+#include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
 #include "SDL3_ttf/SDL_ttf.h"
 #include <SDL3/SDL.h>
 #include <string>
 #include <unordered_map>
+#include <vector>
 using namespace std;
 using namespace PWEngine::Type;
 namespace PWEngine::Core
 {
-    /*
-     
-    
-    
-     */
     typedef struct
     {
         SDL_GPUDevice* device;
         SDL_Window* window;
         SDL_Renderer* renderer;
+        PWEVec2T<uint> window_resolution;
     } PWEWindowInfo;
+
+    typedef struct
+    {
+        SDL_Keycode key;
+        SDL_Keymod mod;
+    } PWEInputEventPackage;
     
     class IPWEScene
     {
         public:
-            virtual string loop() = 0;
+            virtual string loop(SDL_Event event) = 0;
     };
     class PWEFont : public PWERefCountPtr<TTF_Font>
     {
@@ -63,7 +72,6 @@ namespace PWEngine::Core
     
     class PWESurface : public PWERefCountPtr<SDL_Surface>
     {
-        private:
         public:
             PWESurface() = default;
             explicit PWESurface(SDL_Surface* suf) : PWERefCountPtr(suf, SDL_DestroySurface){}
@@ -100,39 +108,29 @@ namespace PWEngine::Core
     };
     class PWECanvasScene : public IPWEScene
     {
-        protected:
+        private:
+            vector<SDL_Surface*> surfaces;
             SDL_Renderer* renderer;
-        public:
-            PWECanvasScene(PWEWindowInfo info)
-            {
-                this->renderer = info.renderer;
-
-                int w, h;
-                SDL_GetWindowSizeInPixels(info.window, &w, &h);
-            }
-            void clearCanvas(PWEColor color)
-            {
-                SDL_SetRenderDrawColor(this->renderer, color.r, color.g, color.b, color.a);
-                SDL_RenderClear(this->renderer);
-            }
-            void submitCanvas()
-            {
-                SDL_RenderPresent(this->renderer);   
-            }
-
+        protected:
             void draw(PWESurface surface, PWEVec2T<uint> pos);
             void draw(PWESurface surface, PWEVec2T<uint> pos, PWEVec2T<uint> size);
-
-    };
+        public:
+            PWECanvasScene(PWEWindowInfo info);
+            void clearCanvas(PWEColor color);
+            void addSurface(PWESurface surface);
+            void submitCanvas();
+    }; 
+   
     class PWEEvent
     {
         private:
-        
+            SDL_Keycode on_pressed_key;
+            SDL_Keymod on_pressed_mod;
+            uint mouse_x;
+            uint mouse_y;
         public: 
-            void event(bool is_running);
-            void onKeyPressOnce(SDL_Keycode key, SDL_Keymod mod);
-            void onKeyHoldRepeat(SDL_Keycode key, SDL_Keymod mod);
-            void onKeyRelease(SDL_Keycode key, SDL_Keymod mod);
+            PWEInputEventPackage getPackage();
+            tuple<bool, SDL_Event> event(bool is_running);
     };
     class PWEWindow
     {
@@ -145,6 +143,7 @@ namespace PWEngine::Core
             void startInfo();
             // config
             PWEVec2T<uint> window_resolution = PWEVec2T<uint>(1280, 720);
+            PWEVec2T<uint> logical_resolution = PWEVec2T<uint>(1280, 720);
             // basic handle
             SDL_Window* window;
             SDL_GPUDevice* device;
@@ -162,7 +161,7 @@ namespace PWEngine::Core
             // set config
             void configWindowResolution(PWEVec2T<uint> window_resolution){this->window_resolution=window_resolution;}
             // out info
-            PWEWindowInfo getInfo(){return PWEWindowInfo {.window=this->window,.device=this->device,.renderer=this->renderer};}
+            PWEWindowInfo getInfo(){return PWEWindowInfo {.window=this->window,.device=this->device,.renderer=this->renderer, .window_resolution=this->window_resolution};}
             void registryScene(string unique_name, IPWEScene* scene){scenes[unique_name] = scene;}
             void runMainScene(string name);
 

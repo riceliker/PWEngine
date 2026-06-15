@@ -4,7 +4,7 @@ namespace PWEngine::Core
 {
     void PWECanvasScene::draw(PWESurface surface, PWEVec2T<uint> pos)
     {
-        SDL_Texture* texture =  SDL_CreateTextureFromSurface(this->renderer, surface.get());
+        SDL_Texture* texture = SDL_CreateTextureFromSurface(this->renderer, surface.get());
         
         SDL_FRect dstRect = {
             .x = (float)pos.x, .y = (float)pos.y,
