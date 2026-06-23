@@ -1,29 +1,39 @@
+use std::{any::Any, ptr::null};
+
+use crate::{core::{engine::PWEngine, window::{self, PWEWindow}}, utils::vec::Vec2};
+
+
 mod core;
 mod utils;
-use sdl3::sys::events::{SDL_EVENT_QUIT, SDL_Event, SDL_PollEvent};
-
-use crate::core::window::{Window, WindowInfo};
-use crate::utils::vec::Vec2;
 fn main() 
 {
-    let mut win = Window::new();
-    win.create_window(WindowInfo {
-        logical_resolution: Vec2 {x: 1280,y: 720}
-    });
-    println!("Hello, world!");
-    let mut is_running = true;
-    unsafe 
-    {
-        while(is_running)
+    let mut engine = PWEngine::create_engine();
+    let mut window = engine.create_window("Main");
+
+    window.borrow_mut().create_window(Vec2{x:1280, y:720} , window::PWEWindowMode::RESIZABLE);
+    window.borrow_mut().create_render(Vec2 {x: 1280, y: 720});
+
+    engine.show_window("Main");
+
+    unsafe
         {
-            let mut event = SDL_Event::default();
-            while (SDL_PollEvent(&mut event)) 
+            let mut event: sdl3_sys::events::SDL_Event = Default::default();
+            let mut is_running = true;
+            while is_running 
             {
-                if(event.r#type == SDL_EVENT_QUIT) 
+                while sdl3_sys::events::SDL_PollEvent(&mut event)
                 {
-                    is_running = false;
+                    if event.r#type == sdl3_sys::events::SDL_EVENT_QUIT
+                    {
+                        is_running = false;
+                    }
+                    let render = window.borrow_mut().get_render_ptr();
+                    sdl3_sys::render::SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
+                    sdl3_sys::render::SDL_RenderClear(render);
+                    sdl3_sys::render::SDL_RenderPresent(render);   
                 }
             }
         }
-    }
+    
+
 }

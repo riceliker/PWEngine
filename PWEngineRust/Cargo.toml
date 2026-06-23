@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sdl3 = "0.18.4"
+sdl3-image-sys = "0.6.4"
+sdl3-sys = "0.6.6"
+serde_json = "1.0.150"

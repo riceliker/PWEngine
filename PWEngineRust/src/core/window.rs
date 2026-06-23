@@ -1,85 +1,86 @@
-/* 
- * Window is a class, which manager the SDL window. it control GPU device and SDL renderer
- */
+use std::{cell::RefCell, rc::Rc};
 
-
-use std::ffi::{CString};
-
-use sdl3::sys::{
-    gpu::{SDL_ClaimWindowForGPUDevice, SDL_CreateGPUDevice, SDL_DestroyGPUDevice, SDL_GPU_SHADERFORMAT_SPIRV, SDL_GPUDevice}, init::{SDL_INIT_VIDEO, SDL_Init}, log::SDL_Log, render::{SDL_CreateGPURenderer, SDL_DestroyRenderer, SDL_Renderer}, video::{SDL_CreateWindow, SDL_DestroyWindow, SDL_ShowWindow, SDL_WINDOW_RESIZABLE, SDL_WINDOW_VULKAN, SDL_Window}
-};
-fn c_str(str : &str) -> CString
+use crate::utils::vec::*;
+use crate::utils::log::*;
+use sdl3_sys::gpu::SDL_GPUDevice;
+use sdl3_sys::*;
+pub enum PWEWindowMode 
 {
-    return CString::new(str).unwrap();
+    RESIZABLE, FULLSCREEN
 }
-
-use crate::utils::vec;
-pub struct WindowInfo
+impl PWEWindowMode 
 {
-    pub logical_resolution : vec::Vec2<u32>
-}
-pub struct Window
-{
-    window : Option<*mut SDL_Window>,
-    device : Option<*mut SDL_GPUDevice>,
-    renderer : Option<*mut SDL_Renderer>   
-}
-impl Drop for Window
-{
-    fn drop(&mut self) 
+    pub fn as_sdl3(&self) -> video::SDL_WindowFlags
     {
-        unsafe 
-        {
-            SDL_DestroyRenderer(self.renderer.unwrap());
-            SDL_DestroyGPUDevice(self.device.unwrap());
-            SDL_DestroyWindow(self.window.unwrap());
+        match self {
+            PWEWindowMode::RESIZABLE => return  video::SDL_WINDOW_RESIZABLE,
+            PWEWindowMode::FULLSCREEN => return  video::SDL_WINDOW_FULLSCREEN
         }
     }
 }
-impl Window
+pub struct PWEWindow
 {
-    pub fn new() -> Self
+    name: String,
+    device: Option<Rc<RefCell<*mut gpu::SDL_GPUDevice>>>,
+    window: Option<Rc<RefCell<*mut video::SDL_Window>>>,
+    render: Option<Rc<RefCell<*mut render::SDL_Renderer>>>
+}
+
+impl PWEWindow 
+{
+    pub fn builder(name: &str, device: Rc<RefCell<*mut SDL_GPUDevice>>) -> Self
     {
-        return Window { window: None, device: None, renderer: None };
+        return PWEWindow {
+            name: String::from(name),
+            device: Some(device),
+            window: None,
+            render: None
+        };
     }
-    // If you want to use it. you must use it first.
-    pub fn create_window(&mut self, info : WindowInfo)
+    // 3. Create Window
+    pub fn create_window(&mut self, window_resolution: Vec2<u32>, mode: PWEWindowMode)
     {
         unsafe 
         {
-            SDL_Init(SDL_INIT_VIDEO);
-
-            let maybe_null_window  = SDL_CreateWindow(
-                c_str("").as_ptr(), 1280, 720,
-                SDL_WINDOW_RESIZABLE | SDL_WINDOW_VULKAN);
-            if maybe_null_window.is_null()
+            let title_c = std::ffi::CString::new(self.name.clone()).expect("Name Error");
+            let window_ptr =  video::SDL_CreateWindow(title_c.as_ptr() , window_resolution.x as i32, window_resolution.y as i32, video::SDL_WINDOW_METAL);
+            if window_ptr.is_null() 
             {
-                SDL_Log(c_str("Error: Create window failed").as_ptr());
+                PWELog::log_warn("Warning: Can not create window.");
             }
-            self.window = Some(maybe_null_window);
-
-            let maybe_null_device = SDL_CreateGPUDevice(
-                SDL_GPU_SHADERFORMAT_SPIRV, true,
-                CString::new("vulkan").unwrap().as_ptr());
-            if maybe_null_device.is_null()
+            if !gpu::SDL_ClaimWindowForGPUDevice(self.get_device_ptr(), window_ptr)
             {
-                SDL_Log(c_str("Error: Create device failed").as_ptr());
+                PWELog::log_warn("Claimed device and window was failed.");
             }
-            self.device = Some(maybe_null_device);
-
-            if !SDL_ClaimWindowForGPUDevice(self.device.expect("Device Not Found"), self.window.expect("Window Not Found"))
+            self.window = Some(Rc::new(RefCell::new(window_ptr)));
+        }
+        
+    }
+    
+    // 4. Create Render
+    pub fn create_render(&mut self, logical_resolution: Vec2<u32>)
+    {
+        unsafe 
+        {
+            let renderer_ptr = render::SDL_CreateGPURenderer(self.get_device_ptr(), self.get_window_ptr());
+            if renderer_ptr.is_null()
             {
-                SDL_Log(c_str("Error: Claimed device and window was failed.").as_ptr());
+                PWELog::log_warn("Create render failed");
             }
-
-            let maybe_null_renderer = SDL_CreateGPURenderer(self.device.unwrap(), self.window.unwrap());
-            if maybe_null_renderer.is_null()
-            {
-                SDL_Log(c_str("Error: Create renderer failed").as_ptr());
-            }
-            self.renderer = Some(maybe_null_renderer);
-            SDL_ShowWindow(self.window.unwrap());
-
-        };
+            render::SDL_SetRenderLogicalPresentation(renderer_ptr,logical_resolution.x as i32, logical_resolution.y as i32, render::SDL_LOGICAL_PRESENTATION_LETTERBOX);
+            self.render = Some(Rc::new(RefCell::new(renderer_ptr)));
+        }
+    }
+    pub fn get_window_ptr(&self) -> *mut video::SDL_Window
+    {
+        return *self.window.as_ref().expect("You should create new window firstly").borrow();
+    }
+    pub fn get_device_ptr(&self) -> *mut gpu::SDL_GPUDevice
+    {
+        return *self.device.as_ref().expect("You should create new device firstly").borrow();
+    }
+    pub fn get_render_ptr(&self) -> *mut render::SDL_Renderer
+    {
+        return *self.render.as_ref().expect("You should create new render firstly").borrow();
     }
 }
