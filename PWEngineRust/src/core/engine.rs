@@ -44,15 +44,8 @@ impl PWEngine
     {
         unsafe 
         {
-            let init_code = init::SDL_Init(init::SDL_INIT_VIDEO);
-            if init_code
-            {
-                PWELog::log_info("SDL has init.");
-            }
-            else 
-            {
-                PWELog::log_error("ERROR: SDL init failed");
-            }
+            init::SDL_Init(init::SDL_INIT_VIDEO);
+            sdl3_ttf_sys::ttf::TTF_Init();
             Self::engine_info();
             let device_ptr = gpu::SDL_CreateGPUDevice(gpu::SDL_GPU_SHADERFORMAT_SPIRV,false, c"vulkan".as_ptr());
             if device_ptr.is_null()
@@ -69,21 +62,17 @@ impl PWEngine
         }
         
     }
-    pub fn create_window(&mut self, window_name: &str) -> Rc<RefCell<PWEWindow>>
+    pub fn registry_window(&mut self, window_name: &str)
     {
         let name = String::from(window_name);
         let window = Rc::new(RefCell::new(PWEWindow::builder(&name, Rc::clone(&self.device))));
         self.window_map.insert(name, Rc::clone(&window));
-        return window;
+
     }
-    pub fn show_window(&self, name: &str) -> Rc<RefCell<PWEWindow>>
+    pub fn get_window(&self, name: &str) -> Rc<RefCell<PWEWindow>>
     {
         let window = self.window_map.get(name).unwrap();
-        unsafe 
-        {
-            video::SDL_ShowWindow(window.borrow_mut().get_window_ptr());
-            video::SDL_SetWindowPosition(window.borrow_mut().get_window_ptr(),  video::SDL_WINDOWPOS_CENTERED, video::SDL_WINDOWPOS_CENTERED);
-        }
+        
         return Rc::clone(window);
     }
     pub fn run(&self) 

@@ -21,18 +21,18 @@ impl PWEWindowMode
 pub struct PWEWindow
 {
     name: String,
-    device: Option<Rc<RefCell<*mut gpu::SDL_GPUDevice>>>,
-    window: Option<Rc<RefCell<*mut video::SDL_Window>>>,
-    render: Option<Rc<RefCell<*mut render::SDL_Renderer>>>
+    device: Rc<RefCell<*mut gpu::SDL_GPUDevice>>,
+    window: Option<*mut video::SDL_Window>,
+    render: Option<*mut render::SDL_Renderer>
 }
 
 impl PWEWindow 
 {
-    pub fn builder(name: &str, device: Rc<RefCell<*mut SDL_GPUDevice>>) -> Self
+    pub fn builder(name: &str, device: Rc<RefCell<*mut SDL_GPUDevice>>) -> PWEWindow
     {
         return PWEWindow {
             name: String::from(name),
-            device: Some(device),
+            device: device,
             window: None,
             render: None
         };
@@ -48,39 +48,43 @@ impl PWEWindow
             {
                 PWELog::log_warn("Warning: Can not create window.");
             }
-            if !gpu::SDL_ClaimWindowForGPUDevice(self.get_device_ptr(), window_ptr)
+            if !gpu::SDL_ClaimWindowForGPUDevice(*self.device.as_ref().borrow_mut(), window_ptr)
             {
                 PWELog::log_warn("Claimed device and window was failed.");
             }
-            self.window = Some(Rc::new(RefCell::new(window_ptr)));
+            self.window = Some(window_ptr);
         }
         
     }
-    
+
     // 4. Create Render
     pub fn create_render(&mut self, logical_resolution: Vec2<u32>)
     {
         unsafe 
         {
-            let renderer_ptr = render::SDL_CreateGPURenderer(self.get_device_ptr(), self.get_window_ptr());
+            let renderer_ptr = render::SDL_CreateGPURenderer(*self.device.as_ref().borrow_mut(), self.get_window_ptr());
             if renderer_ptr.is_null()
             {
                 PWELog::log_warn("Create render failed");
             }
             render::SDL_SetRenderLogicalPresentation(renderer_ptr,logical_resolution.x as i32, logical_resolution.y as i32, render::SDL_LOGICAL_PRESENTATION_LETTERBOX);
-            self.render = Some(Rc::new(RefCell::new(renderer_ptr)));
+            self.render = Some(renderer_ptr);
+        }
+    }
+    pub fn show_window(&self)
+    {
+        unsafe 
+        {
+            video::SDL_ShowWindow(self.get_window_ptr());
+            video::SDL_SetWindowPosition(self.get_window_ptr(),  video::SDL_WINDOWPOS_CENTERED, video::SDL_WINDOWPOS_CENTERED);
         }
     }
     pub fn get_window_ptr(&self) -> *mut video::SDL_Window
     {
-        return *self.window.as_ref().expect("You should create new window firstly").borrow();
-    }
-    pub fn get_device_ptr(&self) -> *mut gpu::SDL_GPUDevice
-    {
-        return *self.device.as_ref().expect("You should create new device firstly").borrow();
+        return *self.window.as_ref().expect("You should create new window firstly");
     }
     pub fn get_render_ptr(&self) -> *mut render::SDL_Renderer
     {
-        return *self.render.as_ref().expect("You should create new render firstly").borrow();
+        return *self.render.as_ref().expect("You should create new render firstly");
     }
 }

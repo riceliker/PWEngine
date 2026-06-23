@@ -1,0 +1,31 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.6 Chrome/144.0.7559.236 Electron/40.8.4 Safari/537.36" version="29.6.6">
+  <diagram name="第 1 页" id="rZvLyv8ioKHmks2elbwY">
+    <mxGraphModel dx="1220" dy="859" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="m8gi1zwzGO0G17LVBCno-6" edge="1" parent="1" source="m8gi1zwzGO0G17LVBCno-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" target="m8gi1zwzGO0G17LVBCno-2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-7" edge="1" parent="1" source="m8gi1zwzGO0G17LVBCno-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m8gi1zwzGO0G17LVBCno-3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-1" parent="1" style="html=1;whiteSpace=wrap;" value="PWEngine" vertex="1">
+          <mxGeometry height="20" width="60" x="370" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-10" edge="1" parent="1" source="m8gi1zwzGO0G17LVBCno-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" target="m8gi1zwzGO0G17LVBCno-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-2" parent="1" style="html=1;whiteSpace=wrap;" value="PWEWindow" vertex="1">
+          <mxGeometry height="20" width="80" x="120" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-3" parent="1" style="html=1;whiteSpace=wrap;" value="PWEAsset" vertex="1">
+          <mxGeometry height="20" width="70" x="603" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="m8gi1zwzGO0G17LVBCno-9" parent="1" style="html=1;whiteSpace=wrap;" value="PWEScene" vertex="1">
+          <mxGeometry height="20" width="70" x="125" y="190" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

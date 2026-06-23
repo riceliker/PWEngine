@@ -8,12 +8,10 @@ mod utils;
 fn main() 
 {
     let mut engine = PWEngine::create_engine();
-    let mut window = engine.create_window("Main");
 
-    window.borrow_mut().create_window(Vec2{x:1280, y:720} , window::PWEWindowMode::RESIZABLE);
-    window.borrow_mut().create_render(Vec2 {x: 1280, y: 720});
-
-    engine.show_window("Main");
+    engine.registry_window("Main");
+    engine.get_window("Main").borrow_mut().create_window(Vec2{x:1280, y:720} , window::PWEWindowMode::RESIZABLE);
+    engine.get_window("Main").borrow_mut().create_render(Vec2 {x: 1280, y: 720});
 
     unsafe
         {
@@ -27,7 +25,7 @@ fn main()
                     {
                         is_running = false;
                     }
-                    let render = window.borrow_mut().get_render_ptr();
+                    let render = engine.get_window("Main").borrow_mut().get_render_ptr();
                     sdl3_sys::render::SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
                     sdl3_sys::render::SDL_RenderClear(render);
                     sdl3_sys::render::SDL_RenderPresent(render);   
