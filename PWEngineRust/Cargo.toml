@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sdl3-image-sys = "0.6.4"
-sdl3-sys = "0.6.6"
-sdl3-ttf-sys = "0.6.1"
+sdl3-image-sys = {version = "0.6.4", default-features = false, features = ["no-link"]}
+sdl3-sys = {version = "0.6.6", default-features = false, features = ["link-system"]}
+sdl3-ttf-sys = {version = "0.6.1", default-features = false, features = ["link-system"]}
 serde_json = "1.0.150"

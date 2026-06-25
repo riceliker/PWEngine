@@ -1,11 +1,14 @@
 use std::{cell::RefCell, collections::HashMap, ffi::CStr, rc::Rc};
 
-use sdl3_sys::*;
-use crate::{core::window::{self, PWEWindow}, utils::log::*};
+use sdl3_sys::{error::SDL_GetError, gpu::SDL_CreateGPUDeviceWithProperties, hints::{SDL_HINT_GPU_DRIVER, SDL_SetHint}, properties::{SDL_CreateProperties, SDL_DestroyProperties, SDL_SetBooleanProperty}, render::{SDL_RenderClear, SDL_RenderPresent, SDL_SetRenderDrawColor}, *};
+use crate::{core::{scene::PWEScene, window::{PWEWindow}}, utils::log::*};
 pub struct PWEngine
 {
     device: Rc<RefCell<*mut gpu::SDL_GPUDevice>>,
-    window_map: HashMap<String, Rc<RefCell<PWEWindow>>>
+    window_map: HashMap<String, Rc<RefCell<PWEWindow>>>,
+    scene_map: HashMap<String, Rc<RefCell<dyn PWEScene>>>,
+    curr_window: Option<*mut PWEWindow>,
+    curr_scene: Option<*mut dyn PWEScene>
 }
 impl PWEngine
 {
@@ -46,18 +49,24 @@ impl PWEngine
         {
             init::SDL_Init(init::SDL_INIT_VIDEO);
             sdl3_ttf_sys::ttf::TTF_Init();
-            Self::engine_info();
+            //Self::engine_info();
             let device_ptr = gpu::SDL_CreateGPUDevice(gpu::SDL_GPU_SHADERFORMAT_SPIRV,false, c"vulkan".as_ptr());
             if device_ptr.is_null()
             {
-                PWELog::log_error("Create device failed.");
+                let c_ptr_error = SDL_GetError();
+                let c_error = CStr::from_ptr(c_ptr_error).to_owned();
+                let error = c_error.to_str().unwrap();
+                PWELog::log_error(format!("Create device failed. SDL_ERROR:{}", error ).as_str());
                 panic!("Create device failed.")
             }
             let device = Rc::new(RefCell::new(device_ptr));
             return PWEngine 
             {
                 device: device,
-                window_map: HashMap::new()
+                window_map: HashMap::new(),
+                scene_map: HashMap::new(),
+                curr_window: None,
+                curr_scene: None
             };
         }
         
@@ -75,6 +84,24 @@ impl PWEngine
         
         return Rc::clone(window);
     }
+    pub fn registry_scene<T>(&mut self, scene_name: &str, scene: T)
+    where T: PWEScene + 'static
+    {
+        let name = String::from(scene_name);
+        self.scene_map.insert(name, Rc::new(RefCell::new(scene)));
+    }
+    pub fn binding_window(&mut self, window_name: &str)
+    {
+        match self.window_map.get(window_name) {
+            Some(window) => {
+                self.curr_window = Some(window.as_ptr());
+            },
+            None => {
+                PWELog::log_warn("Can not found window");
+                return;
+            }
+        }
+    }
     pub fn run(&self) 
     {
         unsafe
@@ -90,6 +117,13 @@ impl PWEngine
                         is_running = false;
                     }
                 }
+                let window = self.curr_window.unwrap();
+                let render = (*window).get_render_ptr();
+                SDL_SetRenderDrawColor(render, 255, 255, 255, 255);
+                SDL_RenderClear(render);
+                SDL_RenderPresent(render);
+                // let scene = self.curr_scene.unwrap();
+                // (*scene).render(render);
             }
         }
     }

@@ -43,7 +43,7 @@ impl PWEWindow
         unsafe 
         {
             let title_c = std::ffi::CString::new(self.name.clone()).expect("Name Error");
-            let window_ptr =  video::SDL_CreateWindow(title_c.as_ptr() , window_resolution.x as i32, window_resolution.y as i32, video::SDL_WINDOW_METAL);
+            let window_ptr =  video::SDL_CreateWindow(title_c.as_ptr() , window_resolution.x as i32, window_resolution.y as i32, video::SDL_WINDOW_VULKAN);
             if window_ptr.is_null() 
             {
                 PWELog::log_warn("Warning: Can not create window.");
