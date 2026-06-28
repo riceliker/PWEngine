@@ -1,15 +1,17 @@
 #ifndef PWENGINE_C_API_H
 #define PWENGINE_C_API_H
 
-#include "SDL3/SDL_gpu.h"
-#include "SDL3/SDL_render.h"
-#include "SDL3/SDL_video.h"
+#include "PWVMT.h"
 
-#define PWE_CONSOLE_RESET          "\033[0m"
+#define PWE_CONSOLE_RESET          "\033[0m\n"
 #define PWE_CONSOLE_RED            "\033[31m"
 #define PWE_CONSOLE_GREEN          "\033[32m"
 #define PWE_CONSOLE_YELLOW         "\033[33m"
 #define PWE_CONSOLE_BLUE           "\033[34m"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static bool PWEngineCAPI_is_debug = false;
 
@@ -29,10 +31,7 @@ void PWEngineCAPI_LogError(const char *info);
  */
 int PWEngineCAPI_ExitSDL();
 
-typedef struct
-{
-        SDL_GPUDevice *device;
-} PWEngineCAPI_Engine;
+typedef struct PWEngineCAPI_Engine PWEngineCAPI_Engine;
 
 /**
  * @brief
@@ -47,30 +46,13 @@ typedef struct
  */
 PWEngineCAPI_Engine* PWEngineCAPI_CreateEngine(void);
 
-void PWEngineCAPI_DestroyEngine(PWEngineCAPI_Engine *engine);
+void PWEngineCAPI_DestroyEngine(PWEngineCAPI_Engine* engine);
 
-typedef enum
-{
-        PWE_WINDOW_MODE_FULLSCREEN = SDL_WINDOW_FULLSCREEN,
-        PWE_WINDOW_MODE_RESIZABLE = SDL_WINDOW_RESIZABLE
-} PWEngineCAPI_WindowMode;
+typedef enum PWEngineCAPI_WindowMode PWEngineCAPI_WindowMode;
 
-typedef struct
-{
-        char *name;
-        int physic_w;
-        int physic_h;
-        int logical_w;
-        int logical_h;
-        PWEngineCAPI_WindowMode mode;
-} PWEngineCAPI_WindowInfo;
+typedef struct PWEngineCAPI_WindowInfo PWEngineCAPI_WindowInfo;
 
-typedef struct
-{
-        char *name;
-        SDL_Window *window;
-        SDL_Renderer *render;
-} PWEngineCAPI_Window;
+typedef struct PWEngineCAPI_Window PWEngineCAPI_Window;
 
 /**
  * @brief 
@@ -84,5 +66,19 @@ PWEngineCAPI_Window* PWEngineCAPI_CreateWindow(PWEngineCAPI_Engine *engine, PWEn
 
 void PWEngineCAPI_DestroyWindow(PWEngineCAPI_Window *window);
 
+typedef struct PWEngineCAPI_Font PWEngineCAPI_Font;
+typedef struct PWEngineCAPI_Surface PWEngineCAPI_Surface;
+
+PWEngineCAPI_Surface* PWEngineCAPI_CreateSurfaceByEmpty(int size_x, int size_y);
+PWEngineCAPI_Surface* PWEngineCAPI_CreateSurfaceByImage(char* path);
+PWEngineCAPI_Surface* PWEngineCAPI_CreateSurfaceByText(PWEngineCAPI_Font* font, int size, PWVMT_Color color , char* text);
+PWEngineCAPI_Surface* PWEngineCAPI_CloneSurface();
+
+void PWEngineCAPI_DrawRectInSurface();
+void PWEngineCAPI_DrawSubsurfaceInSurface();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

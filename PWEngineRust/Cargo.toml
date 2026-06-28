@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-sdl3-image-sys = {version = "0.6.4", default-features = false, features = ["no-link"]}
-sdl3-sys = {version = "0.6.6", default-features = false, features = ["link-system"]}
-sdl3-ttf-sys = {version = "0.6.1", default-features = false, features = ["link-system"]}
-serde_json = "1.0.150"
+bindgen = "0.72.1"
+cc = "1.2.65"
+libc = "0.2"
+
+[build-dependencies]
+bindgen = "0.72.1"
+cc = "1.2.65"

@@ -1,0 +1,14 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.menu {
+    height: 48px;
+    background-color: #0099FF;
+}
+
+.menu-title-text {
+    padding-top: 12px;
+    color: #FFFFFF;
+}
