@@ -55,7 +55,7 @@ struct PWEngineCAPI_Engine
         SDL_GPUDevice* device;
 };
 
-void PWEngineCAPI_PreloadInfo(SDL_GPUDevice* device)
+void PWEngineCAPI_PreloadInfo(void* device)
 {
         printf("PWEngine v0.0.1 beta. Copyright by riceliker and constructors. Open source license: LGPL2.0\n");
         printf("SDL Version: %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);

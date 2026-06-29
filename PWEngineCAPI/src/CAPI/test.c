@@ -17,6 +17,11 @@ void PWEngineCAPI_TestEngine_DrawText(SDL_Renderer* render, TTF_Font* font, char
         SDL_Surface* render_triangle_number_surface =  TTF_RenderText_Blended(font, text, size, color);
         SDL_Texture* render_triangle_number_texture = SDL_CreateTextureFromSurface(render, render_triangle_number_surface);
 
+        if(render_triangle_number_texture == NULL)
+        {
+                return;
+        }
+
         SDL_FRect rect = {0, 32*line, render_triangle_number_texture->w, render_triangle_number_texture->h};
 
         SDL_RenderFillRect(render, &rect);
@@ -24,11 +29,12 @@ void PWEngineCAPI_TestEngine_DrawText(SDL_Renderer* render, TTF_Font* font, char
         SDL_RenderTexture(render, render_triangle_number_texture, NULL, &rect);
 }
 
-void PWEngineCAPI_TestEngine()
+void PWEngineCAPI_TestEngineSDLRender()
 {
         TTF_Init();
         SDL_Init(SDL_INIT_VIDEO);
         SDL_GPUDevice* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
+        PWEngineCAPI_PreloadInfo(device);
         SDL_Window* window = SDL_CreateWindow("PWEngine Test Application", 1280, 720, SDL_WINDOW_RESIZABLE);
         SDL_ClaimWindowForGPUDevice(device, window);
         SDL_Renderer* render = SDL_CreateGPURenderer(device, window);
@@ -68,6 +74,9 @@ void PWEngineCAPI_TestEngine()
                                         SDL_SetRenderDrawColor(render, 0, 0, 0, 0);
                                         SDL_RenderClear(render);
                                         render_triangle_number = 0;
+                                        render_time = SDL_GetPerformanceCounter();
+                                        Uint64 fps_time = SDL_GetPerformanceCounter();
+                                        Uint64 total_fps = 0;
                                         break;
                                 default:
                                         break;

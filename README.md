@@ -22,6 +22,12 @@ The PWEngine have:
 ## Programming Language & Framework
 ![structure](./Assets/PWEngine.svg)
 
+## NO DRM(Digital Restrictions Management)
+PWEngine NEVER allow any DRM, include:
+1. DRM Platform: such as iOS, XBox, PlayStation
+2. DRM Tool: Anti-cheating program
+3. DRM 
+
 ## Why it call simple
 1. Support XML to design UI.
 2. Provide entity template and scene template.

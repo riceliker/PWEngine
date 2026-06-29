@@ -27,11 +27,20 @@ extern "C" {
 extern bool PWEngineCAPI_is_debug;
 
 void PWEngineCAPI_setDebug();
-void PWEngineCAPI_TestEngine();
+/**
+ * @brief 
+ * Test SDL Renderer.
+ * Notice: It will make out of memory! It is only use for test device.
+ * IT TEST ONLY! DO NOT USE THE RELEASE PROGRAM.
+ * 
+ */
+void PWEngineCAPI_TestEngineSDLRender();
 
 void PWEngineCAPI_LogInfo(const char *info);
 void PWEngineCAPI_LogWarn(const char *info);
 void PWEngineCAPI_LogError(const char *info);
+
+void PWEngineCAPI_PreloadInfo(void* device);
 
 
 /**

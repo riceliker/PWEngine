@@ -32,5 +32,5 @@ class PWEWindow
 
 int main()
 {
-    PWEngineCAPI_TestEngine();
+    
 }
