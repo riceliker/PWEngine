@@ -2,30 +2,42 @@
 <html>
   <main>
     <title>PWEngine Document</title>
+    <link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/deed.en">
   </main>
   <body style="background-color:#001122;">
     <!-- menu -->
     <div style="height: 48px;background-color: #006699;">
       <div style="margin-left: 5px;">
-        <p class="menu-text" onclick="go_menu">PWEngine Document</p>
+        <p class="menu-text">PWEngine Document</p>
       </div>
     </div>
-    <!-- content -->
-    <div style="display: flex; flex-direction: column; width: 20%; height: 100%; background-color: #002233;"> 
-      <p1>test</p1>
-      <p1>next</p1>
+    <!-- Body -->
+    <div style="display: flex; flex-direction: row; height: 100%;">
+      <!-- content -->
+      <div style="display: flex; flex-direction: column; width:25%; height: 100%; background-color: #002233;"> 
+        <p1>1. PWEngine Introduction</p1>
+        <p2 onclick="to('./Page/1.1.html')">1.1 Hello PWEngine</p2>
+      </div>
+      <!-- page -->
+      <iframe id="page" style="width:100%;height:100%;border:none;" src=""></iframe>
     </div>
+    <footer style="color: #FFFFFF;">
+      Copyright (c) 2026 Riceliker and Document Constructors.(CC-BY-NC 4.0)
+    </footer>
   </body>
   <style>
     * {margin: 0;padding: 0;}
     html, body {width: 100%;height: 100%;}
-    p1 {font-size: 1em; font-style: normal; color: #FFFFFF;}
+    p1 {font-size: 1.25em; font-style: normal; color: #FFFFFF; padding-top: 0.5em; padding-bottom: 0.5em;}
+    p1:hover {background-color: rgba(255, 255, 255, 0.2);}
+    p2 {font-size: 1em; font-style: normal; color: #FFFFFF; padding-top: 0.25em; padding-bottom: 0.25em; padding-left: 1em;}
+    p2:hover {background-color: rgba(255, 255, 255, 0.2);}
     .menu-text {padding-top: 12px; color: #FFFFFF;}
+    
   </style>
   <script>
-    function go_menu(page)
-    {
-      
+    async function to(page) {
+      document.getElementById('page').src = page;
     }
   </script>
 <html>

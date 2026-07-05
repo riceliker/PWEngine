@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+  <div id="code">
+    <div class="code-box">
+      <div class="code-head">
+        <p style="margin-left: 1em;"></p>
+        <button class="code-button" onclick="copyCode()">Copy</button>
+      </div>
+      <textarea id="text" row="10" readonly style="width: 100%; background: rgba(255, 255, 255, 1.0);">
+
+      </textarea>
+    </div>
+  </div>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    .code-box {
+      background-color: rgba(0, 0, 255, 0.5);
+      border: 2px solid black;
+      border-radius: 4px;
+      height: 100%;
+      padding: 4px;
+    }
+    .code-head {
+      height: 2em;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .code-button {
+      border: none;
+      background-color: rgba(0, 0, 0, 0);
+    }
+    .code-button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+  <script>
+    async function copyCode() {
+    const text = document.getElementById("text").value;
+    await navigator.clipboard.writeText(text);
+  }
+  </script>
+</html>

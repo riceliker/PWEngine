@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+  <body>
+    <h1>1.1 Hello PWEngine</h1>
+    <h2>1.1.1 PWEngine, A free software engine</h2>
+    <div class="p-text">
+      <p>Welcome to use PWEngine. This web document is help you know something about PWEngine.</p>
+      <p>PWEngine is a GUI Engine and Game Engine. Basic by language is C and SDL framework.</p>
+      <p>PWEngine is a free library, use LGPL3.0 License. That's mean anyone can help engine developing, Can be free to copy, remove, add, compile, run the code. </p>
+      <p>PWEngine support multi-platform(Desktop is the main focus). But except the DRM platform.(such as iOS, Xbox, PlayStation, Switch).</p>
+      <p>Although the PWEngine is written by C. But we comment you choose C++ or Rust. It has memory manager and container.</p>
+      <p>The GUI Editor is optional. And we abandon the huge editor to do anything. Remember `Lite is best`.</p>
+    </div>
+    <h2>1.1.2 PWEngine Attribute</h2>
+    <div class="p-text">
+      <p>Platform Support:</p>
+      <p>PWEngine support there official platform</p>
+      <table border="1">
+        <th>
+          <td>Type</td>
+          <td>Architecture</td>
+          <td>Package</td>
+          <td>Support</td>
+        </th>
+        <tr>
+          <td>Window</td>
+          <td>Official</td>
+          <td>amd64, arm64</td>
+          <td>exe</td>
+          <td>100%</td>
+        </tr>
+        <tr>
+          <td>MacOS</td>
+          <td>Official</td>
+          <td>arm64</td>
+          <td>unix execute file</td>
+          <td>100%</td>
+        </tr>
+        <tr>
+          <td>Linux</td>
+          <td>Official</td>
+          <td>amd64, arm64, rv64</td>
+          <td>unix execute file</td>
+          <td>100%</td>
+        </tr>
+        <tr>
+          <td>BSD</td>
+          <td>Planing</td>
+          <td>amd64</td>
+          <td>unix execute file</td>
+          <td>0%</td>
+        </tr>
+      </table>
+    </div>
+    
+    <div id="code">
+      <div class="code-box">
+        <div class="code-head">
+          <p style="margin-left: 1em; font-size: 24px; margin-top: -8px;">C++</p>
+          <button class="code-button" style="margin-top: -12px;" onclick="copyCode()">Copy</button>
+        </div>
+        <textarea id="text" readonly style="width: 100%; background: rgba(255, 255, 255, 1.0); min-height: 240px;">
+#include<PWLibrary.h>
+int main()
+{
+  PWLibrary_TestEngineSDLRender();
+}
+        </textarea>
+      </div>
+    </div>
+  </body>
+  <style>
+    * {margin: 0; padding: 0.5em;}
+    p {color: #FFFFFF; padding: 0;}
+    h1 {color: #FFFFFF; padding: 0; padding-bottom: 0.5em;}
+    h2 {color: #FFFFFF; padding: 0;}
+    td {color: #FFFFFF;}
+    .p-text {
+      padding-left: 1em;
+    }
+    .code-box {
+      background-color: rgba(0, 0, 255, 0.5);
+      border: 2px solid black;
+      border-radius: 4px;
+      height: 100%;
+      padding: 8px;
+      padding-right: 24px;
+    }
+    .code-head {
+      height: 2em;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;
+    }
+    .code-button {
+      border: none;
+      background-color: rgba(0, 0, 0, 0);
+      color: #FFFFFF;
+      font-size: 24px;
+    }
+    .code-button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+  <script>
+    async function copyCode() {
+      const text = document.getElementById("text").value;
+      await navigator.clipboard.writeText(text);
+    }
+  </script>
+</html>
