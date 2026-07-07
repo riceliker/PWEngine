@@ -1,20 +1,27 @@
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 set_languages("c23")
-set_warnings("all")
-add_cflags("-Wunused-result", "-Wall", "-Wextra")
+
+local make_library = false
 
 add_requires("libsdl3", "libsdl3_image", "libsdl3_ttf")
-add_includedirs("thirdparty/stc", {public = true})
 
 target("PWLibrary")
-    set_kind("binary")
+    if make_library then
+        set_kind("shared")
+    else
+        set_kind("binary")
+    end
+    -- for export
     add_headerfiles("include/**.h")
-    add_files("src/**.c", "test/main.c")
-
-    add_includedirs("thirdparty/stc/include/stc")
-    add_headerfiles("thirdparty/stc/include/stc/**.h")
-    add_files("thirdparty/stc/src/**.c")
+    -- for private
+    add_headerfiles("src/**.h")
+    add_includedirs("src")
+    add_files("src/**.c")
+    -- for test 
+    if make_library then
+        add_files("test/main.c")
+    end
 
     add_packages("libsdl3", {configs = {vulkan = true}})
     add_packages("libsdl3_image", "libsdl3_ttf")

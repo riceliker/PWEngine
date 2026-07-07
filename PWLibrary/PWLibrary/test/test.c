@@ -1,5 +1,5 @@
-#include "PWLibraryTest.h"
-#include "PWLibrary.h"
+#include "PWLTest.h"
+#include "PWL.h"
 
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_gpu.h"
@@ -12,7 +12,7 @@
 #include "SDL3_ttf/SDL_ttf.h"
 #include <stdlib.h>
 
-void PWLibrary_TestEngine_DrawText(SDL_Renderer* render, TTF_Font* font, char* text, int size, int line)
+void PWL_TestEngine_DrawText(SDL_Renderer* render, TTF_Font* font, char* text, int size, int line)
 {
         SDL_Color color = {255, 255, 255, 255};
         SDL_Surface* render_triangle_number_surface =  TTF_RenderText_Blended(font, text, size, color);
@@ -30,12 +30,12 @@ void PWLibrary_TestEngine_DrawText(SDL_Renderer* render, TTF_Font* font, char* t
         SDL_RenderTexture(render, render_triangle_number_texture, NULL, &rect);
 }
 
-void PWLibrary_TestEngineSDLRender()
+void PWL_TestEngineSDLRender()
 {
         TTF_Init();
         SDL_Init(SDL_INIT_VIDEO);
         SDL_GPUDevice* device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, true, "vulkan");
-        PWLibrary_PreloadInfo(device);
+        PWL_PreloadInfo(device);
         SDL_Window* window = SDL_CreateWindow("PWEngine Test Application", 1280, 720, SDL_WINDOW_RESIZABLE);
         SDL_ClaimWindowForGPUDevice(device, window);
         SDL_Renderer* render = SDL_CreateGPURenderer(device, window);
@@ -108,16 +108,16 @@ void PWLibrary_TestEngineSDLRender()
                 
                 char render_triangle_number_text[128];
                 snprintf(render_triangle_number_text, 128, "TriCount:%d", render_triangle_number);
-                PWLibrary_TestEngine_DrawText(render, font, render_triangle_number_text, 128, 0);
+                PWL_TestEngine_DrawText(render, font, render_triangle_number_text, 128, 0);
 
                 char render_time_text[128];
                 snprintf(render_time_text, 128, "Time:%fs", (double)(SDL_GetPerformanceCounter() - render_time) / SDL_GetPerformanceFrequency());
-                PWLibrary_TestEngine_DrawText(render, font, render_time_text, 128, 1);
+                PWL_TestEngine_DrawText(render, font, render_time_text, 128, 1);
 
                 char render_fps_text[128];
                 total_fps += (Uint64)( 1 / ((double)(SDL_GetPerformanceCounter() - fps_time) / SDL_GetPerformanceFrequency()) );
                 snprintf(render_fps_text, 128, "FPS:%0.f",total_fps / (double)render_triangle_number);
-                PWLibrary_TestEngine_DrawText(render, font, render_fps_text, 128, 2);
+                PWL_TestEngine_DrawText(render, font, render_fps_text, 128, 2);
 
                 render_triangle_number++;
                 loop_count++;

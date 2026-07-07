@@ -1,5 +1,5 @@
-#include "PWLibrary.h"
-#include "_PWLibrary.h"
+#include "PWL.h"
+#include "core/core.h"
 
 
 #include "SDL3/SDL_error.h"
@@ -20,27 +20,27 @@
 
 // log module
 
-void PWLibrary_LogInfo(const char *fmt)
+void PWL_LogInfo(const char *fmt)
 {
         SDL_LogInfo(0, "%s", fmt);
         printf(PWE_CONSOLE_RESET "%s" PWE_CONSOLE_RESET, fmt);
 }
 
-void PWLibrary_LogWarn(const char *fmt)
+void PWL_LogWarn(const char *fmt)
 {
         SDL_LogWarn(0, "%s", fmt);
         SDL_LogWarn(0, "%s", SDL_GetError());
         printf(PWE_CONSOLE_YELLOW "%s" PWE_CONSOLE_RESET, fmt);      
 }
 
-void PWLibrary_LogError(const char *fmt)
+void PWL_LogError(const char *fmt)
 {
         SDL_LogError(0, "%s", fmt);
         SDL_LogError(0, "%s", SDL_GetError());
         printf(PWE_CONSOLE_RED "%s" PWE_CONSOLE_RESET, fmt);
 }
 
-void PWLibrary_PreloadInfo(void* device)
+void PWL_PreloadInfo(void* device)
 {
         printf("PWEngine v0.0.1 beta. Copyright by riceliker and constructors. Open source license: LGPL2.0\n");
         printf("SDL Version: %d.%d.%d\n", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_MICRO_VERSION);
@@ -50,17 +50,17 @@ void PWLibrary_PreloadInfo(void* device)
 
 // engine module
 
-PWLibrary_Engine* PWLibrary_CreateEngine(void)
+PWL_Engine* PWL_CreateEngine(void)
 {
-        PWLibrary_Engine *engine = (PWLibrary_Engine*)malloc(sizeof(*engine));
+        PWL_Engine *engine = (PWL_Engine*)malloc(sizeof(*engine));
         if (!TTF_Init())
         {
-                PWLibrary_LogError("Error: Init TTF failed.");
+                PWL_LogError("Error: Init TTF failed.");
         }
          
         if(!SDL_Init(SDL_INIT_VIDEO))
         {
-                PWLibrary_LogWarn("Error: Init SDL failed");
+                PWL_LogWarn("Error: Init SDL failed");
         } 
 
         SDL_SetHint(SDL_HINT_GPU_DRIVER, "vulkan");
@@ -68,84 +68,84 @@ PWLibrary_Engine* PWLibrary_CreateEngine(void)
 
         if (engine->device == NULL)
         {
-                PWLibrary_LogError("Error: can not create device.");
+                PWL_LogError("Error: can not create device.");
         }
 
-        PWLibrary_PreloadInfo(engine->device);
+        PWL_PreloadInfo(engine->device);
                 
         return engine;
 }
 
-void PWLibrary_DestroyEngine(PWLibrary_Engine* engine)
+void PWL_DestroyEngine(PWL_Engine* engine)
 {
         if(engine == NULL)
         {
-                PWLibrary_LogWarn("Warning: engine is null! destroying was stopped.");
+                PWL_LogWarn("Warning: engine is null! destroying was stopped.");
         }
         free(engine);
 }
 
-PWLibrary_Window* PWLibrary_CreateWindow(PWLibrary_Engine *engine, PWLibrary_WindowInfo* info)
+PWL_Window* PWL_CreateWindow(PWL_Engine *engine, PWL_WindowInfo* info)
 {
-        PWLibrary_Window *nd_mbn_window = (PWLibrary_Window*) malloc(sizeof(*nd_mbn_window));
-        if (nd_mbn_window == NULL)
+        PWL_Window *window = (PWL_Window*) malloc(sizeof(*window));
+        if (window == NULL)
         {
-                PWLibrary_LogWarn("Warning: can not malloc window.");
-                free(nd_mbn_window);
+                PWL_LogWarn("Warning: can not malloc window.");
+                free(window);
                 return NULL;
         }
 
         size_t len = strlen(info->name);
-        nd_mbn_window->name = (char*)malloc(len + 1);
-        if (nd_mbn_window->name == NULL) 
+        window->name = (char*)malloc(len + 1);
+        if (window->name == NULL) 
         {
-                free(nd_mbn_window);
+                free(window);
                 return NULL;
         }
-        strcpy(nd_mbn_window->name, info->name);
+        strcpy(window->name, info->name);
                 
-        nd_mbn_window->window = SDL_CreateWindow(info->name, info->physic_w, info->physic_h, info->mode);
-        if (nd_mbn_window->window == NULL)
+        window->window = SDL_CreateWindow(info->name, info->physic_w, info->physic_h, info->mode);
+        if (window->window == NULL)
         {
-                PWLibrary_LogWarn("Warning: can not create window.");
-                free(nd_mbn_window);
+                PWL_LogWarn("Warning: can not create window.");
+                free(window);
                 return NULL;
         }
 
-        SDL_ReleaseWindowFromGPUDevice(engine->device, nd_mbn_window->window);
+        SDL_ReleaseWindowFromGPUDevice(engine->device, window->window);
 
-        if (SDL_ClaimWindowForGPUDevice(engine->device, nd_mbn_window->window) == false)
+        if (SDL_ClaimWindowForGPUDevice(engine->device, window->window) == false)
         {
-                PWLibrary_LogWarn("Warning: can not bind window and device.");
-                free(nd_mbn_window);
+                PWL_LogWarn("Warning: can not bind window and device.");
+                free(window);
                 return NULL;
         }
         
-        nd_mbn_window->render = SDL_CreateGPURenderer(engine->device, nd_mbn_window->window);
-        if (nd_mbn_window->render == NULL)
+        window->render = SDL_CreateGPURenderer(engine->device, window->window);
+        if (window->render == NULL)
         {
-                PWLibrary_LogWarn("Warning: can not create render.");
-                free(nd_mbn_window);
+                PWL_LogWarn("Warning: can not create render.");
+                free(window);
                 return NULL;
         }
-        if (SDL_SetRenderLogicalPresentation(nd_mbn_window->render, info->logical_h, info->logical_w, SDL_LOGICAL_PRESENTATION_LETTERBOX) == false)
+        if (SDL_SetRenderLogicalPresentation(window->render, info->logical_h, info->logical_w, SDL_LOGICAL_PRESENTATION_LETTERBOX) == false)
         {
                 
         }
-        return nd_mbn_window;
+        return window;
 }
 
-void PWLibrary_DestroyWindow(PWLibrary_Window *window)
+void PWL_DestroyWindow(PWL_Window *window)
 {
         if (window == NULL)
         {
-                PWLibrary_LogWarn("Warning: window is null! maybe it has been destroy.");
+                PWL_LogWarn("Warning: window is null! maybe it has been destroy.");
                 return;
         }
 
         if(window->name == NULL)
         {
-                PWLibrary_LogWarn("Warning: name is null! maybe it has been destroy.");
+                PWL_LogWarn("Warning: name is null! maybe it has been destroy.");
         }
         else 
         {
@@ -154,16 +154,16 @@ void PWLibrary_DestroyWindow(PWLibrary_Window *window)
         
         if(window->window == NULL)
         {
-                PWLibrary_LogWarn("Warning: sdl window is null! maybe it has been destroy.");
+                PWL_LogWarn("Warning: sdl window is null! maybe it has been destroy.");
         }
         else 
         {
                 SDL_DestroyWindow(window->window);
         }
         
-        if(window->render)
+        if(window->render == NULL)
         {
-               PWLibrary_LogWarn("Warning: sdl render is null! maybe it has been destroy."); 
+               PWL_LogWarn("Warning: sdl render is null! maybe it has been destroy."); 
         }
         else 
         {
@@ -173,7 +173,7 @@ void PWLibrary_DestroyWindow(PWLibrary_Window *window)
         free(window);
 }
 
-void PWLibrary_EngineRun(PWLibrary_Engine* engine)
+void PWL_EngineRun(PWL_Engine* engine)
 {
         SDL_Event event;
         bool is_engine_running = true;
