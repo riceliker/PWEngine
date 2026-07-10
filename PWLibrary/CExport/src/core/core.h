@@ -12,18 +12,30 @@
  */
 #pragma once
 #include "PWL.h"
-#include "collections/khash.h"
-#include "collections/kvec.h"
+#include "SDL3/SDL_stdinc.h"
+#include "collections/klib/khash.h"
+#include "collections/klib/kstring.h"
+#include "collections/klib/kvec.h"
 // SDL Library
 #include "SDL3/SDL_gpu.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3_ttf/SDL_ttf.h"
+
+/// ===== KLib Utils ===== ///
+static void str_k(const char* src, kstring_t* out)
+{
+    out->l = 0;
+    if (src == NULL || *src == '\0')
+        return;
+    kputs(src, out);
+}
 
 /// ===== Engine Module ===== ///
 struct PWL_Engine
 {
     SDL_GPUDevice* device;
 };
+bool PWL_SDLEvent(SDL_Event* event);
 
 /// ===== Window Module ===== ///
 struct PWL_WindowInfo
@@ -36,12 +48,13 @@ struct PWL_WindowInfo
         PWL_WindowMode mode;
 };
 
-
+KHASH_MAP_INIT_STR(PWL_SceneMap_HasMap, PWL_Scene*)
 struct PWL_Window
 {
         char* name;
         SDL_Window* window;
         SDL_Renderer* render;
+        khash_t(PWL_SceneMap_HasMap)* scene_map;
 };
 
 /// ===== Font Module ===== ///
@@ -61,28 +74,30 @@ struct PWL_Surface
 struct PWL_SurfacePool
 {
         khash_t(PWL_SurfacePool_HasMap)* surfaces_list;
+        kvec_t(char*) key_ptr_list;
 };
 
-SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name);
-void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name, SDL_Surface* surface);
+SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name);
+void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name, SDL_Surface* surface);
 
 /// ===== Scene Module ===== ///
 struct PWL_Texture
 {
         SDL_Texture* texture;
         bool is_visible;
+        kvec_t(int) offset_list;
 };
 
 struct PWL_SceneLoopPackage
 {
-
+        PWL_Scene* scene;
 };
 
 struct PWL_Scene
 {
-        SDL_Renderer* not_delete_render;
-        char* (*Loop)(char* next_scene, float delta, PWL_SceneLoopPackage* self);
-        kvec_t(PWL_Texture*)* texture_levels;
+        SDL_Renderer* render;
+        void (*Loop)(char* next_scene, PWL_Scene* scene, float delta);
+        kvec_t(PWL_Texture*) texture_layers;
+        Uint16 loop_mode;
 };
 
-void PWL_AddSceneToWindow(PWL_Window* window, char* scene_name, PWL_Scene* scene);

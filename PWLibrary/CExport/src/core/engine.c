@@ -1,4 +1,6 @@
 #include "PWL.h"
+#include "collections/klib/khash.h"
+#include "collections/klib/kvec.h"
 #include "core/core.h"
 
 
@@ -132,6 +134,8 @@ PWL_Window* PWL_CreateWindow(PWL_Engine *engine, PWL_WindowInfo* info)
         {
                 
         }
+
+        window->scene_map = kh_init(PWL_SceneMap_HasMap);
         return window;
 }
 
@@ -169,26 +173,101 @@ void PWL_DestroyWindow(PWL_Window *window)
         {
                 SDL_DestroyRenderer(window->render);
         }
+
+        if (window->scene_map == NULL)
+        {
+
+        }
+        else 
+        {
+                PWL_Scene* scene;
+                kh_foreach_value(window->scene_map, scene, 
+                {
+                        // Delete Texture Layer
+                        int texture_count = scene->texture_layers.n;
+                        for (int j = 0; j < texture_count; ++j)
+                        {
+                                free(kv_A(scene->texture_layers, j));
+                        }
+                        kv_destroy(scene->texture_layers);
+                        // Delete Struct
+                        free(scene);
+                });
+        }
+        
         
         free(window);
 }
 
-void PWL_EngineRun(PWL_Engine* engine)
+void PWL_ShowWindow(PWL_Window* window)
 {
         SDL_Event event;
-        bool is_engine_running = true;
-        while (is_engine_running) 
+
+        khint_t k = kh_get(PWL_SceneMap_HasMap, window->scene_map, "main");
+        PWL_Scene* current_scene = kh_val(window->scene_map, k);
+
+        int loop_mode_count = 0;
+        while (true) 
         {
-                while(SDL_PollEvent(&event)) 
+                /* 1.Get Event */
+                if (PWL_SDLEvent(&event))
                 {
-                        switch (event.type) 
+                        break;
+                }
+                /* 2.Run Scene Loop Function */
+                char scene_name[256] = "";
+                current_scene->Loop(scene_name, current_scene, 1.0);
+                if (strcmp(scene_name, "") != 0)
+                {
+                        khint_t k = kh_get(PWL_SceneMap_HasMap, window->scene_map, "main");
+                        if (k == kh_end(window->scene_map))
                         {
-                                case SDL_EVENT_QUIT:
-                                        is_engine_running = false;
-                                        break;
-                                default:
-                                        break;
+                                PWL_LogWarn("Warning: Scene not found.");
+                                goto scene_not_found; /* No.1*/
                         }
+                        PWL_Scene* current_scene = kh_val(window->scene_map, k);
+                }
+                scene_not_found: /* Continue, If not found, warn only and run continue */
+                /* 3. Set Texture */
+                for (int texture_index = 0; texture_index < current_scene->texture_layers.n; ++texture_index)
+                {
+                        PWL_Texture* texture = kv_A(current_scene->texture_layers, texture_index);
+                        if (texture->is_visible == false)
+                        {
+                                continue;
+                        }
+                        for (int i = 0; i < texture->offset_list.n; ++i)
+                        {
+                                if (kv_A(texture->offset_list, i) == loop_mode_count)
+                                {
+                                        goto texture_need_render;
+                                }
+                        }
+                        continue;
+                        texture_need_render: /* Continue, If the texture in the level. Now render it */
+                        SDL_FRect texture_rect = {
+                                .x = 0, .y = 0, .w = texture->texture->w, .h = texture->texture->h
+                        };
+                        SDL_RenderTexture(window->render, texture->texture, NULL, &texture_rect);
+                }
+                /* 4. Submit Texture */
+                SDL_RenderPresent(window->render);
+                /* 5. New Count */
+                loop_mode_count = (loop_mode_count + 1) % current_scene->loop_mode;
+        }
+}
+
+bool PWL_SDLEvent(SDL_Event* event)
+{
+        while(SDL_PollEvent(event)) 
+        {
+                switch (event->type) 
+                {
+                        case SDL_EVENT_QUIT:
+                                return true;
+                        default:
+                                break;
                 }
         }
+        return false;
 }

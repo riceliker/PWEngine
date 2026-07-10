@@ -1,5 +1,6 @@
 #include "PWL.h"
-#include "collections/khash.h"
+#include "collections/klib/khash.h"
+#include "collections/klib/kvec.h"
 #include "core/core.h"
 
 #include "SDL3/SDL_pixels.h"
@@ -9,6 +10,7 @@
 #include "SDL3_image/SDL_image.h"
 #include "SDL3_ttf/SDL_ttf.h"
 
+#include <_string.h>
 #include <stdlib.h>
 
 PWL_SurfacePool* PWL_CreateSurfacePool(void)
@@ -20,6 +22,7 @@ PWL_SurfacePool* PWL_CreateSurfacePool(void)
                 return NULL;
         }
         pool->surfaces_list = kh_init(PWL_SurfacePool_HasMap);
+        kv_init(pool->key_ptr_list);
         if (pool->surfaces_list == NULL)
         {
                 PWL_LogWarn("Warning: Can not init the hasmap.");
@@ -40,6 +43,12 @@ void PWL_DestroySurfacePool(PWL_SurfacePool* pool)
                 PWL_LogWarn("Warning: hashmap in surface pool is null! destroying was stopped.");
                 return;
         }
+        int ptr_length = pool->key_ptr_list.n;
+        for (int i = 0; i < ptr_length; ++i)
+        {
+                free(kv_A(pool->key_ptr_list, i));
+        }
+        kv_destroy(pool->key_ptr_list);
         khint_t k;
         for (k = kh_begin(pool->surfaces_list); k != kh_end(pool->surfaces_list); ++k)
         {
@@ -52,7 +61,7 @@ void PWL_DestroySurfacePool(PWL_SurfacePool* pool)
         free(pool);
 }
 
-SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name)
+SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name)
 {
         if (pool == NULL)
         {
@@ -64,7 +73,7 @@ SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name)
                 PWL_LogWarn("Warning: The hashmap is NULL");
                 return NULL;
         }
-        khint_t k = kh_get_PWL_SurfacePool_HasMap(pool->surfaces_list, name);
+        khint_t k = kh_get(PWL_SurfacePool_HasMap, pool->surfaces_list, name);
         SDL_Surface* surface = NULL;
         if (k != kh_end(pool->surfaces_list))
         {
@@ -73,7 +82,7 @@ SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name)
         return surface;
 }
 
-void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name, SDL_Surface* surface)
+void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name, SDL_Surface* surface)
 {
         if (pool == NULL)
         {
@@ -86,16 +95,20 @@ void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, char* name, SDL_Surface*
                 return;
         }
         int absent;
-        khint_t k = kh_put(PWL_SurfacePool_HasMap, pool->surfaces_list, name, &absent);
+        char* name_h = strdup(name);
+        khint_t k = kh_put(PWL_SurfacePool_HasMap, pool->surfaces_list, name_h, &absent);
         if (absent)
         {
+                kh_key(pool->surfaces_list, k) = name_h;
                 kh_val(pool->surfaces_list, k) = surface;
+                kv_push(char*, pool->key_ptr_list, name_h);
         }
         else
         {
                 SDL_Surface* old_surface = kh_val(pool->surfaces_list, k);
                 SDL_DestroySurface(old_surface);
                 kh_val(pool->surfaces_list, k) = surface;
+                free(name_h);
         }
 }
 

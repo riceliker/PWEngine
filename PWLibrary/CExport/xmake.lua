@@ -2,24 +2,25 @@ add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 set_languages("c23")
 
-local make_library = false
+local make_binary = true
+local VULKAN_SDK = os.getenv("HOME") .. "/VulkanSDK/1.4.350.0/macOS"
 
 add_requires("libsdl3", "libsdl3_image", "libsdl3_ttf")
 
 target("PWLibrary")
-    if make_library then
-        set_kind("shared")
+    if make_binary then
+        set_kind("binary")  
     else
-        set_kind("binary")
+        set_kind("shared")
     end
     -- for export
     add_headerfiles("include/**.h")
     -- for private
-    add_headerfiles("src/**.h")
-    add_includedirs("src")
-    add_files("src/**.c")
+    add_headerfiles("src/**/**.h")
+    add_includedirs("src", "include")
+    add_files("src/**/**.c")
     -- for test 
-    if make_library then
+    if make_binary then
         add_files("test/main.c")
     end
 
@@ -34,13 +35,11 @@ target("PWLibrary")
     set_optimize("none")
     set_strip("none")
 
-    local VULKAN_SDK = os.getenv("HOME") .. "/VulkanSDK/1.4.350.0/macOS"
-    add_includedirs(path.join(VULKAN_SDK, "include"), "include")
+    add_includedirs(path.join(VULKAN_SDK, "include"))
     add_linkdirs(path.join(VULKAN_SDK, "lib"))
     add_links("vulkan")
 
     add_rpathdirs(path.join(VULKAN_SDK, "lib"))
-
     if is_plat("macosx") then
         add_links("MoltenVK")
         add_frameworks("CoreVideo", "Metal", "IOKit", "AppKit")

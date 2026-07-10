@@ -1,0 +1,8 @@
+The PWLibrary History Version 
+
+>>>| MINOR: 0.1.0 create the core of PWLibrary | =====
+
+1. Core module. The PWLibrary base. Define the engine window etc.
+2. Test module. Test SDL can run in the 
+
+>>>>>| MAJOR: 0 The Start | =====
