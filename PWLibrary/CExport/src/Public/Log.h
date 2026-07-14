@@ -41,27 +41,27 @@ _PWL_LogError(fmt, __FILE__, __LINE__); }while(0)
 
 /// >>>>>| Is NULL Check |=============================================================================================== ///
 
-static inline void* _PWL_CheckNull(void* ptr, const char* name, const char* file, int line)
+static inline void* _PWL_CheckNull(void* self, const char* name, const char* file, int line)
 {
-        if(ptr == NULL)
+        if(self == NULL)
         {
                 printf(PWE_CONSOLE_YELLOW "[%s](%d)WARN:" PWE_CONSOLE_RESET, file, line);
                 printf(PWE_CONSOLE_YELLOW "The pointer(%s) is null." PWE_CONSOLE_RESET "\n", name); 
         }
-        return ptr;
+        return self;
 }
 
-#define PWL_CheckNull(ptr, name) \
-_PWL_CheckNull((ptr), name, __FILE__, __LINE__);
+#define PWL_CheckNull(self, name) \
+_PWL_CheckNull((self), name, __FILE__, __LINE__);
 
-#define PWL_ReturnNull(ptr, name, obj) \
+#define PWL_ReturnNull(self, name, obj) \
 do{ \
-        _PWL_CheckNull((ptr), name, __FILE__, __LINE__); \
-        if (ptr == NULL) return obj; \
+        _PWL_CheckNull((self), name, __FILE__, __LINE__); \
+        if (self == NULL) return obj; \
 }while(0);
 
-#define PWL_ReturnNullVoid(ptr, name) \
+#define PWL_ReturnNullVoid(self, name) \
 do{ \
-        _PWL_CheckNull((ptr), name, __FILE__, __LINE__); \
-        if (ptr == NULL) return; \
+        _PWL_CheckNull((self), name, __FILE__, __LINE__); \
+        if (self == NULL) return; \
 }while(0);

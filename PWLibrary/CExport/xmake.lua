@@ -3,11 +3,12 @@ add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
 set_languages("c23")
 
 local make_binary = true
-local VULKAN_SDK = os.getenv("HOME") .. "/VulkanSDK/1.4.350.0/macOS"
+local VULKAN_SDK = "/Users/Riceliker/VulkanSDK/1.4.350.0/macOS"
+
 
 add_requires("libsdl3", "libsdl3_image", "libsdl3_ttf")
 
-target("PWLibrary")
+target("PWL")
     if make_binary then
         set_kind("binary")  
     else

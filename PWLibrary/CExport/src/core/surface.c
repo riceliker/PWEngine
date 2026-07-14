@@ -22,7 +22,7 @@ PWL_SurfacePool* PWL_CreateSurfacePool(void)
                 return NULL;
         }
         pool->surfaces_list = kh_init(PWL_SurfacePool_HasMap);
-        kv_init(pool->key_ptr_list);
+        kv_init(pool->key_self_list);
         if (pool->surfaces_list == NULL)
         {
                 PWL_LogWarn("Warning: Can not init the hasmap.");
@@ -43,12 +43,12 @@ void PWL_DestroySurfacePool(PWL_SurfacePool* pool)
                 PWL_LogWarn("Warning: hashmap in surface pool is null! destroying was stopped.");
                 return;
         }
-        int ptr_length = pool->key_ptr_list.n;
-        for (int i = 0; i < ptr_length; ++i)
+        int self_length = pool->key_self_list.n;
+        for (int i = 0; i < self_length; ++i)
         {
-                free(kv_A(pool->key_ptr_list, i));
+                free(kv_A(pool->key_self_list, i));
         }
-        kv_destroy(pool->key_ptr_list);
+        kv_destroy(pool->key_self_list);
         khint_t k;
         for (k = kh_begin(pool->surfaces_list); k != kh_end(pool->surfaces_list); ++k)
         {
@@ -101,7 +101,7 @@ void PWL_SetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name, SDL_Su
         {
                 kh_key(pool->surfaces_list, k) = name_h;
                 kh_val(pool->surfaces_list, k) = surface;
-                kv_push(char*, pool->key_ptr_list, name_h);
+                kv_push(char*, pool->key_self_list, name_h);
         }
         else
         {

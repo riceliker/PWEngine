@@ -74,7 +74,7 @@ struct PWL_Surface
 struct PWL_SurfacePool
 {
         khash_t(PWL_SurfacePool_HasMap)* surfaces_list;
-        kvec_t(char*) key_ptr_list;
+        kvec_t(char*) key_self_list;
 };
 
 SDL_Surface* PWL_GetSurfaceInSurfacePool(PWL_SurfacePool* pool, const char* name);

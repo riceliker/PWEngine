@@ -5,6 +5,9 @@ build/
 compile_commands.json
 *.tar.gz
 
+# Meson cache
+builddir/
+
 # MacOS Cache
 .DS_Store
 
