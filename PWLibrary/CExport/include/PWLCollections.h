@@ -72,14 +72,39 @@ struct PWL_Color
 PWL_STRUCT(PWL_Vec2i)
 struct PWL_Vec2i
 {
-    int x; int y;
+        int32_t x;
+        int32_t y;
+};
+
+PWL_STRUCT(PWL_Vec2u)
+struct PWL_Vec2u
+{
+        uint32_t x; 
+        uint32_t y;
 };
 
 PWL_STRUCT(PWL_Vec2f)
 struct PWL_Vec2f
 {
-        float x; float y;
+        float x; 
+        float y;
 };
+/// ===== | PWalloc | ===== ///
+#define PWL_New(type, value, out) \
+{ \
+        type* ptr = malloc(sizeof(type)); \
+        *ptr = (value); \
+        out = (void*)ptr; \
+}
+
+void PWL_Free(void* ptr)
+{
+        if (ptr != NULL)
+                free(ptr);
+}
+
+#define PWL_Min(a,b) ((a) < (b) ? (a) : (b))
+#define PWL_Max(a,b) ((a) > (b) ? (a) : (b))
 
 /// >>>>>| ArrayList |================================================================================================= ///
 
@@ -117,8 +142,12 @@ PWL_ArrayList* PWL_InitArrayList(PWL_ArrayList* self)
  */
 PWL_ArrayList* PWL_CreateArrayList(void)
 {
-        void* void_self= malloc(sizeof(PWL_ArrayList));
-        PWL_ArrayList* self = (PWL_ArrayList*)PWL_CheckNull(void_self, "PW_LArrayList");
+        PWL_ArrayList* self= (PWL_ArrayList*)malloc(sizeof(PWL_ArrayList));
+        if (self == NULL)
+        {
+                printf("\033[33m" "WARN: Input ArrayList is NULL." "\033[0m" "\n"); 
+                return NULL;
+        } 
         self->list_ptr= malloc(8 * sizeof(void*));
         self->count = 0;
         self->memory_count = 8;
@@ -131,7 +160,11 @@ PWL_ArrayList* PWL_CreateArrayList(void)
  */
 void PWL_DestroyArrayList(PWL_ArrayList* self)
 {
-        PWL_ReturnNullVoid(self, "PWL_ArrayList");
+        if (self == NULL)
+        {
+                printf("\033[33m" "WARN: Input ArrayList is NULL." "\033[0m" "\n"); 
+                return;
+        } 
         free(self);
 }
 /**
@@ -142,10 +175,18 @@ void PWL_DestroyArrayList(PWL_ArrayList* self)
  */
 void PWL_CacheInArrayList(PWL_ArrayList* self, const size_t size)
 {
-        PWL_CheckNull(self, "PWL_ArrayList");
+        if (self == NULL)
+        {
+                printf("\033[33m" "WARN: Input ArrayList is NULL." "\033[0m" "\n"); 
+                return;
+        } 
         size_t new_memory_count = self->memory_count + size;
         void** new_list_ptr= realloc(self->list_ptr, new_memory_count * sizeof(void*));
-        PWL_CheckNull(new_list_ptr, "PW_ArrayList->list_ptr");
+        if (new_list_ptr == NULL)
+        {
+                printf("\033[33m" "WARN: Can not create new pointer." "\033[0m" "\n"); 
+                return;
+        } 
         self->list_ptr= new_list_ptr;
         self->memory_count = new_memory_count;
 }
@@ -408,30 +449,8 @@ struct PWL_Dictionary
         size_t bucket_count;
         size_t entry_count;
         float load_threshold;
+        PWL_ArrayList* string_list;
 };
-/**
- * @brief PWL_InitDictionary
- * Create and init Dictionary in Stack.
- * @param self the stack self
- * @return <PWL_ArrayList*> handle
- */
-void PWL_InitDictionary(PWL_Dictionary* self)
-{
-        if (self == NULL)
-        {
-                printf("\033[33m" "WARN: Input Dictionary is NULL." "\033[0m" "\n"); 
-                return;
-        } 
-        self->bucket_count = 64;
-        self->entry_count = 0;
-        self->load_threshold = 0.75f;
-
-        self->buckets = (PWL_DictionaryEntry**)calloc(self->bucket_count, sizeof(PWL_DictionaryEntry*));
-        if (self->buckets == NULL)
-        {
-                printf("\033[33m" "WARN: Create Dictionary Entry is failed" "\033[0m" "\n"); 
-        }
-}
 /**
  * @brief PWL_CreateDictionary
  * Create and init Dictionary in heap. It's store in the heap, you should destroy by PWL_DestroyDictionary.
@@ -439,13 +458,24 @@ void PWL_InitDictionary(PWL_Dictionary* self)
  */
 PWL_Dictionary* PWL_CreateDictionary()
 {
-        PWL_Dictionary* self = (PWL_Dictionary*)malloc(sizeof(PWL_Dictionary*));
+        PWL_Dictionary* self = (PWL_Dictionary*)malloc(sizeof(PWL_Dictionary));
         if (self == NULL)
         {
                 printf("\033[33m" "WARN: Create Dictionary is failed" "\033[0m" "\n"); 
                 return NULL;
         }
-        PWL_InitDictionary(self);
+
+        self->bucket_count = 64;
+        self->entry_count = 0;
+        self->load_threshold = 0.75f;
+
+        self->string_list = PWL_CreateArrayList();
+
+        self->buckets = (PWL_DictionaryEntry**)calloc(self->bucket_count, sizeof(PWL_DictionaryEntry*));
+        if (self->buckets == NULL)
+        {
+                printf("\033[33m" "WARN: Create Dictionary Entry is failed" "\033[0m" "\n"); 
+        }
         return self;
 }
 /**
@@ -460,7 +490,8 @@ void PWL_DestroyDictionary(PWL_Dictionary* self)
                 printf("\033[33m" "WARN: Create Dictionary is failed" "\033[0m" "\n"); 
                 return;
         }
-
+        PWL_FreeArrayList(self->string_list);
+        PWL_DestroyArrayList(self->string_list);
         free(self->buckets);
         free(self);
 }
@@ -503,7 +534,7 @@ static void PWL_ResizeInDictionary(PWL_Dictionary* self)
  * If value equal NULL, mean get function. Return the value in dictionary.
  * Else, Modify the value and return the old value.
  */
-void* PWL_FindInDictionary(PWL_Dictionary* self, char* key, void* value)
+void* PWL_FindInDictionary(PWL_Dictionary* self, const char* key, void* value)
 {
         if (self == NULL)
         {
@@ -538,6 +569,13 @@ void* PWL_FindInDictionary(PWL_Dictionary* self, char* key, void* value)
                                 /* set mode*/
                                 old_value = current_bucket->value;
                                 current_bucket->value = value;
+                                char* key_name = (char*)calloc(strlen(key), sizeof(char*));
+                                if (key_name == NULL) 
+                                {
+                                        printf("\033[33m" "Error: Can not malloc memory for store window name." "\033[0m" "\n");
+                                        return NULL;
+                                }
+                                strcpy(key_name, key);
                                 return old_value;
                         }
                         

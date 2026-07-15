@@ -1,3 +1,5 @@
+#pragma once
+
 #include <stdio.h>
 #include <string.h>
 
@@ -23,26 +25,3 @@
 #else
 #  define PWL_ENUM(Name) typedef enum Name Name; enum Name
 #endif
-
-/// ===== | Null checker | ===== ///
-
-static inline void* PWL_CheckNull(void* self, const char* name)
-{
-        if(self== NULL)
-        {
-                printf("\033[33m" "WARN:The pointer(%s) is null." "\033[0m" "\n", name); 
-        }
-        return self;
-}
-
-#define PWL_ReturnNull(self, name, obj) \
-do{ \
-        PWL_CheckNull((self), name); \
-        if (self== NULL) return obj; \
-}while(0);
-
-#define PWL_ReturnNullVoid(self, name) \
-do{ \
-        PWL_CheckNull((self), name); \
-        if (self== NULL) return; \
-}while(0);

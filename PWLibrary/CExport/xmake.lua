@@ -1,6 +1,6 @@
 add_rules("mode.debug", "mode.release")
 add_rules("plugin.compile_commands.autoupdate", {outputdir = "."})
-set_languages("c23")
+set_languages("gnu23")
 
 local make_binary = true
 local VULKAN_SDK = "/Users/Riceliker/VulkanSDK/1.4.350.0/macOS"
