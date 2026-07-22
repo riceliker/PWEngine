@@ -25,7 +25,8 @@ Example: `PWL_SubmitSurfaceInScene` submit the surface in the Scene, the diction
 
 ### 3. Class/Struct/Enum
 0. Use BigCamel style
-1. Export Struct/Enum name need use `PWL_` in head
+1. C: Export Struct/Enum name need use `PWL_` in head
+2. C++: Use namespace.
 
 ### 4. Label
 0. Use snake_case style.

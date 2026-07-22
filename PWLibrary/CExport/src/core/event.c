@@ -1,24 +1,10 @@
 #include "PWL.h"
 #include "PWLCollections.h"
+
+#include "Core.h"
+
 #include "SDL3/SDL_events.h"
 #include "SDL3/SDL_scancode.h"
-
-struct PWL_Event
-{
-        bool is_exit;
-        PWL_InputKey press_key;
-        PWL_InputKey release_key;
-        bool key_down[1024];
-        bool shift;
-        bool ctrl;
-        bool alt;
-        bool meta;
-        PWL_Vec2u mouse_position;
-        PWL_InputMouse press_mouse;
-        PWL_InputMouse release_mouse;
-        bool mouse_down[16];
-        PWL_Vec2i mouse_roll;
-};
 
 static PWL_InputKey TransformSDLKeyToPWLKey(SDL_Scancode code)
 {
@@ -113,7 +99,6 @@ void PWL_GetEventFromSDL(PWL_Event* self, SDL_Event* event)
                 PWL_LogWarn("Warning: The event is NULL");
                 return;
         }
-        SDL_Keycode key = -1;
         while(SDL_PollEvent(event)) 
         {
                 if (event->type == SDL_EVENT_QUIT) self->is_exit = true;
@@ -223,4 +208,31 @@ bool PWL_IsMultiClickedFromEvent(PWL_Event* self, PWL_InputKey key, ...)
         }
         va_end(ap);
         return true;
+}
+
+void PWL_InitEvent(PWL_Event* self)
+{
+        self->alt = false;
+        self->ctrl = false;
+        self->meta = false;
+        self->shift = false;
+        self->is_exit = false;
+        self->key_down = (bool*)calloc(1024, sizeof(bool));
+        self->mouse_down = (bool*)calloc(16, sizeof(bool));
+        self->press_key = PWL_KEY_NONE;
+        self->press_mouse = PWL_MOUSE_NONE;
+        self->release_key = PWL_KEY_NONE;
+        self->release_mouse = PWL_MOUSE_NONE;
+        PWL_Vec2u zero_u = {0, 0};
+        self->mouse_position = zero_u;
+        PWL_Vec2i zero_i = {0, 0};
+        self->mouse_roll = zero_i;
+}
+
+void PWL_FreeEvent(PWL_Event* self)
+{
+        if (self == NULL)
+                return;
+        free(self->key_down);
+        free(self->mouse_down);
 }

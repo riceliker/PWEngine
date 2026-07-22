@@ -61,6 +61,85 @@ static void PWL_PrintErrorVoid(char* fmt)
         return;
 }
 
+/// ==========| String |========== ///
+PWL_STRUCT(PWL_String)
+struct PWL_String
+{
+        char* list;
+        size_t length;
+};
+
+PWL_String* PWL_CreateString(const char* c_str)
+{
+        PWL_String* self = (PWL_String*)malloc(sizeof(PWL_String));
+        if (self == NULL)
+        {
+                printf("\033[33m" "WARN: Malloc the string instance failed." "\033[0m" "\n"); 
+                goto clean_string;
+        }
+        size_t length = strlen(c_str);
+        self->list = (char*)malloc(length+1);
+        if (self->list == NULL)
+        {
+                printf("\033[33m" "WARN: Malloc the char list failed." "\033[0m" "\n"); 
+                goto clean_char_list;
+        }
+        memcpy(self->list, c_str, length);
+        self->list[length] = '\0';
+        self->length = length;
+        return self;
+
+        clean_char_list:
+                free(self->list);
+        clean_string:
+                free(self);
+        return NULL;
+}
+
+void PWL_DestroyString(PWL_String* self)
+{
+        if (self == NULL)
+        {
+                printf("\033[33m" "WARN: Malloc the string instance failed." "\033[0m" "\n"); 
+                return;
+        }
+        if (self->list != NULL)
+        {
+                free(self->list);
+        }
+        free(self);
+}
+
+char* const PWL_StringToCharArray(PWL_String* self)
+{
+        return self->list;
+}
+
+void PWL_AppendCharArrayToString(PWL_String* self, const char* c_char)
+{
+        if (self == NULL && c_char == NULL)
+        {
+                printf("\033[33m" "WARN: Input String is NULL." "\033[0m" "\n"); 
+                return;
+        } 
+        size_t old_length = self->length;
+        self->length += strlen(c_char);
+        char* new_list = realloc(self, old_length + strlen(c_char) + 1);
+        if (new_list == NULL)
+        {
+                printf("\033[33m" "WARN: Memory no enough to realloc string." "\033[0m" "\n"); 
+                return;
+        }
+        self->list = new_list;
+        strcpy(self->list, c_char);
+}
+
+void PWL_AppendStringToString(PWL_String* self, const PWL_String* from)
+{
+
+}
+
+
 /// >>>>>| Vector |==================================================================================================== ///
 
 PWL_STRUCT(PWL_Color)
@@ -89,22 +168,6 @@ struct PWL_Vec2f
         float x; 
         float y;
 };
-/// ===== | PWalloc | ===== ///
-#define PWL_New(type, value, out) \
-{ \
-        type* ptr = malloc(sizeof(type)); \
-        *ptr = (value); \
-        out = (void*)ptr; \
-}
-
-void PWL_Free(void* ptr)
-{
-        if (ptr != NULL)
-                free(ptr);
-}
-
-#define PWL_Min(a,b) ((a) < (b) ? (a) : (b))
-#define PWL_Max(a,b) ((a) > (b) ? (a) : (b))
 
 /// >>>>>| ArrayList |================================================================================================= ///
 

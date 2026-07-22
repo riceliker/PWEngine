@@ -1,0 +1,19 @@
+CompileFlags:
+  Compiler: /opt/homebrew/opt/llvm@19/bin/clang++
+  Add:
+    - -std=c++23
+    - -fmodules
+    - -stdlib=libc++
+    - -Wno-c++17-extensions
+    - -Xclang
+    - -resource-dir
+    - -Xclang
+    - /opt/homebrew/opt/llvm@19/lib/clang/19
+
+    - -I./src
+    - -I/opt/homebrew/include
+    - -I/opt/homebrew/opt/sdl3/include
+Index:
+  Background: Build
+Diagnostics:
+  UnusedIncludes: Strict

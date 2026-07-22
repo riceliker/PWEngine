@@ -1,4 +1,7 @@
 #include "PWL.h"
+#include "PWLCollections.h"
+
+#include "Core.h"
 
 #include "SDL3/SDL_gpu.h"
 #include "SDL3/SDL_render.h"
@@ -11,6 +14,9 @@ struct PWL_Application
         SDL_GPUDevice* device;
         SDL_Window* window;
         SDL_Renderer* render;
+
+        PWL_Event* event;
+        PWL_GlobalAsset* asset;
 };
 
 static void PWL_PreloadInfo(void* device)
@@ -105,10 +111,23 @@ PWL_Application* PWL_CreateApplication(char* name, PWL_Vec2i window_size, PWL_Ve
                 PWL_LogError("Warning: Can not set logical resolution.");
                 goto clean_render;
         }
-
+        /* 5. Create Event Bus */
+        self->event = (PWL_Event*)malloc(sizeof(PWL_Event));
+        if (self->render == NULL)
+        {
+                PWL_LogError("Warning: Can not create event.");
+                goto clean_render;
+        }
+        /* GOTO: 6*/
+        PWL_InitEvent(self->event);
+        /* 6. Create Global Asset */
         
 
         return self;
+        /* 6 */
+        clean_event:
+                PWL_FreeEvent(self->event);
+                free(self->event);
         /* 5 */
         clean_render:
                 free(self->render);
@@ -131,17 +150,11 @@ PWL_Application* PWL_CreateApplication(char* name, PWL_Vec2i window_size, PWL_Ve
 
 void PWL_DestroyApplication(PWL_Application* self)
 {
-        if (self == NULL)
-                return;
-        if (self->render == NULL)
-                free(self->render);
-        if (self->window == NULL)
-                free(self->window);
-        if (self->name == NULL)
-                free(self->name);
-        //
-        if (self->device == NULL)
-                free(self->device);
+        if (self == NULL) return;
+        if (self->render != NULL) free(self->render);
+        if (self->window != NULL) free(self->window);
+        if (self->name != NULL) free(self->name);
+        if (self->device != NULL) free(self->device);
         /* 0 */
         free(self);
 }

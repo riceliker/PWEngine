@@ -16,7 +16,6 @@ Nobody know why and we just use AI to help. In the end, the project became much 
 
 If human not control the project, when the tool was monopoly. We will not any measures.
 And most AI tool is paid. That's mean the project was rely on AI company.
-
 I don't think AI is the not a good thing. We have PWTorch, a machine learning library.
 But we should a controllable tool. DO NOT RELY ON AI COMPANY.(why I create PWTorch)
 
@@ -28,28 +27,29 @@ That's mean this project was controlled by AI.
 
 I hate the Manipulate from behind the Scene. It is mean you lost the control.
 
-2. The *stupid* vibe coding developer submit *fucking* code 
-Some *stupid* vibe coding developer submit *fucking* code without any check. 
+2. The vibe coding developer submit terrible code 
+Some vibe coding developer submit terrible code without any check. 
 The code just can run, but detail? The just think Oh! It was run, I can submit it.
 And then the generic code is a *shit mountain* code.
 
-The vibe coding make the pupil can coding. But that make some *stupid* developer think
-I'm a programmer, I can write program. But they don't know how to permanently maintain project.
-Refactor of code. Optimization the code.
+3. The vibe coding create the inferior code
+PWEngine is a Engine, Not application. It can not allow any shit mountain code.
+But vibe coding just satisfy your request, It will never thing the code in the future.
+That's mean they will create the inferior code. Only satisfy your request, Not satisfy the future.
 
 >>> Part 2 Rule
 
 0. NO VIBE CODING
 
-Any vibe coding tool, such as claude, codex. *Fuck* away my project.
+Any vibe coding tool, such as claude, codex. Go away my project.
 Use nature language just only write a Toy. Not a project.
 If I find you use vibe coding, you will be PERMANENTLY banned.
 
 1. USE AI AS COUNSELOR
 
 Use AI as a counselor. It's mean you should not direct generic code. I suggest that steps:
-1. Tell AI My idea have any problem
-2. Write the partial code, which if you don't know. And then try to write by yourself
+1. Tell AI about my idea and ask it did they have any problem?
+2. Write the partial code, which if you don't know. And then try to write by yourself.
 3. Make AI to check your code is right.
 
 Although that code will allow generic code by AI:
@@ -76,29 +76,3 @@ confirmed that the issue exists before submitting a bug report or pull request.
 
 Any pull request to this project will ask you to confirm that you are the
 author and that you are contributing your changes under the LGPL3.0/GPL3.0 license.
-
-Q&A
-Q: Are you hate AI?
-Riceliker: I'm not hate AI. Actually, I also use it. I hate vibe coding.
-
-Q: Why you hate vibe coding.
-Riceliker: The vibe coding is mean write code without any program language. It is stupid.
-
-Q: Program without program language is not a good idea?
-Riceliker: No, I think it's terrible. The simple nature language can not control any detail.
-           You just know you want, but not principle.
-
-Q: Why not make AI to tell you about the program principle?
-Riceliker: Only know the architecture is not enough. You should know any module and function.
-           But when you know why. It's cost so many time and most of people don't like it.
-
-Q: Why you should know any detail.
-Riceliker: Because this project is my project. I have duty to control it's developing.
-           I need check the code have not any backdoor and bug.
-           I even control how does this project developing in the future.
-        
-Q: But the program like linux. You will never read all code. So you will abandon it?
-Riceliker: linux is not my program. The rule is only use for my program.
-
-Q: What the mean of control the program. I can via the AI to control my program.
-Riceliker: The control the program is mean you know any details about the program

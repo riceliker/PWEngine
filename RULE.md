@@ -28,8 +28,11 @@ Digital Restrictions Management(DRM) is the practice of imposing technological r
 Visit this website to boycott DRM. https://www.defectivebydesign.org
 
 ## 2. No vibe coding.
-Use AI to check code and ask question is okay, but vibe coding is NOT allowed.
-See AGENTS or CLAUDE for details.
-I'm NOT oppose AI, but developer need check and control any code.
+Using AI to check code and asking question is okay, but vibe coding is NOT allowed.
+See more detail for AGENTS or CLAUDE for.
+I NOT oppose AI, but developer need check and control the code.
 
-## 2. 
+## 3. No close source developing environment
+You can develop and use PWEngine without any Close Source Software.
+If you are a GNU/Linux developer. You can feel relieved to develop in GNU/Linux.
+PWEngine support developing in open source program. And I can run in the platform which compiler free.

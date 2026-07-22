@@ -22,28 +22,22 @@ PWEngine is a SDK include:
 
 ### PWL 
 PWL is a simple library and base of PWEngine. Basic by SDL.  
-PWL is write by C language. Because it can be use for C++, Rust, Zig.  
-*C is a simple language which can let me focus on underlying logical.*
-PWL have bind layer to support for C++, Rust, Zig.  
-*Use C++, Rust, Zig focus on RAII, refcount and business design.*
 
 ### PWEngineRuntime
 PWEngineRuntime is a Vulkan runtime. Not independent the SDL API.
-PWEngineRuntime use C++ only. Not support Rust.
+PWEngineRuntime use C++ only.
 
 ### PWEngine Editor Utils
 PWEngine Editor Utils is a group of editor. Write by PWL.
 We don't like a huge editor. The different module need in different editor.
 
 ## Programming Language & Framework
-We both like C++ & Rust. Do not talk about who is better.  
-Official Support Language: C, C++, Rust, Zig. 
 Notice: PWEngine dependent on clang/gcc. Not support by MSVC.
 *MSVC is a terrible C/C++ compiler. And it is not open source.*
 If you are a windows developer, you should install MSYS2 and MinGW.
 
 ### PWL 
-PWL basic by C only, bind C++, Rust, Zig.
+PWL basic by C++.
 ### PWEngineRuntime
 PWEngineRuntime basic by C++ only.
 ### PWEngine Editors Utils
@@ -78,6 +72,18 @@ PWEngine NEVER allow any code for DRM, include:
 3. DRM MEDIA: The media format must not have any DRM.
 
 PWEngine never support this code, do not pull your PR which include them.
+
+## The Control of Community
+PWEngine must control by community. Not company. We have 5 steps.
+
+1. Use LGPL3.0 Only. Company can not close source code.
+2. No donate with condition.
+3. Issue control. Anyone only 3 untreated issue. And If find company employ someone to batch submit issue,
+It will be ban in community.
+4. If core developer was employ by company and try to control it for company. The community can fire them.
+5. If the community has controlled by company. The other developer must fork a new project like MariaDB.
+To avoid company effect. The new community can try to use GPL3.0.
+
 
 ## End
 We want to create a free game for everyone. PWEngine is the base of it.
