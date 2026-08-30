@@ -1,0 +1,27 @@
+# PWMake 0.1.0
+# ===== Compiler =====
+compiler_path = /opt/homebrew/opt/llvm@19/bin/clang++
+compiler_flags = -std=c++23 -stdlib=libc++ -I./include  -I/opt/homebrew/opt/GLFW/include  -I/opt/homebrew/opt/vulkan-headers/include  -g -O0
+rule compile
+  command = $compiler_path $compiler_flags -c $in -o $out -MD -MF $out.d
+  depfile = $out.d
+  deps = gcc
+rule compile_lib
+  command = $compiler_path $compiler_flags -fPIC -c $in -o $out -MD -MF $out.d
+  depfile = $out.d
+  deps = gcc
+link_flags = -stdlib=libc++ -framework Metal  
+rule binary
+  command = $compiler_path $in -o $out $link_flags
+ar = ar
+rule static_library
+  command = $ar rc $out $in
+rule shared_library
+  command = $compiler_path -shared $in -o $out $link_flags
+# ===== Make Object =====
+obj = ./build/obj
+bin = ./build/PWEngine
+build $obj/PWEngine/runtime/render/window.o: compile runtime/render/window.cpp
+build $obj/PWEngine/runtime/main.o: compile runtime/main.cpp
+build $bin: binary $obj/PWEngine/runtime/render/window.o $obj/PWEngine/runtime/main.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+default $bin

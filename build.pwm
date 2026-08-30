@@ -1,0 +1,36 @@
+$same($is_macos, "macos", __platform__)
+@compiler(compiler_path)
+    language_version("c++23")
+    standard_library("libc++")
+    library_header("./include")
+    library_header(glfw_header)
+    library_header(vulkan_header)
+    compiler_debug()
+    :if(is_macos)
+        framework("Metal")
+    :fi
+;
+:fi
+
+@files("PWEngine")
+    recursion_folder("runtime", ".cpp")
+;
+
+# @files("test")
+#     recursion_folder("src", ",cpp")
+# ;
+
+@project("PWEngine", "binary")
+    source_files("PWEngine")
+    add_library(glfw_library)
+    add_library(vulkan_library)
+    :if(is_macos)
+        add_library(molten_vk_library)
+    :fi
+;
+:fi
+
+# @project("test", "binary")
+#     source_files("test")
+#     add_library(PWL_library_path)
+# ;

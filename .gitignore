@@ -1,0 +1,13 @@
+/.DS_Store/
+.cache/
+.vscode/
+
+build/
+
+.clangd
+.ninja_deps
+.ninja_log
+compile_commands.json
+
+
+PWEngine.log

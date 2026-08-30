@@ -1,0 +1,9 @@
+# You should modify this file when build in new platform
+compiler_path=/opt/homebrew/opt/llvm@19/bin/clang++
+glfw_header=/opt/homebrew/opt/GLFW/include
+vulkan_header=/opt/homebrew/opt/vulkan-headers/include
+# library
+glfw_library=/opt/homebrew/opt/GLFW/lib/libGLFW.dylib
+vulkan_library=/opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib
+# if macos
+molten_vk_library=/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib
