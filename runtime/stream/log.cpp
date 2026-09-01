@@ -1,14 +1,14 @@
 #include "stream.hpp"
+#include <chrono>
 #include <cstdio>
+#include <ctime>
 #include <fstream>
 #include <mutex>
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <chrono>
-#include <ctime>
 
-namespace PWEngine::Stream::Log 
+namespace PWEngine::Stream::Log
 {
     void LogLoop(LogSystem* ptr)
     {
@@ -16,20 +16,21 @@ namespace PWEngine::Stream::Log
         while (!ptr->is_stop.load())
         {
             std::unique_lock<std::mutex> lock(ptr->mutex);
-            ptr->cv.wait_for(lock, 
-                std::chrono::milliseconds(16), [ptr](){
-                    return ptr->is_stop.load() || !ptr->queue.empty();
-                }
-            );
-            if (ptr->is_stop.load()) break;
-            if (ptr->queue.empty()) continue;
+            ptr->cv.wait_for(
+                lock,
+                std::chrono::milliseconds(16),
+                [ptr]() { return ptr->is_stop.load() || !ptr->queue.empty(); });
+            if (ptr->is_stop.load())
+                break;
+            if (ptr->queue.empty())
+                continue;
             LogInfo message = ptr->queue.front();
             ptr->queue.pop();
-        
+
             std::string color;
             std::string type;
             std::string from;
-            switch (message.type) 
+            switch (message.type)
             {
             case LogType::Info:
                 color = "";
@@ -48,7 +49,7 @@ namespace PWEngine::Stream::Log
                 type = "Debug";
                 break;
             }
-            switch (message.from) 
+            switch (message.from)
             {
             case LogFrom::AssetManager:
                 from = "AssetManager";
@@ -65,7 +66,10 @@ namespace PWEngine::Stream::Log
             }
             std::time_t now_time = std::time(nullptr);
             auto time = std::localtime(&now_time);
-            std::string text = "[" + std::to_string(time->tm_hour) + ":" + std::to_string(time->tm_min) + ":" + std::to_string(time->tm_sec) + "][" + from + "]" + message.message;
+            std::string text = "[" + std::to_string(time->tm_hour) + ":" +
+                               std::to_string(time->tm_min) + ":" +
+                               std::to_string(time->tm_sec) + "][" + from +
+                               "]" + message.message;
             std::string color_text = color + text + "\033[0m";
             printf("%s\n", color_text.c_str());
             if (ptr->is_create_file)
@@ -80,7 +84,7 @@ namespace PWEngine::Stream::Log
         log_file.close();
     }
 
-    LogSystem::LogSystem(bool is_create_file): is_create_file(is_create_file)
+    LogSystem::LogSystem(bool is_create_file) : is_create_file(is_create_file)
     {
         std::thread loop_thread(LogLoop, this);
         this->loop_thread = std::move(loop_thread);
@@ -108,4 +112,4 @@ namespace PWEngine::Stream::Log
         }
         cv.notify_one();
     }
-}
+} // namespace PWEngine::Stream::Log
