@@ -1,38 +1,46 @@
 #include "render.hpp"
 #include "checker.hpp"
 
-namespace PWEngine::Render::GPU 
+namespace PWEngine::Render 
 {
-    CommandBuffer::CommandBuffer(Device device, Window window)
+    CommandPool* Device::createCommandPool()
     {
         VkCommandPool commandPool;
-        VkCommandBuffer commandBuffer;
-        if (window.surface.has_value())
-        {
-
-        }
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(device.adapter, window.surface.value());
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->adapter);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-        if (vkCreateCommandPool(device.ptr, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
+        if (vkCreateCommandPool(this->ptr, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create command pool!");
         }
 
+        CommandPool* self = new CommandPool();
+        self->command_pool = commandPool;
+        self->p_device = this;
+        this->command_pools.push_back(self);
+        return self;
+    }
+
+    CommandBuffer* CommandPool::createBuffer()
+    {
+        VkCommandBuffer commandBuffer;
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = commandPool;
+        allocInfo.commandPool = this->command_pool;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         allocInfo.commandBufferCount = 1;
 
-        if (vkAllocateCommandBuffers(device.ptr, &allocInfo, &commandBuffer) != VK_SUCCESS) {
+        if (vkAllocateCommandBuffers(this->p_device->ptr, &allocInfo, &commandBuffer) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate command buffers!");
         }
 
-        this->commandPool = commandPool;
-        this->commandBuffer = commandBuffer;
+        CommandBuffer* self = new CommandBuffer();
+        self->commandBuffer = commandBuffer;
+        self->p_pool = this;
+        this->command_buffers.push_back(self);
+        return self;
     }
 }

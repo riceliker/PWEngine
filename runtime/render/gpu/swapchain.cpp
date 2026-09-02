@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <stdexcept>
 
-namespace PWEngine::Render::GPU
+namespace PWEngine::Render
 {
     struct swapchain_supportDetails
     {
@@ -24,12 +24,25 @@ namespace PWEngine::Render::GPU
         uint32_t format_count;
         vkGetPhysicalDeviceSurfaceFormatsKHR(
             device, surface, &format_count, nullptr);
-
+        
         if (format_count != 0)
         {
             details.formats.resize(format_count);
             vkGetPhysicalDeviceSurfaceFormatsKHR(
                 device, surface, &format_count, details.formats.data());
+        }
+
+        bool is_support_rgba = false;
+        for (const auto format : details.formats)
+        {
+            if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace ==VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                is_support_rgba = true;
+            }
+        }
+        if (!is_support_rgba)
+        {
+            std::runtime_error("you device is not support rgba");
         }
 
         uint32_t present_mode_count;
@@ -47,21 +60,6 @@ namespace PWEngine::Render::GPU
         }
 
         return details;
-    }
-
-    VkSurfaceFormatKHR chooseSwapSurfaceFormat(
-        const std::vector<VkSurfaceFormatKHR>& available_formats)
-    {
-        for (const auto& availableFormat : available_formats)
-        {
-            if (availableFormat.format == VK_FORMAT_B8G8R8A8_SRGB &&
-                availableFormat.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                return availableFormat;
-            }
-        }
-
-        return available_formats[0];
     }
 
     VkPresentModeKHR chooseSwapPresentMode(
@@ -106,12 +104,9 @@ namespace PWEngine::Render::GPU
         }
     }
 
-    Swapchain::Swapchain(Device device, Window window)
+    Swapchain* Window::createSwapchain(RenderPass* render_pass)
     {
-        if (window.surface.has_value())
-        {
-            std::runtime_error("You should bind first");
-        }
+        /* swapchain */
         VkSwapchainKHR swapchain;
         std::vector<VkImage> swapchain_images;
         VkFormat swapchain_image_format;
@@ -120,14 +115,17 @@ namespace PWEngine::Render::GPU
         std::vector<VkFramebuffer> swapchain_framebuffers;
 
         swapchain_supportDetails swapchain_support =
-            querySwapchainSupport(device.adapter, window.surface.value());
+            querySwapchainSupport(this->p_device->adapter, this->surface);
 
-        VkSurfaceFormatKHR surfaceFormat =
-            chooseSwapSurfaceFormat(swapchain_support.formats);
+        VkSurfaceFormatKHR availableFormat;
+        availableFormat.format = VK_FORMAT_B8G8R8A8_SRGB;
+        availableFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+
+        VkSurfaceFormatKHR surfaceFormat = availableFormat;
         VkPresentModeKHR presentMode =
             chooseSwapPresentMode(swapchain_support.presentModes);
         VkExtent2D extent =
-            chooseSwapExtent(swapchain_support.capabilities, window.ptr);
+            chooseSwapExtent(swapchain_support.capabilities, this->ptr);
 
         uint32_t image_count = swapchain_support.capabilities.minImageCount + 1;
         if (swapchain_support.capabilities.maxImageCount > 0 &&
@@ -138,7 +136,7 @@ namespace PWEngine::Render::GPU
 
         VkSwapchainCreateInfoKHR create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        create_info.surface = window.surface.value();
+        create_info.surface = this->surface;
 
         create_info.minImageCount = image_count;
         create_info.imageFormat = surfaceFormat.format;
@@ -147,21 +145,10 @@ namespace PWEngine::Render::GPU
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices =
-            findQueueFamilies(device.adapter, window.surface.value());
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(),
-                                         indices.presentFamily.value()};
+        QueueFamilyIndices indices = findQueueFamilies(this->p_device->adapter);
+        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value()};
 
-        if (indices.graphicsFamily != indices.presentFamily)
-        {
-            create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            create_info.queueFamilyIndexCount = 2;
-            create_info.pQueueFamilyIndices = queueFamilyIndices;
-        }
-        else
-        {
-            create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        }
+        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         create_info.preTransform =
             swapchain_support.capabilities.currentTransform;
@@ -172,19 +159,19 @@ namespace PWEngine::Render::GPU
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(
-                device.ptr, &create_info, nullptr, &swapchain) != VK_SUCCESS)
+                this->p_device->ptr, &create_info, nullptr, &swapchain) != VK_SUCCESS)
         {
             throw std::runtime_error("failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(device.ptr, swapchain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(this->p_device->ptr, swapchain, &image_count, nullptr);
         swapchain_images.resize(image_count);
         vkGetSwapchainImagesKHR(
-            device.ptr, swapchain, &image_count, swapchain_images.data());
+            this->p_device->ptr, swapchain, &image_count, swapchain_images.data());
 
         swapchain_image_format = surfaceFormat.format;
         swapchain_extent = extent;
-
+        /* Image View */
         swapchain_image_views.resize(swapchain_images.size());
 
         for (size_t i = 0; i < swapchain_images.size(); i++) {
@@ -203,21 +190,13 @@ namespace PWEngine::Render::GPU
             create_info.subresourceRange.baseArrayLayer = 0;
             create_info.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(device.ptr, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
+            if (vkCreateImageView(this->p_device->ptr, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create image views!");
             }
         }
 
-        this->swapchain = swapchain;
-        this->swapchain_extent = swapchain_extent;
-        this->swapchain_image_format = swapchain_image_format;
-        this->swapchain_images = swapchain_images;
-        this->swapchain_image_views = swapchain_image_views;
-    }
-
-    void Swapchain::bindPipeline(Device device, Pipeline pipeline)
-    {
-        std::vector<VkFramebuffer> swapchain_framebuffers;
+        /* framebuffer */
+        
         swapchain_framebuffers.resize(swapchain_image_views.size());
 
         for (size_t i = 0; i < swapchain_image_views.size(); i++) {
@@ -227,18 +206,28 @@ namespace PWEngine::Render::GPU
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = pipeline. render_pass;
+            framebufferInfo.renderPass = render_pass->ptr;
             framebufferInfo.attachmentCount = 1;
             framebufferInfo.pAttachments = attachments;
             framebufferInfo.width = swapchain_extent.width;
             framebufferInfo.height = swapchain_extent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(device.ptr, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
+            if (vkCreateFramebuffer(render_pass->p_device->ptr, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create framebuffer!");
             }
-            this->swapchain_framebuffers = swapchain_framebuffers;
+            
         }
+        
+
+        Swapchain* self = new Swapchain();
+        self->swapchain = swapchain;
+        self->swapchain_extent = swapchain_extent;
+        self->swapchain_image_format = swapchain_image_format;
+        self->swapchain_images = swapchain_images;
+        self->swapchain_image_views = swapchain_image_views;
+        self->swapchain_framebuffers = swapchain_framebuffers;
+        return self;
     }
 
     void recordCommandBuffer(VkExtent2D swapChainExtent, VkRenderPass renderPass, std::vector<VkFramebuffer> swapChainFramebuffers, VkPipeline graphicsPipeline, VkCommandBuffer commandBuffer, uint32_t imageIndex) {
@@ -287,31 +276,31 @@ namespace PWEngine::Render::GPU
         }
     }
 
-    void Swapchain::submit(Device device, Pipeline pipeline, CommandBuffer command_buffer, Sync sync)
+    void Swapchain::submit(Device* device, Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync)
     {
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(device.ptr, swapchain, UINT64_MAX, sync.imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        vkAcquireNextImageKHR(device->ptr, swapchain, UINT64_MAX, sync->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        vkResetCommandBuffer(command_buffer.commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
-        recordCommandBuffer(this->swapchain_extent, pipeline.render_pass, this->swapchain_framebuffers.value(), pipeline.graphics_pipeline, command_buffer.commandBuffer, imageIndex);
+        vkResetCommandBuffer(command_buffer->commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
+        recordCommandBuffer(this->swapchain_extent, pipeline->p_render_pass->ptr, this->swapchain_framebuffers, pipeline->graphics_pipeline, command_buffer->commandBuffer, imageIndex);
 
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {sync.imageAvailableSemaphore};
+        VkSemaphore waitSemaphores[] = {sync->imageAvailableSemaphore};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &command_buffer.commandBuffer;
+        submitInfo.pCommandBuffers = &command_buffer->commandBuffer;
 
-        VkSemaphore signalSemaphores[] = {sync.renderFinishedSemaphore};
+        VkSemaphore signalSemaphores[] = {sync->renderFinishedSemaphore};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(device.graphics_queue, 1, &submitInfo, sync.inFlightFence) != VK_SUCCESS) {
+        if (vkQueueSubmit(device->graphics_queue, 1, &submitInfo, sync->inFlightFence) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -327,6 +316,6 @@ namespace PWEngine::Render::GPU
 
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(device.present_queue, &presentInfo);
+        vkQueuePresentKHR(device->graphics_queue, &presentInfo);
     }
-} // namespace PWEngine::Render::GPU
+} // namespace PWEngine::Render

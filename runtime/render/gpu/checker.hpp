@@ -16,16 +16,14 @@ const std::vector<const char*> device_extensions = {
 struct QueueFamilyIndices
 {
     std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
 
     bool isComplete()
     {
-        return graphicsFamily.has_value() && presentFamily.has_value();
+        return graphicsFamily.has_value();
     }
 };
 
-static inline QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device,
-                                                   VkSurfaceKHR surface)
+static inline QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
 {
     QueueFamilyIndices indices;
 
@@ -37,30 +35,13 @@ static inline QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device,
     vkGetPhysicalDeviceQueueFamilyProperties(
         device, &queueFamilyCount, queueFamilies.data());
 
-    int i = 0;
-    for (const auto& queueFamily : queueFamilies)
+    for(uint32_t i = 0; i < queueFamilyCount; i++)
     {
-        if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        if(queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
             indices.graphicsFamily = i;
-        }
-
-        VkBool32 presentSupport = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(
-            device, i, surface, &presentSupport);
-
-        if (presentSupport)
-        {
-            indices.presentFamily = i;
-        }
-
-        if (indices.isComplete())
-        {
             break;
         }
-
-        i++;
     }
-
     return indices;
 }

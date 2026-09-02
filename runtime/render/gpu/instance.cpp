@@ -1,10 +1,11 @@
 #include "render.hpp"
+#include "stream.hpp"
 #include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-namespace PWEngine::Render::GPU
+namespace PWEngine::Render
 {
     const std::vector<const char*> validation_layers = {
         "VK_LAYER_KHRONOS_validation"};
@@ -73,7 +74,7 @@ namespace PWEngine::Render::GPU
         }
     }
 
-    static inline void CheckValidationLayer()
+    static inline void CheckValidationLayer(Stream::LogSystem* log)
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -97,20 +98,34 @@ namespace PWEngine::Render::GPU
 
             if (!layer_found)
             {
-                throw std::runtime_error(
-                    "validation layers requested, but not available!");
-                ;
+                Stream::log(log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
             }
         }
     }
 
-    Instance::Instance(InstanceInfo info, Window window)
+    /*
+        ██░ ▓███    ████ ▒███████  ██▒
+        ██░ ▓████  █████ ▒██   ▒██ ██▒
+        ██░ ▓██▒██▓█▒███ ▒███████  ██▒
+        ██░ ▓██ ████ ███ ▒██       ██▒
+        ██░ ▓██  ██  ███ ▒██       ███████▒
+    */
+
+    Instance::Instance(InstanceInfo info, Stream::LogSystem* log)
+    {
+        this->log = log; 
+        glfwInit();
+        createInstance(info);
+        getAllAdapter();
+    }
+
+    void Instance::createInstance(InstanceInfo info)
     {
         /* create vulkan instance */
         VkInstance instance;
 
         if (info.is_debug)
-            CheckValidationLayer();
+            CheckValidationLayer(this->log);
         /* application */
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -126,13 +141,13 @@ namespace PWEngine::Render::GPU
         instance_create_info.pApplicationInfo = &app_info;
         /* vulkan extensions */
         auto extensions = GetRequiredExtensions(info.is_debug);
-#if (__APPLE__)
-        extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
-        extensions.emplace_back(
-            VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
-        instance_create_info.flags |=
-            VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
-#endif
+        #if (__APPLE__)
+            extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+            extensions.emplace_back(
+                VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
+            instance_create_info.flags |=
+                VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        #endif
         instance_create_info.enabledExtensionCount =
             static_cast<uint32_t>(extensions.size());
         instance_create_info.ppEnabledExtensionNames = extensions.data();
@@ -174,22 +189,31 @@ namespace PWEngine::Render::GPU
                 throw std::runtime_error("failed to set up debug messenger!");
             }
         }
-        /* find all physics device */
-        uint32_t deviceCount = 0;
-        vkEnumeratePhysicalDevices(instance, &deviceCount, nullptr);
 
-        if (deviceCount == 0)
+        this->instance = instance;
+    }
+
+    void Instance::getAllAdapter()
+    {
+        /* find all physics device */
+        uint32_t adapter_count = 0;
+        vkEnumeratePhysicalDevices(instance, &adapter_count, nullptr);
+
+        if (adapter_count == 0)
         {
             throw std::runtime_error(
                 "failed to find GPUs with Vulkan support!");
         }
 
-        std::vector<VkPhysicalDevice> devices(deviceCount);
-        vkEnumeratePhysicalDevices(instance, &deviceCount, devices.data());
-        
-
-        this->instance = instance;
-        this->devices = devices;
+        std::vector<VkPhysicalDevice> devices(adapter_count);
+        vkEnumeratePhysicalDevices(instance, &adapter_count, devices.data());
+                
+        this->adapters = devices;
     }
 
-} // namespace PWEngine::Render::GPU
+    Instance::~Instance()
+    {
+
+    }
+
+} // namespace PWEngine::Render

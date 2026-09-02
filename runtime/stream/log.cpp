@@ -8,7 +8,7 @@
 #include <string>
 #include <thread>
 
-namespace PWEngine::Stream::Log
+namespace PWEngine::Stream
 {
     void LogLoop(LogSystem* ptr)
     {
@@ -112,4 +112,4 @@ namespace PWEngine::Stream::Log
         }
         cv.notify_one();
     }
-} // namespace PWEngine::Stream::Log
+} // namespace PWEngine::Stream

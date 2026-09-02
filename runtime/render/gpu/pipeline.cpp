@@ -1,7 +1,7 @@
 #include "render.hpp"
 #include <fstream>
 
-namespace PWEngine::Render::GPU 
+namespace PWEngine::Render 
 {
     static std::vector<char> readFile(const std::string& filename) {
         std::ifstream file(filename, std::ios::ate | std::ios::binary);
@@ -35,54 +35,18 @@ namespace PWEngine::Render::GPU
         return shaderModule;
     }
 
-    Pipeline::Pipeline(Device device, Swapchain swapchain)
-    {
-        VkAttachmentDescription color_attachment{};
-        color_attachment.format = swapchain.swapchain_image_format;
-        color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-        color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    
 
-        VkAttachmentReference colorAttachmentRef{};
-        colorAttachmentRef.attachment = 0;
-        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-        VkSubpassDescription subpass{};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-        subpass.colorAttachmentCount = 1;
-        subpass.pColorAttachments = &colorAttachmentRef;
-
-        VkSubpassDependency dependency{};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.srcAccessMask = 0;
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-        VkRenderPassCreateInfo render_pass_info{};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount = 1;
-        render_pass_info.pAttachments = &color_attachment;
-        render_pass_info.subpassCount = 1;
-        render_pass_info.pSubpasses = &subpass;
-        render_pass_info.dependencyCount = 1;
-        render_pass_info.pDependencies = &dependency;
-
-        if (vkCreateRenderPass(device.ptr, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass!");
-        }
-
+    Pipeline* RenderPass::createPipeline()
+    {   
+        VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
 
         auto vertShaderCode = readFile("./shaders/vert.spv");
         auto fragShaderCode = readFile("./shaders/frag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, device.ptr);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, device.ptr);
+        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, this->p_device->ptr);
+        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, this->p_device->ptr);
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -157,7 +121,7 @@ namespace PWEngine::Render::GPU
         pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-        if (vkCreatePipelineLayout(device.ptr, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(this->p_device->ptr, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
 
@@ -173,15 +137,21 @@ namespace PWEngine::Render::GPU
         pipelineInfo.pColorBlendState = &colorBlending;
         pipelineInfo.pDynamicState = &dynamicState;
         pipelineInfo.layout = pipeline_layout;
-        pipelineInfo.renderPass = render_pass;
+        pipelineInfo.renderPass = this->ptr;
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(device.ptr, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &this->graphics_pipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(this->p_device->ptr, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
         }
 
-        vkDestroyShaderModule(device.ptr, fragShaderModule, nullptr);
-        vkDestroyShaderModule(device.ptr, vertShaderModule, nullptr);
+        vkDestroyShaderModule(this->p_device->ptr, fragShaderModule, nullptr);
+        vkDestroyShaderModule(this->p_device->ptr, vertShaderModule, nullptr);
+
+        Pipeline* self = new Pipeline();
+        self->graphics_pipeline = graphics_pipeline;
+        self->pipeline_layout = pipeline_layout;
+        self->p_render_pass = this;
+        return self;
     }
 }

@@ -2,7 +2,7 @@
 #include "render.hpp"
 #include <set>
 
-namespace PWEngine::Render::GPU
+namespace PWEngine::Render
 {
 
     struct swapchain_supportDetails
@@ -72,7 +72,7 @@ namespace PWEngine::Render::GPU
     static inline bool isDeviceSuitable(VkPhysicalDevice device,
                                         VkSurfaceKHR surface)
     {
-        QueueFamilyIndices indices = findQueueFamilies(device, surface);
+        QueueFamilyIndices indices = findQueueFamilies(device);
 
         bool extensions_supported = checkDeviceExtensionSupport(device);
 
@@ -97,45 +97,29 @@ namespace PWEngine::Render::GPU
         ██░ ▓██  ██  ███ ▒██       ███████▒
     */
 
-    std::optional<Device> Instance::GetBestDevice(Window window)
-    {
-        if (window.surface.has_value())
-        {
 
-        }
-        VkPhysicalDevice adapter = VK_NULL_HANDLE;
-        for (const auto& device : devices)
-        {
-            if (isDeviceSuitable(device, window.surface.value()))
-            {
-                adapter = device;
-                break;
-            }
-        }
+    Device* Instance::GetBestDevice()
+    {
+        VkPhysicalDevice adapter = this->adapters[0];
         if (adapter == VK_NULL_HANDLE)
-            return std::nullopt;
+        {
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
+        }
 
         VkDevice device;
         VkQueue graphics_queue;
-        VkQueue present_queue;
-        QueueFamilyIndices indices =
-            findQueueFamilies(adapter, window.surface.value());
+        QueueFamilyIndices indices = findQueueFamilies(adapter);
 
         std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
-        std::set<uint32_t> unique_queue_families = {
-            indices.graphicsFamily.value(), indices.presentFamily.value()};
-
+        
         float queuePriority = 1.0f;
-        for (uint32_t queueFamily : unique_queue_families)
-        {
-            VkDeviceQueueCreateInfo queue_create_info{};
-            queue_create_info.sType =
-                VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queue_create_info.queueFamilyIndex = queueFamily;
-            queue_create_info.queueCount = 1;
-            queue_create_info.pQueuePriorities = &queuePriority;
-            queue_create_infos.push_back(queue_create_info);
-        }
+        VkDeviceQueueCreateInfo queue_create_info{};
+        queue_create_info.sType =
+            VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = indices.graphicsFamily.value();
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &queuePriority;
+        queue_create_infos.push_back(queue_create_info);
 
         VkPhysicalDeviceFeatures device_features{};
 
@@ -156,19 +140,17 @@ namespace PWEngine::Render::GPU
                 adapter, &device_create_info, nullptr, &device) !=
             VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create logical device!");
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
         }
 
         vkGetDeviceQueue(
             device, indices.graphicsFamily.value(), 0, &graphics_queue);
-        vkGetDeviceQueue(
-            device, indices.presentFamily.value(), 0, &present_queue);
 
-        Device self;
-        self.ptr = device;
-        self.adapter = adapter;
-        self.graphics_queue = graphics_queue;
-        self.present_queue = present_queue;
+        Device* self = new Device();
+        self->ptr = device;
+        self->adapter = adapter;
+        self->graphics_queue = graphics_queue;
+        this->devices.push_back(self);
         return self;
     }
 
@@ -176,4 +158,4 @@ namespace PWEngine::Render::GPU
     {
         vkDeviceWaitIdle(this->ptr);
     }
-} // namespace PWEngine::Render::GPU
+} // namespace PWEngine::Render

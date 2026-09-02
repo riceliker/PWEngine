@@ -1,4 +1,5 @@
 #pragma once
+#include "stream.hpp"
 #include <cstdint>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,7 +10,6 @@
 
 #include <string>
 #include <vector>
-#include <optional>
 
 #include "utils.hpp"
 
@@ -18,56 +18,133 @@
 The GPU module is control the vulkan instance with C++ class.
 Use it is simple, you should not write the template code.
 
+Instance->N * Device
+Device->N * Window
+Window->Swapchain
+
 Window->Instance->Window::BindInstance->Device->Swapchain->Pipeline->Swapchain::BindPipeline
 
 */
-namespace PWEngine::Render 
+namespace PWEngine::Render
 {
-    class Window;
-}
+    struct InstanceInfo
+    {
+        std::string name;
+        Utils::Vec3<uint8_t> version;
+        bool is_debug;
+    };
 
-namespace PWEngine::Render::GPU
-{
-    class Instance;
     struct WindowInfo
     {
         Utils::Vec2<uint32_t> size;
         std::string title;
         bool is_resizable;
     };
-    class Window
+
+    class Instance;
+    class Device;
+    class Window;
+    class RenderPass;
+    class Pipeline;
+    class Swapchain;
+    class CommandPool;
+    class CommandBuffer;
+    class Sync;
+
+    class Instance
     {
     private:
-        GLFWwindow* ptr;
-        std::optional<VkSurfaceKHR> surface;
+        /* Log */
+        Stream::LogSystem* log;
+        /* owner */
+        std::vector<Device*> devices;
+        /* self */
+        VkInstance instance;
+        VkDebugUtilsMessengerEXT debug_messenger;
+        std::vector<VkPhysicalDevice> adapters;
+        void createInstance(InstanceInfo info);
+        void getAllAdapter();
     public:
-        Window(WindowInfo info);
-        void bindInstance(Instance instance);
-        bool isClosed();
-        friend class Instance;
-        friend class Swapchain;
-        friend class CommandBuffer;
+        Instance(InstanceInfo info, Stream::LogSystem* log);
+        ~Instance();
+        Device* GetBestDevice();
+        Window* CreateWindow(WindowInfo info, Device* device);
     };
 
     class Device
     {
     private:
+        /* owner */
+        std::vector<Window*> windows;
+        std::vector<RenderPass*> render_passes;
+        std::vector<CommandPool*> command_pools;
+        std::vector<Sync*> syncs;
+        /* self */
         VkPhysicalDevice adapter;
         VkDevice ptr;
         VkQueue graphics_queue;
-        VkQueue present_queue;
+        void registryWindow();
+        ~Device();
     public:
+        RenderPass* createRenderPass();
+        CommandPool* createCommandPool();
+        Sync* createSync();
         void waitIdle();
+        friend class Window;
         friend class Instance;
         friend class Pipeline;
         friend class Swapchain;
         friend class CommandBuffer;
         friend class Sync;
+        friend class RenderPass;
+        friend class CommandPool;
     };
 
-    class Pipeline;
-    class Sync;
-    class CommandBuffer;
+    class Window
+    {
+    private:
+        /* parent */
+        Device* p_device;
+        /* self */
+        GLFWwindow* ptr;
+        VkSurfaceKHR surface;
+    public:
+        Swapchain* createSwapchain(RenderPass* render_pass);
+        bool isClosed();
+        friend class Instance;
+        friend class Swapchain;
+        friend class CommandBuffer;
+        friend class Device;
+    };
+
+    class RenderPass
+    {
+    private:
+        /* owner */
+        Device* p_device;
+        /* self*/
+        VkRenderPass ptr;
+    public:
+        Pipeline* createPipeline();
+        friend class Pipeline;
+        friend class Device;
+        friend class Swapchain;
+        friend class Window;
+    };
+
+    class Pipeline
+    {
+    private:
+        /* owner */
+        RenderPass* p_render_pass;
+        /* self */
+        VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
+    public:
+        friend class Swapchain;
+        friend class Device;
+        friend class RenderPass;
+    };
 
     class Swapchain
     {
@@ -77,65 +154,56 @@ namespace PWEngine::Render::GPU
         VkFormat swapchain_image_format;
         VkExtent2D swapchain_extent;
         std::vector<VkImageView> swapchain_image_views;
-        std::optional<std::vector<VkFramebuffer>> swapchain_framebuffers;
+        std::vector<VkFramebuffer> swapchain_framebuffers;
     public:
-        Swapchain(Device device, Window window);
-        void bindPipeline(Device device, Pipeline pipeline);
-        void submit(Device device, Pipeline pipeline, CommandBuffer command_buffer, Sync sync);
+        void submit(Device* device, Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync);
         friend class Pipeline;
         friend class CommandBuffer;
+        friend class Instance;
+        friend class Window;
     };
 
-    class Pipeline
+    class CommandPool
     {
     private:
-        VkRenderPass render_pass;
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
+        /* owner */
+        Device* p_device;
+        /* self */
+        VkCommandPool command_pool;
+        std::vector<CommandBuffer*> command_buffers;
     public:
-        Pipeline(Device device, Swapchain swapchain);
+        CommandBuffer* createBuffer();
         friend class Swapchain;
+        friend class Device;
     };
 
     class CommandBuffer
     {
     private:
-        VkCommandPool commandPool;
+        CommandPool* p_pool;
         VkCommandBuffer commandBuffer;
     public:
-        CommandBuffer(Device device, Window window);
+        friend class CommandPool;
         friend class Swapchain;
     };
 
     class Sync
     {
     private:
+        /* owner */
+        Device* p_device;
+        /* self */
         VkSemaphore imageAvailableSemaphore;
         VkSemaphore renderFinishedSemaphore;
         VkFence inFlightFence;
     public:
-        Sync(Device device);
-        void wait(Device device);
+        void wait(Device* device);
         friend class Swapchain;
+        friend class Device;
     };
 
-    struct InstanceInfo
-    {
-        std::string name;
-        Utils::Vec3<uint8_t> version;
-        bool is_debug;
-    };
-    class Instance
-    {
-    private:
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debug_messenger;
-        std::vector<VkPhysicalDevice> devices;
-    public:
-        Instance(InstanceInfo info, Window window);
-        std::optional<Device> GetBestDevice(Window window);
-        friend class Window;
-    };
+    
+    
 }
 
 namespace PWEngine::Render 

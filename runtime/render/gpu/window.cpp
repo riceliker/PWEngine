@@ -1,34 +1,33 @@
 #include "render.hpp"
+#include "stream.hpp"
 #include "utils.hpp"
 
-namespace PWEngine::Render::GPU
+namespace PWEngine::Render
 {
-    Window::Window(WindowInfo info)
+    Window* Instance::CreateWindow(WindowInfo info, Device* device)
     {
-        glfwInit();
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE,
                        info.is_resizable ? GLFW_TRUE : GLFW_FALSE);
-        this->ptr = glfwCreateWindow(
+        auto window = glfwCreateWindow(
             info.size.x, info.size.y, info.title.c_str(), nullptr, nullptr);
-    }
-
-    void Window::bindInstance(Instance instance)
-    {
+        
         VkSurfaceKHR surface;
-        if (glfwCreateWindowSurface(instance.instance, this->ptr, nullptr, &surface) !=
+        if (glfwCreateWindowSurface(this->instance, window, nullptr, &surface) !=
             VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create window surface!");
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
         }
-        else 
-        {
-            this->surface = surface;
-        }
+        Window* self = new Window();
+        self->ptr = window;
+        self->surface = surface;
+        device->windows.push_back(self);
+        self->p_device = device;
+        return self;
     }
 
     bool Window::isClosed()
     {
         return glfwWindowShouldClose(this->ptr);
     }
-} // namespace PWEngine::Render::GPU
+} // namespace PWEngine::Render

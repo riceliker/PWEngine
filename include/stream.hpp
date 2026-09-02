@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <filesystem>
@@ -15,39 +16,47 @@ namespace PWEngine::Stream
     If you want to use log system. You should create LogSystem.
 
     */
-    namespace Log 
+    enum class LogType
     {
-        enum class LogType
+        Info, Warn, Error, Debug
+    };
+    enum class LogFrom
+    {
+        Debug, VulkanRender, AssetManager, FileIO
+    };
+    struct LogInfo
+    {
+        std::string message;
+        LogType type;
+        LogFrom from;
+    };
+    class LogSystem
+    {
+    private:
+        bool is_create_file = false;
+        std::queue<LogInfo> queue;
+        mutable std::mutex mutex;
+        std::condition_variable cv;
+        std::atomic<bool> is_stop{false};
+        std::thread loop_thread;
+    public:
+        LogSystem(bool is_create_file);
+        ~LogSystem();
+        bool getIsStop(){return this->is_stop.load();};
+        void send(LogType type, LogFrom from, std::string message);
+        friend void LogLoop(LogSystem* ptr);
+    };
+    inline void log(LogSystem* ptr, LogType type, LogFrom from, std::string message)
+    {
+        if (ptr == nullptr)
         {
-            Info, Warn, Error, Debug
-        };
-        enum class LogFrom
-        {
-            Debug, VulkanRender, AssetManager, FileIO
-        };
-        struct LogInfo
-        {
-            std::string message;
-            LogType type;
-            LogFrom from;
-        };
-        class LogSystem
-        {
-        private:
-            bool is_create_file = false;
-            std::queue<LogInfo> queue;
-            mutable std::mutex mutex;
-            std::condition_variable cv;
-            std::atomic<bool> is_stop{false};
-            std::thread loop_thread;
-        public:
-            LogSystem(bool is_create_file);
-            ~LogSystem();
-            bool getIsStop(){return this->is_stop.load();};
-            void send(LogType type, LogFrom from, std::string message);
-            friend void LogLoop(LogSystem* ptr);
-        };
+            if (type == LogType::Error)
+                std::runtime_error(message.c_str());
+        }
+        else 
+            ptr->send(type, from, message);
     }
+    
 
     namespace Config
     {
@@ -60,9 +69,9 @@ namespace PWEngine::Stream
             std::filesystem::path file_path;
             std::unordered_map<std::array<char, 64>, std::array<char, 256>, KeyHash, KeyEqual> kv;
             std::vector<std::array<char, 64>> ks;
-            Log::LogSystem* log;
+            LogSystem* log;
             ConfigFile(){};
-            ConfigFile(std::string config_file_path, Log::LogSystem* log);
+            ConfigFile(std::string config_file_path, LogSystem* log);
             ~ConfigFile();
         public:
             void write();
