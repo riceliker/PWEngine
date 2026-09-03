@@ -42,7 +42,7 @@ namespace PWEngine::Render
         renderPassInfo.pDependencies = &dependency;
 
         if (vkCreateRenderPass(this->ptr, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass!");
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create render pass!");
         }
 
         RenderPass* self = new RenderPass;
@@ -50,5 +50,14 @@ namespace PWEngine::Render
         self->p_device = this;
         this->render_passes.push_back(self);
         return self;
+    }
+
+    RenderPass::~RenderPass()
+    {
+        for (const auto pipeline: pipelines)
+        {
+            delete pipeline;
+        }
+        vkDestroyRenderPass(this->p_device->ptr, this->ptr, nullptr);
     }
 }

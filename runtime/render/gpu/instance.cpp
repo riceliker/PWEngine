@@ -1,7 +1,6 @@
 #include "render.hpp"
 #include "stream.hpp"
 #include <iostream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -124,6 +123,7 @@ namespace PWEngine::Render
         /* create vulkan instance */
         VkInstance instance;
 
+        this->is_debug = info.is_debug;
         if (info.is_debug)
             CheckValidationLayer(this->log);
         /* application */
@@ -173,7 +173,7 @@ namespace PWEngine::Render
         if (vkCreateInstance(&instance_create_info, nullptr, &instance) !=
             VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create instance!");
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create instance!");
         }
         /* make debug layer */
         if (info.is_debug)
@@ -186,34 +186,47 @@ namespace PWEngine::Render
                                              nullptr,
                                              &debug_messenger) != VK_SUCCESS)
             {
-                throw std::runtime_error("failed to set up debug messenger!");
+                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to set up debug messenger!");
             }
         }
 
-        this->instance = instance;
+        this->ptr = instance;
     }
 
     void Instance::getAllAdapter()
     {
         /* find all physics device */
         uint32_t adapter_count = 0;
-        vkEnumeratePhysicalDevices(instance, &adapter_count, nullptr);
+        vkEnumeratePhysicalDevices(ptr, &adapter_count, nullptr);
 
         if (adapter_count == 0)
         {
-            throw std::runtime_error(
-                "failed to find GPUs with Vulkan support!");
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to find GPUs with Vulkan support!");
         }
 
         std::vector<VkPhysicalDevice> devices(adapter_count);
-        vkEnumeratePhysicalDevices(instance, &adapter_count, devices.data());
+        vkEnumeratePhysicalDevices(ptr, &adapter_count, devices.data());
                 
         this->adapters = devices;
     }
 
+    static inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
+
     Instance::~Instance()
     {
-
+        for (const auto& device: this->devices)
+        {
+            delete device;
+        }
+        if (is_debug) {
+            DestroyDebugUtilsMessengerEXT(this->ptr, this->debug_messenger, nullptr);
+        }
+        vkDestroyInstance(this->ptr, nullptr);
     }
 
 } // namespace PWEngine::Render

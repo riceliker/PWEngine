@@ -18,7 +18,7 @@ namespace PWEngine::Render
         if (vkCreateSemaphore(this->ptr, &semaphoreInfo, nullptr, &imageAvailableSemaphore) != VK_SUCCESS ||
             vkCreateSemaphore(this->ptr, &semaphoreInfo, nullptr, &renderFinishedSemaphore) != VK_SUCCESS ||
             vkCreateFence(this->ptr, &fenceInfo, nullptr, &inFlightFence) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create synchronization objects for a frame!");
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
         }
 
         Sync* self = new Sync();
@@ -29,6 +29,14 @@ namespace PWEngine::Render
         this->syncs.push_back(self);
         return self;
     }
+
+    Sync::~Sync()
+    {
+        vkDestroySemaphore(this->p_device->ptr, renderFinishedSemaphore, nullptr);
+        vkDestroySemaphore(this->p_device->ptr, imageAvailableSemaphore, nullptr);
+        vkDestroyFence(this->p_device->ptr, inFlightFence, nullptr);
+    }
+
     void Sync::wait(Device* device)
     {
         vkWaitForFences(device->ptr, 1, &inFlightFence, VK_TRUE, UINT64_MAX);

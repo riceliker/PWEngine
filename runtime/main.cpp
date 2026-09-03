@@ -19,10 +19,8 @@ int main()
     window_info.title = "Test";
     window_info.size = PWEngine::Utils::Vec2<uint32_t>(1280, 720);
 
-    
-
     auto device = instance.GetBestDevice();
-    auto window = instance.CreateWindow(window_info, device);
+    auto window = device->createWindow(window_info);
     auto render_pass = device->createRenderPass();
     auto pipeline = render_pass->createPipeline();
     auto swapchain = window->createSwapchain(render_pass);
@@ -34,8 +32,7 @@ int main()
     {
         glfwPollEvents();
         sync->wait(device);
-        swapchain->submit(device, pipeline, cmd_buf, sync);
-
+        swapchain->submit(pipeline, cmd_buf, sync);
     }
     device->waitIdle();
 

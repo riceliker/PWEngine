@@ -150,8 +150,32 @@ namespace PWEngine::Render
         self->ptr = device;
         self->adapter = adapter;
         self->graphics_queue = graphics_queue;
+        self->p_instance = this;
         this->devices.push_back(self);
         return self;
+    }
+
+    Device::~Device()
+    {
+        for (const auto& sync : syncs)
+        {
+            delete sync;
+        }
+        for (const auto& command_pool : command_pools)
+        {
+            delete command_pool;
+        }
+        for (const auto& render_pass: render_passes)
+        {
+            delete render_pass;
+        }
+        for (const auto& window: windows)
+        {
+            delete window;
+        }
+
+        vkDestroyDevice(this->ptr, nullptr);
+
     }
 
     void Device::waitIdle()

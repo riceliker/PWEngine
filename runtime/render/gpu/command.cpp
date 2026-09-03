@@ -14,7 +14,7 @@ namespace PWEngine::Render
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
         if (vkCreateCommandPool(this->ptr, &poolInfo, nullptr, &commandPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create command pool!");
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
         }
 
         CommandPool* self = new CommandPool();
@@ -22,6 +22,11 @@ namespace PWEngine::Render
         self->p_device = this;
         this->command_pools.push_back(self);
         return self;
+    }
+
+    CommandPool::~CommandPool()
+    {
+        vkDestroyCommandPool(this->p_device->ptr, this->command_pool, nullptr);
     }
 
     CommandBuffer* CommandPool::createBuffer()
@@ -34,7 +39,7 @@ namespace PWEngine::Render
         allocInfo.commandBufferCount = 1;
 
         if (vkAllocateCommandBuffers(this->p_device->ptr, &allocInfo, &commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate command buffers!");
+            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
         }
 
         CommandBuffer* self = new CommandBuffer();

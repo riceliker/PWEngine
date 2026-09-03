@@ -13,16 +13,33 @@
 
 #include "utils.hpp"
 
+#define __PWEngine_Render_Friend_Class_Define() \
+friend class Instance; \
+friend class Device; \
+friend class Window; \
+friend class RenderPass; \
+friend class Pipeline; \
+friend class Swapchain; \
+friend class CommandPool; \
+friend class CommandBuffer; \
+friend class Sync;
+
 /*
 ----- GPU Module -----
 The GPU module is control the vulkan instance with C++ class.
 Use it is simple, you should not write the template code.
 
-Instance->N * Device
-Device->N * Window
-Window->Swapchain
-
-Window->Instance->Window::BindInstance->Device->Swapchain->Pipeline->Swapchain::BindPipeline
+Registry:
+Instance -> N * Device
+Device -> N * Window
+Device -> N * RenderPass
+Window + RenderPass -> Swapchain
+RenderPass -> N * Pipeline
+Device -> N * CommandPool
+CommandPool -> N * CommandBuffer
+Device -> N * Sync
+Loop:
+Swapchain <- 
 
 */
 namespace PWEngine::Render
@@ -56,25 +73,31 @@ namespace PWEngine::Render
     private:
         /* Log */
         Stream::LogSystem* log;
-        /* owner */
-        std::vector<Device*> devices;
         /* self */
-        VkInstance instance;
+        bool is_debug = false;
+        VkInstance ptr;
         VkDebugUtilsMessengerEXT debug_messenger;
         std::vector<VkPhysicalDevice> adapters;
+        std::vector<Device*> devices;
+        /* func */
         void createInstance(InstanceInfo info);
         void getAllAdapter();
     public:
         Instance(InstanceInfo info, Stream::LogSystem* log);
         ~Instance();
         Device* GetBestDevice();
-        Window* CreateWindow(WindowInfo info, Device* device);
+        __PWEngine_Render_Friend_Class_Define()
     };
-
+    /*
+        Owner: Instance
+        Manager: Window RenderPass CommandPool Sync
+    */
     class Device
     {
     private:
         /* owner */
+        Instance* p_instance;
+        /* manger */
         std::vector<Window*> windows;
         std::vector<RenderPass*> render_passes;
         std::vector<CommandPool*> command_pools;
@@ -84,22 +107,20 @@ namespace PWEngine::Render
         VkDevice ptr;
         VkQueue graphics_queue;
         void registryWindow();
-        ~Device();
     public:
+        ~Device();
+        Window* createWindow(WindowInfo info);
         RenderPass* createRenderPass();
         CommandPool* createCommandPool();
         Sync* createSync();
         void waitIdle();
-        friend class Window;
-        friend class Instance;
-        friend class Pipeline;
-        friend class Swapchain;
-        friend class CommandBuffer;
-        friend class Sync;
-        friend class RenderPass;
-        friend class CommandPool;
+        __PWEngine_Render_Friend_Class_Define()
     };
-
+    /*
+        Owner: Device;
+        Mananger: NULL
+    
+    */
     class Window
     {
     private:
@@ -108,15 +129,17 @@ namespace PWEngine::Render
         /* self */
         GLFWwindow* ptr;
         VkSurfaceKHR surface;
+        std::vector<Swapchain*> swapchains;
     public:
+        ~Window();
         Swapchain* createSwapchain(RenderPass* render_pass);
         bool isClosed();
-        friend class Instance;
-        friend class Swapchain;
-        friend class CommandBuffer;
-        friend class Device;
+        __PWEngine_Render_Friend_Class_Define()
     };
-
+    /*
+        Owner: Device
+        Manager: Pipeline
+    */
     class RenderPass
     {
     private:
@@ -124,12 +147,11 @@ namespace PWEngine::Render
         Device* p_device;
         /* self*/
         VkRenderPass ptr;
+        std::vector<Pipeline*> pipelines;
     public:
+        ~RenderPass();
         Pipeline* createPipeline();
-        friend class Pipeline;
-        friend class Device;
-        friend class Swapchain;
-        friend class Window;
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     class Pipeline
@@ -141,14 +163,16 @@ namespace PWEngine::Render
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
     public:
-        friend class Swapchain;
-        friend class Device;
-        friend class RenderPass;
+        ~Pipeline();
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     class Swapchain
     {
     private:
+        /* owner */
+        Window* p_window;
+        /* self */
         VkSwapchainKHR swapchain;
         std::vector<VkImage> swapchain_images;
         VkFormat swapchain_image_format;
@@ -156,11 +180,9 @@ namespace PWEngine::Render
         std::vector<VkImageView> swapchain_image_views;
         std::vector<VkFramebuffer> swapchain_framebuffers;
     public:
-        void submit(Device* device, Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync);
-        friend class Pipeline;
-        friend class CommandBuffer;
-        friend class Instance;
-        friend class Window;
+        ~Swapchain();
+        void submit(Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync);
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     class CommandPool
@@ -172,9 +194,9 @@ namespace PWEngine::Render
         VkCommandPool command_pool;
         std::vector<CommandBuffer*> command_buffers;
     public:
+        ~CommandPool();
         CommandBuffer* createBuffer();
-        friend class Swapchain;
-        friend class Device;
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     class CommandBuffer
@@ -183,8 +205,7 @@ namespace PWEngine::Render
         CommandPool* p_pool;
         VkCommandBuffer commandBuffer;
     public:
-        friend class CommandPool;
-        friend class Swapchain;
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     class Sync
@@ -197,9 +218,9 @@ namespace PWEngine::Render
         VkSemaphore renderFinishedSemaphore;
         VkFence inFlightFence;
     public:
+        ~Sync();
         void wait(Device* device);
-        friend class Swapchain;
-        friend class Device;
+        __PWEngine_Render_Friend_Class_Define()
     };
 
     

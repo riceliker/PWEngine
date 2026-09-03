@@ -4,7 +4,7 @@
 
 namespace PWEngine::Render
 {
-    Window* Instance::CreateWindow(WindowInfo info, Device* device)
+    Window* Device::createWindow(WindowInfo info)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE,
@@ -13,17 +13,28 @@ namespace PWEngine::Render
             info.size.x, info.size.y, info.title.c_str(), nullptr, nullptr);
         
         VkSurfaceKHR surface;
-        if (glfwCreateWindowSurface(this->instance, window, nullptr, &surface) !=
+        if (glfwCreateWindowSurface(this->p_instance->ptr, window, nullptr, &surface) !=
             VK_SUCCESS)
         {
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
         }
         Window* self = new Window();
         self->ptr = window;
         self->surface = surface;
-        device->windows.push_back(self);
-        self->p_device = device;
+        self->p_device = this;
+        this->windows.push_back(self);
         return self;
+    }
+
+    Window::~Window()
+    {
+        for (const auto& swapchain: swapchains)
+        {
+            delete swapchain;
+        }
+
+        vkDestroySurfaceKHR(this->p_device->p_instance->ptr, surface, nullptr);
+        glfwDestroyWindow(this->ptr);
     }
 
     bool Window::isClosed()

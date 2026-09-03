@@ -1,4 +1,5 @@
 #include "render.hpp"
+#include "stream.hpp"
 #include <fstream>
 
 namespace PWEngine::Render 
@@ -21,7 +22,7 @@ namespace PWEngine::Render
         return buffer;
     }
 
-    VkShaderModule createShaderModule(const std::vector<char>& code, VkDevice device) {
+    std::optional<VkShaderModule> createShaderModule(const std::vector<char>& code, VkDevice device) {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         createInfo.codeSize = code.size();
@@ -29,13 +30,11 @@ namespace PWEngine::Render
 
         VkShaderModule shaderModule;
         if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create shader module!");
+            return std::nullopt;
         }
 
         return shaderModule;
     }
-
-    
 
     Pipeline* RenderPass::createPipeline()
     {   
@@ -45,8 +44,11 @@ namespace PWEngine::Render
         auto vertShaderCode = readFile("./shaders/vert.spv");
         auto fragShaderCode = readFile("./shaders/frag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, this->p_device->ptr);
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, this->p_device->ptr);
+        auto _vertShaderModule = createShaderModule(vertShaderCode, this->p_device->ptr);
+        auto _fragShaderModule = createShaderModule(fragShaderCode, this->p_device->ptr);
+
+        VkShaderModule vertShaderModule = _vertShaderModule.value();
+        VkShaderModule fragShaderModule = _fragShaderModule.value();
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -122,7 +124,7 @@ namespace PWEngine::Render
         pipelineLayoutInfo.pushConstantRangeCount = 0;
 
         if (vkCreatePipelineLayout(this->p_device->ptr, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create pipeline layout!");
+            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -143,6 +145,7 @@ namespace PWEngine::Render
 
         if (vkCreateGraphicsPipelines(this->p_device->ptr, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
+            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
         }
 
         vkDestroyShaderModule(this->p_device->ptr, fragShaderModule, nullptr);
@@ -152,6 +155,13 @@ namespace PWEngine::Render
         self->graphics_pipeline = graphics_pipeline;
         self->pipeline_layout = pipeline_layout;
         self->p_render_pass = this;
+        this->pipelines.push_back(self);
         return self;
+    }
+
+    Pipeline::~Pipeline()
+    {
+        vkDestroyPipeline(this->p_render_pass->p_device->ptr, this->graphics_pipeline, nullptr);
+        vkDestroyPipelineLayout(this->p_render_pass->p_device->ptr, this->pipeline_layout, nullptr);
     }
 }
