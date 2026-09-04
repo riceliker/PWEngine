@@ -1,4 +1,5 @@
 #include "render.hpp"
+#include "impl.hpp"
 #include "stream.hpp"
 #include "utils.hpp"
 
@@ -13,16 +14,16 @@ namespace PWEngine::Render
             info.size.x, info.size.y, info.title.c_str(), nullptr, nullptr);
         
         VkSurfaceKHR surface;
-        if (glfwCreateWindowSurface(this->p_instance->ptr, window, nullptr, &surface) !=
+        if (glfwCreateWindowSurface(this->self->p_instance->self->ptr, window, nullptr, &surface) !=
             VK_SUCCESS)
         {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
+            Stream::log(this->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
         }
         Window* self = new Window();
         self->ptr = window;
         self->surface = surface;
         self->p_device = this;
-        this->windows.push_back(self);
+        this->self->windows.push_back(self);
         return self;
     }
 
@@ -33,7 +34,7 @@ namespace PWEngine::Render
             delete swapchain;
         }
 
-        vkDestroySurfaceKHR(this->p_device->p_instance->ptr, surface, nullptr);
+        vkDestroySurfaceKHR(this->p_device->self->p_instance->self->ptr, surface, nullptr);
         glfwDestroyWindow(this->ptr);
     }
 

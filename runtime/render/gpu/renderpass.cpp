@@ -1,4 +1,5 @@
 #include "render.hpp"
+#include "impl.hpp"
 
 namespace PWEngine::Render
 {
@@ -41,14 +42,14 @@ namespace PWEngine::Render
         renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
-        if (vkCreateRenderPass(this->ptr, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create render pass!");
+        if (vkCreateRenderPass(this->self->ptr, &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS) {
+            Stream::log(this->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create render pass!");
         }
 
         RenderPass* self = new RenderPass;
         self->ptr = renderPass;
         self->p_device = this;
-        this->render_passes.push_back(self);
+        this->self->render_passes.push_back(self);
         return self;
     }
 
@@ -58,6 +59,6 @@ namespace PWEngine::Render
         {
             delete pipeline;
         }
-        vkDestroyRenderPass(this->p_device->ptr, this->ptr, nullptr);
+        vkDestroyRenderPass(this->p_device->self->ptr, this->ptr, nullptr);
     }
 }

@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <stdexcept>
+#include <functional>
 
 namespace PWEngine::Render
 {
@@ -116,7 +117,7 @@ namespace PWEngine::Render
         std::vector<VkFramebuffer> swapchain_framebuffers;
 
         swapchain_supportDetails swapchain_support =
-            querySwapchainSupport(this->p_device->adapter, this->surface);
+            querySwapchainSupport(this->p_device->self->p_adapter, this->surface);
 
         VkSurfaceFormatKHR availableFormat;
         availableFormat.format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -146,7 +147,7 @@ namespace PWEngine::Render
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = findQueueFamilies(this->p_device->adapter);
+        QueueFamilyIndices indices = findQueueFamilies(this->p_device->self->p_adapter);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value()};
 
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -160,15 +161,15 @@ namespace PWEngine::Render
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(
-                this->p_device->ptr, &create_info, nullptr, &swapchain) != VK_SUCCESS)
+                this->p_device->self->ptr, &create_info, nullptr, &swapchain) != VK_SUCCESS)
         {
-            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
+            Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
         }
 
-        vkGetSwapchainImagesKHR(this->p_device->ptr, swapchain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(this->p_device->self->ptr, swapchain, &image_count, nullptr);
         swapchain_images.resize(image_count);
         vkGetSwapchainImagesKHR(
-            this->p_device->ptr, swapchain, &image_count, swapchain_images.data());
+            this->p_device->self->ptr, swapchain, &image_count, swapchain_images.data());
 
         swapchain_image_format = surfaceFormat.format;
         swapchain_extent = extent;
@@ -191,8 +192,8 @@ namespace PWEngine::Render
             create_info.subresourceRange.baseArrayLayer = 0;
             create_info.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(this->p_device->ptr, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
-                Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");
+            if (vkCreateImageView(this->p_device->self->ptr, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
+                Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");
             }
         }
 
@@ -214,8 +215,8 @@ namespace PWEngine::Render
             framebufferInfo.height = swapchain_extent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(render_pass->p_device->ptr, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
-                Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create framebuffer!");
+            if (vkCreateFramebuffer(render_pass->p_device->self->ptr, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
+                Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create framebuffer!");
             }
             
         }
@@ -236,68 +237,52 @@ namespace PWEngine::Render
     Swapchain::~Swapchain()
     {
         for (auto framebuffer : this->swapchain_framebuffers) {
-            vkDestroyFramebuffer(this->p_window->p_device->ptr, framebuffer, nullptr);
+            vkDestroyFramebuffer(this->p_window->p_device->self->ptr, framebuffer, nullptr);
         }
     }
 
-    void recordCommandBuffer(Stream::LogSystem* log, VkExtent2D swapChainExtent, VkRenderPass renderPass, std::vector<VkFramebuffer> swapChainFramebuffers, VkPipeline graphicsPipeline, VkCommandBuffer commandBuffer, uint32_t imageIndex) {
+    void Swapchain::submit(RenderPass* render_pass, CommandBuffer* command_buffer, Sync* sync, std::function<void(CommandBuffer* cmd)> func)
+    {
+        /* reset */
+        if (render_pass->p_device->self->ptr != command_buffer->p_pool->p_device->self->ptr || render_pass->p_device->self->ptr != sync->p_device->self->ptr)
+        {
+            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "you must use same device!");
+        }
+        uint32_t imageIndex;
+        vkAcquireNextImageKHR(this->p_window->p_device->self->ptr, swapchain, UINT64_MAX, sync->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+        vkResetCommandBuffer(command_buffer->ptr, /*VkCommandBufferResetFlagBits*/ 0);
+        /* record */
+
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            Stream::log(log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
+        if (vkBeginCommandBuffer(command_buffer->ptr, &beginInfo) != VK_SUCCESS) {
+            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
         }
 
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderPass;
-        renderPassInfo.framebuffer = swapChainFramebuffers[imageIndex];
+        renderPassInfo.renderPass = render_pass->ptr;
+        renderPassInfo.framebuffer = this->swapchain_framebuffers[imageIndex];
         renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = swapChainExtent;
+        renderPassInfo.renderArea.extent = this->swapchain_extent;
 
         VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
-        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(command_buffer->ptr, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+        func(command_buffer);
 
-        VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = static_cast<float>(swapChainExtent.width);
-        viewport.height = static_cast<float>(swapChainExtent.height);
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+        vkCmdEndRenderPass(command_buffer->ptr);
 
-        VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = swapChainExtent;
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-
-        vkCmdEndRenderPass(commandBuffer);
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            Stream::log(log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to record command buffer!");
+        if (vkEndCommandBuffer(command_buffer->ptr) != VK_SUCCESS) {
+            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to record command buffer!");
         }
-    }
 
-    void Swapchain::submit(Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync)
-    {
-        if (pipeline->p_render_pass->p_device != command_buffer->p_pool->p_device || pipeline->p_render_pass->p_device != sync->p_device)
-        {
-            Stream::log(this->p_window->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "you must use same device!");
-        }
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(this->p_window->p_device->ptr, swapchain, UINT64_MAX, sync->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
-
-        vkResetCommandBuffer(command_buffer->commandBuffer, /*VkCommandBufferResetFlagBits*/ 0);
-        recordCommandBuffer(this->p_window->p_device->p_instance->log, this->swapchain_extent, pipeline->p_render_pass->ptr, this->swapchain_framebuffers, pipeline->graphics_pipeline, command_buffer->commandBuffer, imageIndex);
-
+        /* submit*/
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
@@ -308,14 +293,14 @@ namespace PWEngine::Render
         submitInfo.pWaitDstStageMask = waitStages;
 
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &command_buffer->commandBuffer;
+        submitInfo.pCommandBuffers = &command_buffer->ptr;
 
         VkSemaphore signalSemaphores[] = {sync->renderFinishedSemaphore};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(this->p_window->p_device->graphics_queue, 1, &submitInfo, sync->inFlightFence) != VK_SUCCESS) {
-            Stream::log(this->p_window->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
+        if (vkQueueSubmit(this->p_window->p_device->self->graphics_queue, 1, &submitInfo, sync->inFlightFence) != VK_SUCCESS) {
+            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
         }
 
         VkPresentInfoKHR presentInfo{};
@@ -330,6 +315,6 @@ namespace PWEngine::Render
 
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(this->p_window->p_device->graphics_queue, &presentInfo);
+        vkQueuePresentKHR(this->p_window->p_device->self->graphics_queue, &presentInfo);
     }
 } // namespace PWEngine::Render

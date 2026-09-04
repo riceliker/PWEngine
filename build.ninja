@@ -31,7 +31,8 @@ build $obj/PWEngine/runtime/render/gpu/device.o: compile runtime/render/gpu/devi
 build $obj/PWEngine/runtime/render/gpu/pipeline.o: compile runtime/render/gpu/pipeline.cpp
 build $obj/PWEngine/runtime/render/gpu/swapchain.o: compile runtime/render/gpu/swapchain.cpp
 build $obj/PWEngine/runtime/render/gpu/instance.o: compile runtime/render/gpu/instance.cpp
+build $obj/PWEngine/runtime/render/gpu/vertex.o: compile runtime/render/gpu/vertex.cpp
 build $obj/PWEngine/runtime/utils/vec.o: compile runtime/utils/vec.cpp
 build $obj/PWEngine/runtime/main.o: compile runtime/main.cpp
-build $bin: binary $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/gpu/window.o $obj/PWEngine/runtime/render/gpu/renderpass.o $obj/PWEngine/runtime/render/gpu/command.o $obj/PWEngine/runtime/render/gpu/sync.o $obj/PWEngine/runtime/render/gpu/device.o $obj/PWEngine/runtime/render/gpu/pipeline.o $obj/PWEngine/runtime/render/gpu/swapchain.o $obj/PWEngine/runtime/render/gpu/instance.o $obj/PWEngine/runtime/utils/vec.o $obj/PWEngine/runtime/main.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: binary $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/gpu/window.o $obj/PWEngine/runtime/render/gpu/renderpass.o $obj/PWEngine/runtime/render/gpu/command.o $obj/PWEngine/runtime/render/gpu/sync.o $obj/PWEngine/runtime/render/gpu/device.o $obj/PWEngine/runtime/render/gpu/pipeline.o $obj/PWEngine/runtime/render/gpu/swapchain.o $obj/PWEngine/runtime/render/gpu/instance.o $obj/PWEngine/runtime/render/gpu/vertex.o $obj/PWEngine/runtime/utils/vec.o $obj/PWEngine/runtime/main.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin

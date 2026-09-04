@@ -1,4 +1,5 @@
 #include "checker.hpp"
+#include "impl.hpp"
 #include "render.hpp"
 #include <set>
 
@@ -97,13 +98,14 @@ namespace PWEngine::Render
         ██░ ▓██  ██  ███ ▒██       ███████▒
     */
 
+    Device::Device(): self(std::make_unique<Impl>()){}
 
     Device* Instance::GetBestDevice()
     {
-        VkPhysicalDevice adapter = this->adapters[0];
+        VkPhysicalDevice adapter = this->self->adapters[0];
         if (adapter == VK_NULL_HANDLE)
         {
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
+            Stream::log(this->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
         }
 
         VkDevice device;
@@ -140,46 +142,46 @@ namespace PWEngine::Render
                 adapter, &device_create_info, nullptr, &device) !=
             VK_SUCCESS)
         {
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
+            Stream::log(this->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
         }
 
         vkGetDeviceQueue(
             device, indices.graphicsFamily.value(), 0, &graphics_queue);
 
-        Device* self = new Device();
-        self->ptr = device;
-        self->adapter = adapter;
-        self->graphics_queue = graphics_queue;
-        self->p_instance = this;
-        this->devices.push_back(self);
-        return self;
+        Device* obj = new Device();
+        obj->self->ptr = device;
+        obj->self->graphics_queue = graphics_queue;
+        obj->self->p_instance = this;
+        obj->self->p_adapter = adapter;
+        this->self->devices.push_back(obj);
+        return obj;
     }
 
     Device::~Device()
     {
-        for (const auto& sync : syncs)
+        for (const auto& sync : this->self->syncs)
         {
             delete sync;
         }
-        for (const auto& command_pool : command_pools)
+        for (const auto& command_pool : this->self->command_pools)
         {
             delete command_pool;
         }
-        for (const auto& render_pass: render_passes)
+        for (const auto& render_pass: this->self->render_passes)
         {
             delete render_pass;
         }
-        for (const auto& window: windows)
+        for (const auto& window: this->self->windows)
         {
             delete window;
         }
 
-        vkDestroyDevice(this->ptr, nullptr);
+        vkDestroyDevice(this->self->ptr, nullptr);
 
     }
 
     void Device::waitIdle()
     {
-        vkDeviceWaitIdle(this->ptr);
+        vkDeviceWaitIdle(this->self->ptr);
     }
 } // namespace PWEngine::Render

@@ -22,7 +22,15 @@ int main()
     auto device = instance.GetBestDevice();
     auto window = device->createWindow(window_info);
     auto render_pass = device->createRenderPass();
-    auto pipeline = render_pass->createPipeline();
+    
+    const std::vector<PWEngine::Render::Vertex> vertices = {
+    {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
+    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    };
+    auto vertex_buffer = device->createVertexBuffer(vertices);
+
+    auto pipeline = render_pass->createPipeline(vertices[0]);
     auto swapchain = window->createSwapchain(render_pass);
     auto cmd_pool = device->createCommandPool();
     auto cmd_buf = cmd_pool->createBuffer();
@@ -32,7 +40,12 @@ int main()
     {
         glfwPollEvents();
         sync->wait(device);
-        swapchain->submit(pipeline, cmd_buf, sync);
+        swapchain->submit(render_pass, cmd_buf, sync, [&](auto cmd){
+            cmd->bindPipeline(pipeline);
+            cmd->setViewPort(swapchain);
+            cmd->setScissor(swapchain);
+            cmd->addVertexBuffer(vertex_buffer);
+        });
     }
     device->waitIdle();
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "stream.hpp"
 #include <cstdint>
+#include <memory>
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
@@ -10,6 +11,8 @@
 
 #include <string>
 #include <vector>
+#include <functional>
+#include <memory>
 
 #include "utils.hpp"
 
@@ -22,7 +25,27 @@ friend class Pipeline; \
 friend class Swapchain; \
 friend class CommandPool; \
 friend class CommandBuffer; \
-friend class Sync;
+friend class Sync; \
+friend class VertexBuffer;
+
+
+namespace PWEngine::Render 
+{
+    class Vertex
+    {
+    private:    
+        Utils::Vec2<float> position;
+        Utils::Vec3<float> color;
+        static VkVertexInputBindingDescription getBindingDescription();
+        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
+    public:
+        Vertex(Utils::Vec2<float> position, Utils::Vec3<float> color):position(position),color(color){};
+        friend class RenderPass;
+    };
+
+    
+}
+
 
 /*
 ----- GPU Module -----
@@ -61,6 +84,7 @@ namespace PWEngine::Render
     class Instance;
     class Device;
     class Window;
+    class VertexBuffer;
     class RenderPass;
     class Pipeline;
     class Swapchain;
@@ -70,19 +94,9 @@ namespace PWEngine::Render
 
     class Instance
     {
-    private:
-        /* Log */
-        Stream::LogSystem* log;
-        /* self */
-        bool is_debug = false;
-        VkInstance ptr;
-        VkDebugUtilsMessengerEXT debug_messenger;
-        std::vector<VkPhysicalDevice> adapters;
-        std::vector<Device*> devices;
-        /* func */
-        void createInstance(InstanceInfo info);
-        void getAllAdapter();
     public:
+        struct Impl;
+        std::unique_ptr<Impl> self;
         Instance(InstanceInfo info, Stream::LogSystem* log);
         ~Instance();
         Device* GetBestDevice();
@@ -94,25 +108,16 @@ namespace PWEngine::Render
     */
     class Device
     {
-    private:
-        /* owner */
-        Instance* p_instance;
-        /* manger */
-        std::vector<Window*> windows;
-        std::vector<RenderPass*> render_passes;
-        std::vector<CommandPool*> command_pools;
-        std::vector<Sync*> syncs;
-        /* self */
-        VkPhysicalDevice adapter;
-        VkDevice ptr;
-        VkQueue graphics_queue;
-        void registryWindow();
     public:
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Device();
         ~Device();
         Window* createWindow(WindowInfo info);
         RenderPass* createRenderPass();
         CommandPool* createCommandPool();
         Sync* createSync();
+        VertexBuffer* createVertexBuffer(std::vector<Vertex> vertices);
         void waitIdle();
         __PWEngine_Render_Friend_Class_Define()
     };
@@ -136,6 +141,20 @@ namespace PWEngine::Render
         bool isClosed();
         __PWEngine_Render_Friend_Class_Define()
     };
+
+    class VertexBuffer
+    {
+    private:
+        /* owner */
+        Device* p_device;
+        std::vector<Vertex> vertices;
+        /* self*/
+        VkBuffer vertexBuffer;
+        VkDeviceMemory vertexBufferMemory;
+        ~VertexBuffer();
+    public:
+        __PWEngine_Render_Friend_Class_Define()
+    };
     /*
         Owner: Device
         Manager: Pipeline
@@ -150,7 +169,7 @@ namespace PWEngine::Render
         std::vector<Pipeline*> pipelines;
     public:
         ~RenderPass();
-        Pipeline* createPipeline();
+        Pipeline* createPipeline(Vertex vertex);
         __PWEngine_Render_Friend_Class_Define()
     };
 
@@ -181,7 +200,7 @@ namespace PWEngine::Render
         std::vector<VkFramebuffer> swapchain_framebuffers;
     public:
         ~Swapchain();
-        void submit(Pipeline* pipeline, CommandBuffer* command_buffer, Sync* sync);
+        void submit(RenderPass* render_pass, CommandBuffer* command_buffer, Sync* sync, std::function<void(CommandBuffer* cmd)> func);
         __PWEngine_Render_Friend_Class_Define()
     };
 
@@ -191,7 +210,7 @@ namespace PWEngine::Render
         /* owner */
         Device* p_device;
         /* self */
-        VkCommandPool command_pool;
+        VkCommandPool ptr;
         std::vector<CommandBuffer*> command_buffers;
     public:
         ~CommandPool();
@@ -203,8 +222,12 @@ namespace PWEngine::Render
     {
     private:
         CommandPool* p_pool;
-        VkCommandBuffer commandBuffer;
+        VkCommandBuffer ptr;
     public:
+        void bindPipeline(Pipeline* pipeline);
+        void setViewPort(Swapchain* swapchain);
+        void setScissor(Swapchain* swapchain);
+        void addVertexBuffer(VertexBuffer* vertex_buffer);
         __PWEngine_Render_Friend_Class_Define()
     };
 
@@ -222,12 +245,6 @@ namespace PWEngine::Render
         void wait(Device* device);
         __PWEngine_Render_Friend_Class_Define()
     };
-
-    
-    
 }
 
-namespace PWEngine::Render 
-{
-    
-}
+

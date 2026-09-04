@@ -1,4 +1,5 @@
 #include "render.hpp"
+#include "impl.hpp"
 #include "stream.hpp"
 #include <fstream>
 
@@ -36,16 +37,17 @@ namespace PWEngine::Render
         return shaderModule;
     }
 
-    Pipeline* RenderPass::createPipeline()
+    Pipeline* RenderPass::createPipeline(Vertex vertex)
     {   
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
 
+        /* shader */
         auto vertShaderCode = readFile("./shaders/vert.spv");
         auto fragShaderCode = readFile("./shaders/frag.spv");
 
-        auto _vertShaderModule = createShaderModule(vertShaderCode, this->p_device->ptr);
-        auto _fragShaderModule = createShaderModule(fragShaderCode, this->p_device->ptr);
+        auto _vertShaderModule = createShaderModule(vertShaderCode, this->p_device->self->ptr);
+        auto _fragShaderModule = createShaderModule(fragShaderCode, this->p_device->self->ptr);
 
         VkShaderModule vertShaderModule = _vertShaderModule.value();
         VkShaderModule fragShaderModule = _fragShaderModule.value();
@@ -64,10 +66,16 @@ namespace PWEngine::Render
 
         VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
+        auto bindingDescription = Vertex::getBindingDescription();
+        auto attributeDescriptions = Vertex::getAttributeDescriptions();
+
+        /* Vertex */
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 0;
-        vertexInputInfo.vertexAttributeDescriptionCount = 0;
+        vertexInputInfo.vertexBindingDescriptionCount = 1;
+        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+        vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+        vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -123,8 +131,8 @@ namespace PWEngine::Render
         pipelineLayoutInfo.setLayoutCount = 0;
         pipelineLayoutInfo.pushConstantRangeCount = 0;
 
-        if (vkCreatePipelineLayout(this->p_device->ptr, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
+        if (vkCreatePipelineLayout(this->p_device->self->ptr, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
+            Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
 
         VkGraphicsPipelineCreateInfo pipelineInfo{};
@@ -143,13 +151,13 @@ namespace PWEngine::Render
         pipelineInfo.subpass = 0;
         pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-        if (vkCreateGraphicsPipelines(this->p_device->ptr, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+        if (vkCreateGraphicsPipelines(this->p_device->self->ptr, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
-            Stream::log(this->p_device->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
+            Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
         }
 
-        vkDestroyShaderModule(this->p_device->ptr, fragShaderModule, nullptr);
-        vkDestroyShaderModule(this->p_device->ptr, vertShaderModule, nullptr);
+        vkDestroyShaderModule(this->p_device->self->ptr, fragShaderModule, nullptr);
+        vkDestroyShaderModule(this->p_device->self->ptr, vertShaderModule, nullptr);
 
         Pipeline* self = new Pipeline();
         self->graphics_pipeline = graphics_pipeline;
@@ -161,7 +169,7 @@ namespace PWEngine::Render
 
     Pipeline::~Pipeline()
     {
-        vkDestroyPipeline(this->p_render_pass->p_device->ptr, this->graphics_pipeline, nullptr);
-        vkDestroyPipelineLayout(this->p_render_pass->p_device->ptr, this->pipeline_layout, nullptr);
+        vkDestroyPipeline(this->p_render_pass->p_device->self->ptr, this->graphics_pipeline, nullptr);
+        vkDestroyPipelineLayout(this->p_render_pass->p_device->self->ptr, this->pipeline_layout, nullptr);
     }
 }
