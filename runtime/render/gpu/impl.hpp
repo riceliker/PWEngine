@@ -1,37 +1,41 @@
 #pragma once
 #include "render.hpp"
+#include <cstddef>
+#include <vector>
 
-namespace PWEngine::Render 
+namespace PWEngine::Render
 {
     struct Instance::Impl
     {
-        /* Log */
-        Stream::LogSystem* log;
-        /* self */
         bool is_debug = false;
-        VkInstance ptr;
+        VkInstance instance;
         VkDebugUtilsMessengerEXT debug_messenger;
         std::vector<VkPhysicalDevice> adapters;
-        std::vector<Device*> devices;
-        /* func */
-        void createInstance(InstanceInfo info);
-        void getAllAdapter();
+         
     };
 
-    struct Device::Impl
+    struct RenderContext::Impl
     {
-        /* owner */
-        Instance* p_instance;
-        VkPhysicalDevice p_adapter;
-        /* manger */
-        std::vector<Window*> windows;
-        std::vector<RenderPass*> render_passes;
-        std::vector<CommandPool*> command_pools;
-        std::vector<Sync*> syncs;
-        std::vector<VertexBuffer*> vertex_buffers;
-        /* self */
-        VkDevice ptr;
+        VkPhysicalDevice adapter;
+        VkDevice device;
         VkQueue graphics_queue;
-        void registryWindow();
+        GLFWwindow* window;
+        VkSurfaceKHR surface;
+        std::vector<VkRenderPass> render_passes;
+
+        size_t currect_render_pass_index;
+        VkSwapchainKHR swapchain;
+        std::vector<VkImage> swapchain_images;
+        VkFormat swapchain_image_format;
+        VkExtent2D swapchain_extent;
+        std::vector<VkImageView> swapchain_image_views;
+        std::vector<VkFramebuffer> swapchain_framebuffers;
+
+        std::vector<VkSemaphore> image_available_semaphores;
+        std::vector<VkSemaphore> render_finished_semaphores;
+        std::vector<VkFence> in_flight_fences;
+
+        VkCommandPool command_pool;
+        std::vector<VkCommandBuffer> command_buffers;
     };
 }

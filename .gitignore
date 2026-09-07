@@ -3,6 +3,7 @@
 .vscode/
 
 build/
+build.ninja
 
 .clangd
 .ninja_deps

@@ -9,80 +9,40 @@
 namespace PWEngine::Render
 {
     const std::vector<const char*> validation_layers = {
-        "VK_LAYER_KHRONOS_validation"};
-
-    static inline std::vector<const char*> GetRequiredExtensions(bool is_debug)
-    {
-        uint32_t glfwExtensionCount = 0;
-        const char** glfwExtensions;
-        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-
-        std::vector<const char*> extensions(
-            glfwExtensions, glfwExtensions + glfwExtensionCount);
-
-        if (is_debug)
-        {
-            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-        }
-
-        return extensions;
-    }
+        "VK_LAYER_KHRONOS_validation"
+    };
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL
-    debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-                  VkDebugUtilsMessageTypeFlagsEXT messageType,
-                  const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-                  void* pUserData)
+    debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
-        std::cerr << "validation layer: " << pCallbackData->pMessage
-                  << std::endl;
-
+        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
         return VK_FALSE;
     }
 
-    static inline void PopulateDebugMessengerCreateInfo(
-        VkDebugUtilsMessengerCreateInfoEXT& create_info)
+    static inline VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
     {
-        create_info = {};
-        create_info.sType =
-            VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        create_info.messageSeverity =
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        create_info.messageType =
-            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
-            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        create_info.pfnUserCallback = debugCallback;
-    }
-
-    static inline VkResult CreateDebugUtilsMessengerEXT(
-        VkInstance instance,
-        const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-        const VkAllocationCallbacks* pAllocator,
-        VkDebugUtilsMessengerEXT* pDebugMessenger)
-    {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
-            instance, "vkCreateDebugUtilsMessengerEXT");
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
         if (func != nullptr)
-        {
             return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-        }
         else
-        {
             return VK_ERROR_EXTENSION_NOT_PRESENT;
-        }
     }
 
-    static inline void CheckValidationLayer(Stream::LogSystem* log)
+    /*
+        ██░ ▓███    ████ ▒███████  ██▒
+        ██░ ▓████  █████ ▒██   ▒██ ██▒
+        ██░ ▓██▒██▓█▒███ ▒███████  ██▒
+        ██░ ▓██ ████ ███ ▒██       ██▒
+        ██░ ▓██  ██  ███ ▒██       ███████▒
+    */
+
+    bool Instance::checkValidationLayer()
     {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
         std::vector<VkLayerProperties> available_layers(layer_count);
-        vkEnumerateInstanceLayerProperties(&layer_count,
-                                           available_layers.data());
+        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
         for (const char* layer_name : validation_layers)
         {
@@ -99,35 +59,17 @@ namespace PWEngine::Render
 
             if (!layer_found)
             {
-                Stream::log(log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
+                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
+                return false;
             }
         }
+        return true;
     }
 
-    /*
-        ██░ ▓███    ████ ▒███████  ██▒
-        ██░ ▓████  █████ ▒██   ▒██ ██▒
-        ██░ ▓██▒██▓█▒███ ▒███████  ██▒
-        ██░ ▓██ ████ ███ ▒██       ██▒
-        ██░ ▓██  ██  ███ ▒██       ███████▒
-    */
-
-    Instance::Instance(InstanceInfo info, Stream::LogSystem* log): self(std::make_unique<Impl>())
+    void Instance::createInstance(InstanceInfo info)
     {
-        this->self->log = log; 
-        glfwInit();
-        this->self->createInstance(info);
-        this->self->getAllAdapter();
-    }
-
-    void Instance::Impl::createInstance(InstanceInfo info)
-    {
-        /* create vulkan instance */
         VkInstance instance;
 
-        this->is_debug = info.is_debug;
-        if (info.is_debug)
-            CheckValidationLayer(this->log);
         /* application */
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -142,7 +84,15 @@ namespace PWEngine::Render
         instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
         instance_create_info.pApplicationInfo = &app_info;
         /* vulkan extensions */
-        auto extensions = GetRequiredExtensions(info.is_debug);
+        uint32_t glfw_extension_count = 0;
+        const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+
+        std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+
+        if (info.is_debug)
+        {
+            extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        }
         #if (__APPLE__)
             extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
             extensions.emplace_back(
@@ -154,62 +104,58 @@ namespace PWEngine::Render
             static_cast<uint32_t>(extensions.size());
         instance_create_info.ppEnabledExtensionNames = extensions.data();
         /* debug layer */
-        VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+       
         if (info.is_debug)
         {
-            instance_create_info.enabledLayerCount =
-                static_cast<uint32_t>(validation_layers.size());
+            instance_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
             instance_create_info.ppEnabledLayerNames = validation_layers.data();
 
-            PopulateDebugMessengerCreateInfo(debug_create_info);
-            instance_create_info.pNext =
-                (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
+            VkDebugUtilsMessengerCreateInfoEXT debug_create_info{};
+            debug_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+            debug_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+            debug_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+            debug_create_info.pfnUserCallback = debugCallback;
+
+            instance_create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
         }
         else
         {
             instance_create_info.enabledLayerCount = 0;
-
             instance_create_info.pNext = nullptr;
         }
         /* make instance */
-        if (vkCreateInstance(&instance_create_info, nullptr, &instance) !=
-            VK_SUCCESS)
-        {
+        if (vkCreateInstance(&instance_create_info, nullptr, &instance) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create instance!");
-        }
-        /* make debug layer */
-        if (info.is_debug)
-        {
-            VkDebugUtilsMessengerCreateInfoEXT debug_util_message_create_info;
-            PopulateDebugMessengerCreateInfo(debug_util_message_create_info);
 
-            if (CreateDebugUtilsMessengerEXT(instance,
-                                             &debug_util_message_create_info,
-                                             nullptr,
-                                             &(this->debug_messenger)) != VK_SUCCESS)
-            {
-                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to set up debug messenger!");
-            }
-        }
-
-        this->ptr = instance;
+        this->self->instance = instance;
     }
 
-    void Instance::Impl::getAllAdapter()
+    void Instance::getBestAdapter()
     {
         /* find all physics device */
         uint32_t adapter_count = 0;
-        vkEnumeratePhysicalDevices(this->ptr, &adapter_count, nullptr);
+        vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, nullptr);
 
         if (adapter_count == 0)
-        {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to find GPUs with Vulkan support!");
-        }
 
-        std::vector<VkPhysicalDevice> devices(adapter_count);
-        vkEnumeratePhysicalDevices(this->ptr, &adapter_count, devices.data());
-                
-        this->adapters = devices;
+        std::vector<VkPhysicalDevice> adapters(adapter_count);
+        vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, adapters.data());
+
+        this->self->adapters = adapters;
+    }
+
+    Instance::Instance(InstanceInfo info, Stream::LogSystem* log): self(std::make_unique<Impl>())
+    {
+        glfwInit();
+
+        bool is_debug = info.is_debug;
+        if (is_debug)
+            is_debug = this->checkValidationLayer();
+
+        this->createInstance(info);
+
+        this->getBestAdapter();
     }
 
     static inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
@@ -221,14 +167,15 @@ namespace PWEngine::Render
 
     Instance::~Instance()
     {
-        for (const auto& device: this->self->devices)
+        for (const auto& context: this->context_list)
         {
-            delete device;
+            delete context;
         }
-        if (this->self->is_debug) {
-            DestroyDebugUtilsMessengerEXT(this->self->ptr, this->self->debug_messenger, nullptr);
+        if (this->self->is_debug) 
+        {
+            DestroyDebugUtilsMessengerEXT(this->self->instance, this->self->debug_messenger, nullptr);
         }
-        vkDestroyInstance(this->self->ptr, nullptr);
+        vkDestroyInstance(this->self->instance, nullptr);
     }
 
 } // namespace PWEngine::Render

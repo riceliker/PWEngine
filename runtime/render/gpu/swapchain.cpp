@@ -1,113 +1,15 @@
-#include "checker.hpp"
 #include "render.hpp"
+#include "impl.hpp"
+#include "check.hpp"
 #include "stream.hpp"
-#include <algorithm>
 #include <cstddef>
-#include <stdexcept>
-#include <functional>
+
 
 namespace PWEngine::Render
 {
-    struct swapchain_supportDetails
+    void RenderContext::createSwapchain(size_t render_pass_index)
     {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-    };
-
-    swapchain_supportDetails querySwapchainSupport(VkPhysicalDevice device,
-                                                  VkSurfaceKHR surface)
-    {
-        swapchain_supportDetails details;
-
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(
-            device, surface, &details.capabilities);
-
-        uint32_t format_count;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(
-            device, surface, &format_count, nullptr);
-        
-        if (format_count != 0)
-        {
-            details.formats.resize(format_count);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(
-                device, surface, &format_count, details.formats.data());
-        }
-
-        bool is_support_rgba = false;
-        for (const auto format : details.formats)
-        {
-            if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace ==VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-            {
-                is_support_rgba = true;
-            }
-        }
-        if (!is_support_rgba)
-        {
-            std::runtime_error("you device is not support rgba");
-        }
-
-        uint32_t present_mode_count;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(
-            device, surface, &present_mode_count, nullptr);
-
-        if (present_mode_count != 0)
-        {
-            details.presentModes.resize(present_mode_count);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(
-                device,
-                surface,
-                &present_mode_count,
-                details.presentModes.data());
-        }
-
-        return details;
-    }
-
-    VkPresentModeKHR chooseSwapPresentMode(
-        const std::vector<VkPresentModeKHR>& available_present_modes)
-    {
-        for (const auto& available_present_mode : available_present_modes)
-        {
-            if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
-            {
-                return available_present_mode;
-            }
-        }
-
-        return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
-    VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities,
-                                GLFWwindow* window)
-    {
-        if (capabilities.currentExtent.width !=
-            std::numeric_limits<uint32_t>::max())
-        {
-            return capabilities.currentExtent;
-        }
-        else
-        {
-            int width, height;
-            glfwGetFramebufferSize(window, &width, &height);
-
-            VkExtent2D actual_extent = {static_cast<uint32_t>(width),
-                                       static_cast<uint32_t>(height)};
-
-            actual_extent.width = std::clamp(actual_extent.width,
-                                            capabilities.minImageExtent.width,
-                                            capabilities.maxImageExtent.width);
-            actual_extent.height =
-                std::clamp(actual_extent.height,
-                           capabilities.minImageExtent.height,
-                           capabilities.maxImageExtent.height);
-
-            return actual_extent;
-        }
-    }
-
-    Swapchain* Window::createSwapchain(RenderPass* render_pass)
-    {
+        VkRenderPass render_pass = this->self->render_passes.at(render_pass_index);
         /* swapchain */
         VkSwapchainKHR swapchain;
         std::vector<VkImage> swapchain_images;
@@ -116,38 +18,32 @@ namespace PWEngine::Render
         std::vector<VkImageView> swapchain_image_views;
         std::vector<VkFramebuffer> swapchain_framebuffers;
 
-        swapchain_supportDetails swapchain_support =
-            querySwapchainSupport(this->p_device->self->p_adapter, this->surface);
+        swapchain_supportDetails swapchain_support = querySwapchainSupport(this->self->adapter, this->self->surface);
 
-        VkSurfaceFormatKHR availableFormat;
-        availableFormat.format = VK_FORMAT_B8G8R8A8_SRGB;
-        availableFormat.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+        VkSurfaceFormatKHR available_format;
+        available_format.format = VK_FORMAT_B8G8R8A8_SRGB;
+        available_format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
-        VkSurfaceFormatKHR surfaceFormat = availableFormat;
-        VkPresentModeKHR presentMode =
-            chooseSwapPresentMode(swapchain_support.presentModes);
-        VkExtent2D extent =
-            chooseSwapExtent(swapchain_support.capabilities, this->ptr);
+        VkSurfaceFormatKHR surface_format = available_format;
+        VkPresentModeKHR present_mode = chooseSwapPresentMode(swapchain_support.presentModes);
+        VkExtent2D extent = chooseSwapExtent(this->self->window, swapchain_support.capabilities);
 
         uint32_t image_count = swapchain_support.capabilities.minImageCount + 1;
-        if (swapchain_support.capabilities.maxImageCount > 0 &&
-            image_count > swapchain_support.capabilities.maxImageCount)
-        {
+        if (swapchain_support.capabilities.maxImageCount > 0 && image_count > swapchain_support.capabilities.maxImageCount)
             image_count = swapchain_support.capabilities.maxImageCount;
-        }
 
         VkSwapchainCreateInfoKHR create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        create_info.surface = this->surface;
+        create_info.surface = this->self->surface;
 
         create_info.minImageCount = image_count;
-        create_info.imageFormat = surfaceFormat.format;
-        create_info.imageColorSpace = surfaceFormat.colorSpace;
+        create_info.imageFormat = surface_format.format;
+        create_info.imageColorSpace = surface_format.colorSpace;
         create_info.imageExtent = extent;
         create_info.imageArrayLayers = 1;
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-        QueueFamilyIndices indices = findQueueFamilies(this->p_device->self->p_adapter);
+        QueueFamilyIndices indices = findQueueFamilies(this->self->adapter);
         uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value()};
 
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -155,23 +51,19 @@ namespace PWEngine::Render
         create_info.preTransform =
             swapchain_support.capabilities.currentTransform;
         create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        create_info.presentMode = presentMode;
+        create_info.presentMode = present_mode;
         create_info.clipped = VK_TRUE;
 
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
-        if (vkCreateSwapchainKHR(
-                this->p_device->self->ptr, &create_info, nullptr, &swapchain) != VK_SUCCESS)
-        {
-            Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
-        }
+        if (vkCreateSwapchainKHR(this->self->device, &create_info, nullptr, &swapchain) != VK_SUCCESS)
+            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
 
-        vkGetSwapchainImagesKHR(this->p_device->self->ptr, swapchain, &image_count, nullptr);
+        vkGetSwapchainImagesKHR(this->self->device, swapchain, &image_count, nullptr);
         swapchain_images.resize(image_count);
-        vkGetSwapchainImagesKHR(
-            this->p_device->self->ptr, swapchain, &image_count, swapchain_images.data());
+        vkGetSwapchainImagesKHR(this->self->device, swapchain, &image_count, swapchain_images.data());
 
-        swapchain_image_format = surfaceFormat.format;
+        swapchain_image_format = surface_format.format;
         swapchain_extent = extent;
         /* Image View */
         swapchain_image_views.resize(swapchain_images.size());
@@ -192,8 +84,8 @@ namespace PWEngine::Render
             create_info.subresourceRange.baseArrayLayer = 0;
             create_info.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(this->p_device->self->ptr, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
-                Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");
+            if (vkCreateImageView(this->self->device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
+                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");
             }
         }
 
@@ -208,113 +100,49 @@ namespace PWEngine::Render
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            framebufferInfo.renderPass = render_pass->ptr;
+            framebufferInfo.renderPass = render_pass;
             framebufferInfo.attachmentCount = 1;
             framebufferInfo.pAttachments = attachments;
             framebufferInfo.width = swapchain_extent.width;
             framebufferInfo.height = swapchain_extent.height;
             framebufferInfo.layers = 1;
 
-            if (vkCreateFramebuffer(render_pass->p_device->self->ptr, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
-                Stream::log(this->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create framebuffer!");
+            if (vkCreateFramebuffer(this->self->device, &framebufferInfo, nullptr, &swapchain_framebuffers[i]) != VK_SUCCESS) {
+                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create framebuffer!");
             }
             
         }
-        
 
-        Swapchain* self = new Swapchain();
-        self->swapchain = swapchain;
-        self->swapchain_extent = swapchain_extent;
-        self->swapchain_image_format = swapchain_image_format;
-        self->swapchain_images = swapchain_images;
-        self->swapchain_image_views = swapchain_image_views;
-        self->swapchain_framebuffers = swapchain_framebuffers;
-        self->p_window = this;
-        this->swapchains.push_back(self);
-        return self;
+        this->self->currect_render_pass_index = index;
+        this->self->swapchain = swapchain;
+        this->self->swapchain_extent = swapchain_extent;
+        this->self->swapchain_image_format = swapchain_image_format;
+        this->self->swapchain_images = swapchain_images;
+        this->self->swapchain_image_views = std::move(swapchain_image_views);
+        this->self->swapchain_framebuffers = std::move(swapchain_framebuffers);
     }
 
-    Swapchain::~Swapchain()
+    void RenderContext::recreateSwapchain()
     {
-        for (auto framebuffer : this->swapchain_framebuffers) {
-            vkDestroyFramebuffer(this->p_window->p_device->self->ptr, framebuffer, nullptr);
-        }
-    }
-
-    void Swapchain::submit(RenderPass* render_pass, CommandBuffer* command_buffer, Sync* sync, std::function<void(CommandBuffer* cmd)> func)
-    {
-        /* reset */
-        if (render_pass->p_device->self->ptr != command_buffer->p_pool->p_device->self->ptr || render_pass->p_device->self->ptr != sync->p_device->self->ptr)
+        int width = 0, height = 0;
+        glfwGetFramebufferSize(this->self->window, &width, &height);
+        while (width == 0 || height == 0) 
         {
-            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "you must use same device!");
+            glfwGetFramebufferSize(this->self->window, &width, &height);
+            glfwWaitEvents();
         }
-        uint32_t imageIndex;
-        vkAcquireNextImageKHR(this->p_window->p_device->self->ptr, swapchain, UINT64_MAX, sync->imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        vkDeviceWaitIdle(this->self->device);
 
-        vkResetCommandBuffer(command_buffer->ptr, /*VkCommandBufferResetFlagBits*/ 0);
-        /* record */
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        if (vkBeginCommandBuffer(command_buffer->ptr, &beginInfo) != VK_SUCCESS) {
-            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
+        for (auto framebuffer : this->self->swapchain_framebuffers) {
+            vkDestroyFramebuffer(this->self->device, framebuffer, nullptr);
         }
 
-        VkRenderPassBeginInfo renderPassInfo{};
-        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = render_pass->ptr;
-        renderPassInfo.framebuffer = this->swapchain_framebuffers[imageIndex];
-        renderPassInfo.renderArea.offset = {0, 0};
-        renderPassInfo.renderArea.extent = this->swapchain_extent;
-
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        renderPassInfo.clearValueCount = 1;
-        renderPassInfo.pClearValues = &clearColor;
-
-        vkCmdBeginRenderPass(command_buffer->ptr, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-        func(command_buffer);
-
-        vkCmdEndRenderPass(command_buffer->ptr);
-
-        if (vkEndCommandBuffer(command_buffer->ptr) != VK_SUCCESS) {
-            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to record command buffer!");
+        for (auto imageView : this->self->swapchain_image_views) {
+            vkDestroyImageView(this->self->device, imageView, nullptr);
         }
 
-        /* submit*/
-        VkSubmitInfo submitInfo{};
-        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        vkDestroySwapchainKHR(this->self->device, this->self->swapchain, nullptr);
 
-        VkSemaphore waitSemaphores[] = {sync->imageAvailableSemaphore};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
-
-        submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &command_buffer->ptr;
-
-        VkSemaphore signalSemaphores[] = {sync->renderFinishedSemaphore};
-        submitInfo.signalSemaphoreCount = 1;
-        submitInfo.pSignalSemaphores = signalSemaphores;
-
-        if (vkQueueSubmit(this->p_window->p_device->self->graphics_queue, 1, &submitInfo, sync->inFlightFence) != VK_SUCCESS) {
-            Stream::log(this->p_window->p_device->self->p_instance->self->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
-        }
-
-        VkPresentInfoKHR presentInfo{};
-        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-        presentInfo.waitSemaphoreCount = 1;
-        presentInfo.pWaitSemaphores = signalSemaphores;
-
-        VkSwapchainKHR swapChains[] = {this->swapchain};
-        presentInfo.swapchainCount = 1;
-        presentInfo.pSwapchains = swapChains;
-
-        presentInfo.pImageIndices = &imageIndex;
-
-        vkQueuePresentKHR(this->p_window->p_device->self->graphics_queue, &presentInfo);
+        this->createSwapchain(this->self->currect_render_pass_index);
     }
 } // namespace PWEngine::Render

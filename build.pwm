@@ -16,10 +16,6 @@ $same($is_macos, "macos", __platform__)
     recursion_folder("runtime", ".cpp")
 ;
 
-# @files("test")
-#     recursion_folder("src", ",cpp")
-# ;
-
 @project("PWEngine", "binary")
     source_files("PWEngine")
     add_library(glfw_library)
@@ -29,8 +25,3 @@ $same($is_macos, "macos", __platform__)
     :fi
 ;
 :fi
-
-# @project("test", "binary")
-#     source_files("test")
-#     add_library(PWL_library_path)
-# ;

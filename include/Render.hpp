@@ -1,5 +1,6 @@
 #pragma once
 #include "stream.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 #define GLFW_INCLUDE_VULKAN
@@ -16,6 +17,8 @@
 
 #include "utils.hpp"
 
+#define MAX_FRAMES_IN_FLIGHT 8
+
 #define __PWEngine_Render_Friend_Class_Define() \
 friend class Instance; \
 friend class Device; \
@@ -26,24 +29,22 @@ friend class Swapchain; \
 friend class CommandPool; \
 friend class CommandBuffer; \
 friend class Sync; \
-friend class VertexBuffer;
+friend class VertexBuffer; \
+friend class PipelineCommand; \
+friend class SimpleTimeCommand;
 
 
 namespace PWEngine::Render 
 {
-    class Vertex
-    {
-    private:    
+    struct Vertex
+    {    
         Utils::Vec2<float> position;
         Utils::Vec3<float> color;
         static VkVertexInputBindingDescription getBindingDescription();
         static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
-    public:
         Vertex(Utils::Vec2<float> position, Utils::Vec3<float> color):position(position),color(color){};
         friend class RenderPass;
     };
-
-    
 }
 
 
@@ -82,127 +83,123 @@ namespace PWEngine::Render
     };
 
     class Instance;
+    class RenderContext;
     class Device;
     class Window;
     class VertexBuffer;
+    class Texture;
     class RenderPass;
     class Pipeline;
     class Swapchain;
     class CommandPool;
     class CommandBuffer;
+    class PipelineCommand;
+    class SimpleTimeCommand;
     class Sync;
+    class FrameSubmitCommand;
 
+    /*
+        The class control the vulkan instance.
+        Instance -> Device;
+    */
     class Instance
     {
+    private:
+        std::vector<RenderContext*> context_list;
+        bool checkValidationLayer();
+        void createInstance(InstanceInfo info);
+        void getBestAdapter();
     public:
+        /* Log */
+        Stream::LogSystem* log;
+        /* PImpl */
         struct Impl;
         std::unique_ptr<Impl> self;
+        /* Constructor */
         Instance(InstanceInfo info, Stream::LogSystem* log);
         ~Instance();
-        Device* GetBestDevice();
-        __PWEngine_Render_Friend_Class_Define()
-    };
-    /*
-        Owner: Instance
-        Manager: Window RenderPass CommandPool Sync
-    */
-    class Device
-    {
-    public:
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        Device();
-        ~Device();
-        Window* createWindow(WindowInfo info);
-        RenderPass* createRenderPass();
-        CommandPool* createCommandPool();
-        Sync* createSync();
-        VertexBuffer* createVertexBuffer(std::vector<Vertex> vertices);
-        void waitIdle();
-        __PWEngine_Render_Friend_Class_Define()
-    };
-    /*
-        Owner: Device;
-        Mananger: NULL
-    
-    */
-    class Window
-    {
-    private:
-        /* parent */
-        Device* p_device;
-        /* self */
-        GLFWwindow* ptr;
-        VkSurfaceKHR surface;
-        std::vector<Swapchain*> swapchains;
-    public:
-        ~Window();
-        Swapchain* createSwapchain(RenderPass* render_pass);
-        bool isClosed();
-        __PWEngine_Render_Friend_Class_Define()
+        /* User Function*/
+        RenderContext* createContext(WindowInfo info);
     };
 
-    class VertexBuffer
+    class RenderContext
     {
     private:
-        /* owner */
-        Device* p_device;
-        std::vector<Vertex> vertices;
-        /* self*/
-        VkBuffer vertexBuffer;
-        VkDeviceMemory vertexBufferMemory;
-        ~VertexBuffer();
+        size_t index;
+        void createDevice();
+        void createWindow(WindowInfo info);
+        void createSync();
+        void createCommandPool();
     public:
-        __PWEngine_Render_Friend_Class_Define()
-    };
-    /*
-        Owner: Device
-        Manager: Pipeline
-    */
-    class RenderPass
-    {
-    private:
-        /* owner */
-        Device* p_device;
-        /* self*/
-        VkRenderPass ptr;
-        std::vector<Pipeline*> pipelines;
-    public:
-        ~RenderPass();
-        Pipeline* createPipeline(Vertex vertex);
-        __PWEngine_Render_Friend_Class_Define()
+        Stream::LogSystem* log;
+        Instance* p_instance;
+        uint32_t current_frame = 0;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        RenderContext();
+        ~RenderContext();
+        /* Function */
+        size_t addRenderPass();
+        void createSwapchain(size_t render_pass_index);
+        void recreateSwapchain();
+        std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index);
+        /* Buffer */
+        std::unique_ptr<VertexBuffer> createVertexBuffer(std::vector<Vertex> vertices);
+
+        /* Command */
+        void drawFrame(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func);
+        /* check the window is closed? */
+        bool getIsClosed();
+        /* when leave the main loop, call it. */
+        void waitIdle();
+        friend class Instance;
     };
 
     class Pipeline
     {
     private:
         /* owner */
-        RenderPass* p_render_pass;
+        RenderContext* p_context;
+        VkRenderPass p_render_pass;
         /* self */
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
     public:
         ~Pipeline();
-        __PWEngine_Render_Friend_Class_Define()
+        friend class RenderContext;
     };
 
-    class Swapchain
+}
+
+namespace PWEngine::Render
+{
+
+    class VertexBuffer
     {
     private:
-        /* owner */
-        Window* p_window;
-        /* self */
-        VkSwapchainKHR swapchain;
-        std::vector<VkImage> swapchain_images;
-        VkFormat swapchain_image_format;
-        VkExtent2D swapchain_extent;
-        std::vector<VkImageView> swapchain_image_views;
-        std::vector<VkFramebuffer> swapchain_framebuffers;
     public:
-        ~Swapchain();
-        void submit(RenderPass* render_pass, CommandBuffer* command_buffer, Sync* sync, std::function<void(CommandBuffer* cmd)> func);
-        __PWEngine_Render_Friend_Class_Define()
+        RenderContext* p_context;
+        std::vector<Vertex> vertices;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        VertexBuffer();
+        ~VertexBuffer();
     };
+
+    struct Texture
+    {
+        Device* p_device;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Utils::Vec2<size_t> size; 
+        ~Texture();
+    };
+}
+
+namespace PWEngine::Render
+{
+    
 
     class CommandPool
     {
@@ -211,39 +208,38 @@ namespace PWEngine::Render
         Device* p_device;
         /* self */
         VkCommandPool ptr;
-        std::vector<CommandBuffer*> command_buffers;
     public:
         ~CommandPool();
-        CommandBuffer* createBuffer();
+        PipelineCommand createPipelineCommand();
+        void createSimpleTimeCommand(std::function<void(SimpleTimeCommand cmd)> func);
+        void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
+        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+        void copyBufferToImage(VkBuffer buffer, Texture texture);
         __PWEngine_Render_Friend_Class_Define()
     };
 
-    class CommandBuffer
+    class FrameSubmitCommand
     {
-    private:
-        CommandPool* p_pool;
-        VkCommandBuffer ptr;
     public:
-        void bindPipeline(Pipeline* pipeline);
-        void setViewPort(Swapchain* swapchain);
-        void setScissor(Swapchain* swapchain);
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        FrameSubmitCommand();
+        void setViewPort();
+        void setScissor();
         void addVertexBuffer(VertexBuffer* vertex_buffer);
-        __PWEngine_Render_Friend_Class_Define()
-    };
+    };  
 
-    class Sync
+
+    template<typename T>
+    class UniformBuffer
     {
-    private:
-        /* owner */
-        Device* p_device;
-        /* self */
-        VkSemaphore imageAvailableSemaphore;
-        VkSemaphore renderFinishedSemaphore;
-        VkFence inFlightFence;
-    public:
-        ~Sync();
-        void wait(Device* device);
-        __PWEngine_Render_Friend_Class_Define()
+        T object;
+        VkBuffer indexBuffer;
+        VkDeviceMemory indexBufferMemory;
+
+        std::vector<VkBuffer> uniformBuffers;
+        std::vector<VkDeviceMemory> uniformBuffersMemory;
+        std::vector<void*> uniformBuffersMapped;
     };
 }
 
