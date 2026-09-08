@@ -73,7 +73,6 @@ namespace PWEngine::Render
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
-
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &this->self->command_buffers[this->current_frame];
 
@@ -87,17 +86,17 @@ namespace PWEngine::Render
 
         VkPresentInfoKHR presentInfo{};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
         VkSwapchainKHR swapChains[] = {this->self->swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-
         presentInfo.pImageIndices = &image_index;
 
         vkQueuePresentKHR(this->self->graphics_queue, &presentInfo);
+        
+        this->current_frame = (this->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     void FrameSubmitCommand::setViewPort()
@@ -120,24 +119,26 @@ namespace PWEngine::Render
         vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void FrameSubmitCommand::addVertexBuffer(VertexBuffer* vertex_buffer)
+    void FrameSubmitCommand::addMesh(Mesh* mesh)
     {
-        VkBuffer vertexBuffers[] = {vertex_buffer->self->vertexBuffer};
+        VkBuffer vertex_buffers[] = {mesh->self->vertex_buffer};
+        VkBuffer index_buffer = mesh->self->indices_buffer;
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(*this->self->command_buffer, 0, 1, vertexBuffers, offsets);
-        vkCmdDraw(*this->self->command_buffer, static_cast<uint32_t>(vertex_buffer->vertices.size()), 1, 0, 0);
+        vkCmdBindVertexBuffers(*this->self->command_buffer, 0, 1, vertex_buffers, offsets);
+        vkCmdBindIndexBuffer(*this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(*this->self->command_buffer, static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
+        
     }
-    
     // void CommandPool::createSimpleTimeCommand(std::function<void(SimpleTimeCommand cmd)> func)
     // {
-    //     VkCommandBufferAllocateInfo allocInfo{};
-    //     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    //     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    //     allocInfo.commandPool = this->ptr;
-    //     allocInfo.commandBufferCount = 1;
+    //     VkCommandBufferAllocateInfo alloc_info{};
+    //     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    //     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    //     alloc_info.commandPool = this->ptr;
+    //     alloc_info.commandBufferCount = 1;
 
     //     VkCommandBuffer commandBuffer;
-    //     vkAllocateCommandBuffers(this->self->ptr, &allocInfo, &commandBuffer);
+    //     vkAllocateCommandBuffers(this->self->ptr, &alloc_info, &commandBuffer);
 
     //     VkCommandBufferBeginInfo beginInfo{};
     //     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

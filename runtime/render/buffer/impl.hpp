@@ -4,9 +4,12 @@
 
 namespace PWEngine::Render 
 {
-    struct VertexBuffer::Impl
+    
+    struct Mesh::Impl
     {
-        VkBuffer vertexBuffer;
-        VkDeviceMemory vertexBufferMemory;
+        VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
+        VkBuffer indices_buffer;
+        VkDeviceMemory indices_buffer_memory;
     };
 }

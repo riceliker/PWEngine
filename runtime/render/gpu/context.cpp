@@ -114,7 +114,7 @@ namespace PWEngine::Render
     {
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
-        command_buffers.resize(8);
+        command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->self->adapter);
 
@@ -126,13 +126,13 @@ namespace PWEngine::Render
         if (vkCreateCommandPool(this->self->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
 
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = command_pool;
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = (uint32_t) command_buffers.size();
+        VkCommandBufferAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.commandPool = command_pool;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
-        if (vkAllocateCommandBuffers(this->self->device, &allocInfo, command_buffers.data()) != VK_SUCCESS)
+        if (vkAllocateCommandBuffers(this->self->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
 
         this->self->command_pool = command_pool;
@@ -173,6 +173,11 @@ namespace PWEngine::Render
         for (auto in_flight_fence: this->self->in_flight_fences)
         {
             vkDestroyFence(this->self->device, in_flight_fence, nullptr);
+        }
+        /* createRenderPass */
+        for (auto render_pass : this->self->render_passes)
+        {
+            vkDestroyRenderPass(this->self->device, render_pass, nullptr);
         }
         /* createWindow */
         vkDestroySurfaceKHR(this->p_instance->self->instance, this->self->surface, nullptr);

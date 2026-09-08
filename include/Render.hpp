@@ -97,6 +97,7 @@ namespace PWEngine::Render
     class SimpleTimeCommand;
     class Sync;
     class FrameSubmitCommand;
+    class Mesh;
 
     /*
         The class control the vulkan instance.
@@ -145,8 +146,7 @@ namespace PWEngine::Render
         void recreateSwapchain();
         std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index);
         /* Buffer */
-        std::unique_ptr<VertexBuffer> createVertexBuffer(std::vector<Vertex> vertices);
-
+        std::unique_ptr<Mesh> createMesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
         /* Command */
         void drawFrame(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func);
         /* check the window is closed? */
@@ -175,16 +175,20 @@ namespace PWEngine::Render
 namespace PWEngine::Render
 {
 
-    class VertexBuffer
+    class Mesh
     {
     private:
+        void setVertices();
+        void setIndices();
     public:
         RenderContext* p_context;
         std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
         struct Impl;
         std::unique_ptr<Impl> self;
-        VertexBuffer();
-        ~VertexBuffer();
+        Mesh();
+        ~Mesh();
+        friend class RenderContext;
     };
 
     struct Texture
@@ -226,7 +230,7 @@ namespace PWEngine::Render
         FrameSubmitCommand();
         void setViewPort();
         void setScissor();
-        void addVertexBuffer(VertexBuffer* vertex_buffer);
+        void addMesh(Mesh* mesh);
     };  
 
 

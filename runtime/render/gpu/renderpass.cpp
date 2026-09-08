@@ -8,6 +8,7 @@ namespace PWEngine::Render
     size_t RenderContext::addRenderPass()
     {
         VkRenderPass render_pass;
+
         VkAttachmentDescription color_attachment{};
         color_attachment.format = VK_FORMAT_B8G8R8A8_SRGB;
         color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;

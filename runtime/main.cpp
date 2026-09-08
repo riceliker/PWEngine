@@ -28,11 +28,15 @@ int main()
     context->createSwapchain(render_pass);
     
     const std::vector<PWEngine::Render::Vertex> vertices = {
-    {{0.0f, -0.5f}, {1.0f, 1.0f, 1.0f}},
-    {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
     };
-    auto vertex_buffer = context->createVertexBuffer(vertices);
+    const std::vector<uint32_t> indices = {
+        0, 1, 2, 2, 3, 0
+    };
+    auto mesh = context->createMesh(vertices, indices);
 
     auto pipeline = context->createPipeline(render_pass);
 
@@ -42,7 +46,7 @@ int main()
         context->drawFrame(pipeline.get(), [&](PWEngine::Render::FrameSubmitCommand& cmd){
             cmd.setViewPort();
             cmd.setScissor();
-            cmd.addVertexBuffer(vertex_buffer.get());
+            cmd.addMesh(mesh.get());
         });
     }
     context->waitIdle();
