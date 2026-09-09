@@ -153,6 +153,10 @@ namespace PWEngine::Render
             swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.presentModes.empty();
         }
 
-        return indices.isComplete() && extensions_supported && swap_chain_adequate;
+        VkPhysicalDeviceFeatures supportedFeatures;
+        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
+
+
+        return indices.isComplete() && extensions_supported && swap_chain_adequate && supportedFeatures.samplerAnisotropy;
     }
 }

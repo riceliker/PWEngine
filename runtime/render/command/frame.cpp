@@ -2,6 +2,8 @@
 #include "impl.hpp"
 #include "../gpu/impl.hpp"
 #include "../buffer/impl.hpp"
+#include "utils.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -13,7 +15,7 @@ namespace PWEngine::Render
 
     }
     
-    void RenderContext::drawFrame(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func)
+    void RenderContext::drawFrameCommand(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func)
     {
         vkWaitForFences(this->self->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
 
@@ -41,7 +43,7 @@ namespace PWEngine::Render
 
         VkRenderPassBeginInfo render_pass_info{};
         render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.renderPass = pipeline->p_render_pass;
+        render_pass_info.renderPass = pipeline->self->p_render_pass;
         render_pass_info.framebuffer = this->self->swapchain_framebuffers[image_index];
         render_pass_info.renderArea.offset = {0, 0};
         render_pass_info.renderArea.extent = this->self->swapchain_extent;
@@ -52,10 +54,13 @@ namespace PWEngine::Render
 
         vkCmdBeginRenderPass(this->self->command_buffers[this->current_frame], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
-        vkCmdBindPipeline(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->graphics_pipeline);
+        vkCmdBindPipeline(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
         FrameSubmitCommand cmd{};
+        cmd.p_context = this;
+        cmd.self->currect_image = image_index;
         cmd.self->command_buffer = &(this->self->command_buffers[this->current_frame]);
         cmd.self->swapchain_extent = &(this->self->swapchain_extent);
+        cmd.self->pipeline_layout = pipeline->self->pipeline_layout;
         func(cmd);
 
         vkCmdEndRenderPass(this->self->command_buffers[this->current_frame]);
@@ -119,7 +124,7 @@ namespace PWEngine::Render
         vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void FrameSubmitCommand::addMesh(Mesh* mesh)
+    void FrameSubmitCommand::addMesh2D(Mesh2D* mesh)
     {
         VkBuffer vertex_buffers[] = {mesh->self->vertex_buffer};
         VkBuffer index_buffer = mesh->self->indices_buffer;
@@ -127,128 +132,17 @@ namespace PWEngine::Render
         vkCmdBindVertexBuffers(*this->self->command_buffer, 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(*this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
         vkCmdDrawIndexed(*this->self->command_buffer, static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
-        
     }
-    // void CommandPool::createSimpleTimeCommand(std::function<void(SimpleTimeCommand cmd)> func)
-    // {
-    //     VkCommandBufferAllocateInfo alloc_info{};
-    //     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    //     alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    //     alloc_info.commandPool = this->ptr;
-    //     alloc_info.commandBufferCount = 1;
 
-    //     VkCommandBuffer commandBuffer;
-    //     vkAllocateCommandBuffers(this->self->ptr, &alloc_info, &commandBuffer);
-
-    //     VkCommandBufferBeginInfo beginInfo{};
-    //     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    //     beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    //     vkBeginCommandBuffer(commandBuffer, &beginInfo);
-
-    //     SimpleTimeCommand cmd;
-    //     cmd.p_pool = this;
-    //     cmd.ptr = commandBuffer;
-    //     func(cmd);
-
-    //     vkEndCommandBuffer(commandBuffer);
-
-    //     VkSubmitInfo submitInfo{};
-    //     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    //     submitInfo.commandBufferCount = 1;
-    //     submitInfo.pCommandBuffers = &commandBuffer;
-
-    //     vkQueueSubmit(this->p_device->self->graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
-    //     vkQueueWaitIdle(this->p_device->self->graphics_queue);
-
-    //     vkFreeCommandBuffers(this->p_device->self->ptr, this->ptr, 1, &commandBuffer);
-    // }
-
-    // void CommandPool::copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size)
-    // {
-    //     this->createSimpleTimeCommand([&](CommandBuffer cmd){
-    //         VkBufferCopy copy_region{};
-    //         copy_region.size = size;
-    //         vkCmdCopyBuffer(cmd.ptr, src_buffer, dst_buffer, 1, &copy_region);
-    //     });
-    // }
-
-    // void CommandPool::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
-    // {
-    //     this->createSimpleTimeCommand([&](CommandBuffer cmd){
-    //         VkImageMemoryBarrier barrier{};
-    //         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    //         barrier.oldLayout = oldLayout;
-    //         barrier.newLayout = newLayout;
-    //         barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    //         barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    //         barrier.image = image;
-    //         barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    //         barrier.subresourceRange.baseMipLevel = 0;
-    //         barrier.subresourceRange.levelCount = 1;
-    //         barrier.subresourceRange.baseArrayLayer = 0;
-    //         barrier.subresourceRange.layerCount = 1;
-    //         barrier.srcAccessMask = 0; // TODO
-    //         barrier.dstAccessMask = 0; // TODO
-
-    //         VkPipelineStageFlags sourceStage;
-    //         VkPipelineStageFlags destinationStage;
-
-    //         if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-    //             barrier.srcAccessMask = 0;
-    //             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-    //             sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    //             destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    //         } else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-    //             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-    //             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-    //             sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    //             destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    //         } else {
-    //             throw std::invalid_argument("unsupported layout transition!");
-    //         }
-
-    //         vkCmdPipelineBarrier(
-    //             cmd.ptr,
-    //             sourceStage, destinationStage,
-    //             0,
-    //             0, nullptr,
-    //             0, nullptr,
-    //             1, &barrier
-    //         );
-    //     });
-        
-    // }
-
-    // void CommandPool::copyBufferToImage(VkBuffer buffer, Texture texture)
-    // {
-    //     this->createSimpleTimeCommand([&](CommandBuffer cmd){
-    //         VkBufferImageCopy region{};
-    //         region.bufferOffset = 0;
-    //         region.bufferRowLength = 0;
-    //         region.bufferImageHeight = 0;
-
-    //         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    //         region.imageSubresource.mipLevel = 0;
-    //         region.imageSubresource.baseArrayLayer = 0;
-    //         region.imageSubresource.layerCount = 1;
-
-    //         region.imageOffset = {0, 0, 0};
-    //         region.imageExtent = {(uint32_t)texture.size.x,(uint32_t)texture.size.y,1};
-    //         vkCmdCopyBufferToImage(
-    //             cmd.ptr,
-    //             buffer,
-    //             texture.self->texture_image,
-    //             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-    //             1,
-    //             &region
-    //         );
-
-            
-    //     });
-
-        
-    //}
+    void FrameSubmitCommand::updateUBO(UBO* ubo, float time)
+    {
+        ubo->data.model = Utils::Mat4(1);
+        ubo->data.view = Utils::Mat4(1);
+        ubo->data.project = Utils::Mat4(1);
+        ubo->data.model = Utils::rotate(Utils::Mat4(1.0f), time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
+        ubo->data.view = Utils::look(Utils::Vec3<float>(0.0f, 2.0f, 2.0f), Utils::Vec3<float>(0.0f, 0.0f, 0.0f), Utils::Vec3<float>(0.0f, 1.0f, 0.0f));
+        ubo->data.project = Utils::perspective(Utils::deg2rad(45), this->self->swapchain_extent->width / (float) this->self->swapchain_extent->height, 0.1f , 10.0f);
+        memcpy(ubo->self->uniform_buffers_mapped[this->self->currect_image], &ubo->data, sizeof(UBO::UBOData));
+        vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->self->pipeline_layout, 0, 1, &ubo->self->descriptor_sets[this->self->currect_image], 0, nullptr);
+    }
 }

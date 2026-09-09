@@ -71,13 +71,13 @@ namespace PWEngine::File
         
     }
 
-    std::unique_ptr<Utils::Image> TgaStream::makeImage()
-    {
-        std::unique_ptr<Utils::Image> image;
-        image->data = std::move(this->pixels);
-        image->size = Utils::Vec2<size_t>(this->info.width, this->info.height);
-        image->depth = this->info.pixel_depth;
-        return image;
-    }
+    // std::unique_ptr<Utils::Image> TgaStream::makeImage()
+    // {
+    //     std::unique_ptr<Utils::Image> image;
+    //     image->data = std::move(this->pixels);
+    //     image->size = Utils::Vec2<size_t>(this->info.width, this->info.height);
+    //     image->depth = this->info.pixel_depth;
+    //     return image;
+    // }
     
 }

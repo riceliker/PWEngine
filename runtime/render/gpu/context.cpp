@@ -1,6 +1,7 @@
 #include "render.hpp"
 #include "impl.hpp"
 #include "check.hpp"
+#include <cstddef>
 #include <memory>
 #include <vector>
 
@@ -18,6 +19,7 @@ namespace PWEngine::Render
         obj->log = this->log;
         obj->createDevice();
         obj->createCommandPool();
+        obj->createDescriptorPool();
         obj->createSync();
         obj->createWindow(info);
         this->context_list.push_back(obj);
@@ -139,6 +141,27 @@ namespace PWEngine::Render
         this->self->command_buffers = std::move(command_buffers);
     }
 
+    void RenderContext::createDescriptorPool()
+    {
+        VkDescriptorPool descriptorPool;
+
+        VkDescriptorPoolSize poolSize{};
+        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = 1;
+        poolInfo.pPoolSizes = &poolSize;
+        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        if (vkCreateDescriptorPool(this->self->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor pool!");
+        }
+
+        this->self->descriptor_pool = descriptorPool;
+    }
+
     bool RenderContext::getIsClosed()
     {
         return glfwWindowShouldClose(this->self->window);
@@ -174,7 +197,21 @@ namespace PWEngine::Render
         {
             vkDestroyFence(this->self->device, in_flight_fence, nullptr);
         }
-        /* createRenderPass */
+        for (auto& UBO : this->self->UBOs)
+        {
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
+            {
+                vkDestroyBuffer(this->self->device, UBO.self->uniform_buffers[i], nullptr);
+                vkFreeMemory(this->self->device, UBO.self->uniform_buffers_memory[i], nullptr);
+            }
+        }
+        /* addDescriptorSetLayout */
+        vkDestroyDescriptorPool(this->self->device, this->self->descriptor_pool, nullptr);
+        for (auto descriptor_set_layout : this->self->descriptor_set_layouts)
+        {
+            vkDestroyDescriptorSetLayout(this->self->device, descriptor_set_layout, nullptr);
+        }
+        /* addRenderPass */
         for (auto render_pass : this->self->render_passes)
         {
             vkDestroyRenderPass(this->self->device, render_pass, nullptr);

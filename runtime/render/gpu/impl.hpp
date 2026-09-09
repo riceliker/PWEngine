@@ -21,9 +21,11 @@ namespace PWEngine::Render
         VkQueue graphics_queue;
         GLFWwindow* window;
         VkSurfaceKHR surface;
-        std::vector<VkRenderPass> render_passes;
 
+        std::vector<VkRenderPass> render_passes;
         size_t currect_render_pass_index;
+        std::vector<UBO> UBOs;
+
         VkSwapchainKHR swapchain;
         std::vector<VkImage> swapchain_images;
         VkFormat swapchain_image_format;
@@ -37,5 +39,25 @@ namespace PWEngine::Render
 
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
+
+        VkDescriptorPool descriptor_pool;
+        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+        std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
+    };
+
+    struct UBO::Impl
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Pipeline::Impl
+    {
+        VkRenderPass p_render_pass;
+        VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
+        size_t currect_descriptor_set_layout_index;
     };
 }

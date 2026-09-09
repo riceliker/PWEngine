@@ -34,20 +34,6 @@ friend class PipelineCommand; \
 friend class SimpleTimeCommand;
 
 
-namespace PWEngine::Render 
-{
-    struct Vertex
-    {    
-        Utils::Vec2<float> position;
-        Utils::Vec3<float> color;
-        static VkVertexInputBindingDescription getBindingDescription();
-        static std::array<VkVertexInputAttributeDescription, 2> getAttributeDescriptions();
-        Vertex(Utils::Vec2<float> position, Utils::Vec3<float> color):position(position),color(color){};
-        friend class RenderPass;
-    };
-}
-
-
 /*
 ----- GPU Module -----
 The GPU module is control the vulkan instance with C++ class.
@@ -84,20 +70,16 @@ namespace PWEngine::Render
 
     class Instance;
     class RenderContext;
-    class Device;
-    class Window;
-    class VertexBuffer;
     class Texture;
-    class RenderPass;
     class Pipeline;
-    class Swapchain;
-    class CommandPool;
     class CommandBuffer;
     class PipelineCommand;
     class SimpleTimeCommand;
     class Sync;
     class FrameSubmitCommand;
-    class Mesh;
+    class Mesh2D;
+    class Texture2D;
+    class UBO;
 
     /*
         The class control the vulkan instance.
@@ -131,6 +113,7 @@ namespace PWEngine::Render
         void createWindow(WindowInfo info);
         void createSync();
         void createCommandPool();
+        void createDescriptorPool();
     public:
         Stream::LogSystem* log;
         Instance* p_instance;
@@ -141,14 +124,17 @@ namespace PWEngine::Render
         RenderContext();
         ~RenderContext();
         /* Function */
+        size_t addDescriptorSetLayout();
         size_t addRenderPass();
         void createSwapchain(size_t render_pass_index);
         void recreateSwapchain();
-        std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index);
+        std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index, size_t descriptor_set_layout_index);
         /* Buffer */
-        std::unique_ptr<Mesh> createMesh(std::vector<Vertex> vertices, std::vector<uint32_t> indices);
+        std::unique_ptr<Mesh2D> createMesh2D(std::vector<Utils::Vertex2D> vertices, std::vector<uint32_t> indices);
+        std::unique_ptr<UBO> createUBO(size_t descriptor_set_layout_index);
+        std::unique_ptr<Texture2D> createTexture2D(Utils::Image* const image);
         /* Command */
-        void drawFrame(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func);
+        void drawFrameCommand(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func);
         /* check the window is closed? */
         bool getIsClosed();
         /* when leave the main loop, call it. */
@@ -161,11 +147,10 @@ namespace PWEngine::Render
     private:
         /* owner */
         RenderContext* p_context;
-        VkRenderPass p_render_pass;
-        /* self */
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
     public:
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Pipeline();
         ~Pipeline();
         friend class RenderContext;
     };
@@ -175,76 +160,73 @@ namespace PWEngine::Render
 namespace PWEngine::Render
 {
 
-    class Mesh
+    class Mesh2D
     {
     private:
         void setVertices();
         void setIndices();
     public:
         RenderContext* p_context;
-        std::vector<Vertex> vertices;
+        std::vector<Utils::Vertex2D> vertices;
         std::vector<uint32_t> indices;
         struct Impl;
         std::unique_ptr<Impl> self;
-        Mesh();
-        ~Mesh();
+        Mesh2D();
+        ~Mesh2D();
         friend class RenderContext;
     };
 
-    struct Texture
+    class UBO
     {
-        Device* p_device;
+    private:
+    public:
+        struct UBOData
+        {
+            Utils::Mat4 model{0};
+            Utils::Mat4 view{0};
+            Utils::Mat4 project{0};
+        };
+        UBOData data;
+        RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
-        Utils::Vec2<size_t> size; 
-        ~Texture();
+        UBO();
+        ~UBO();
+        friend class RenderContext;
+    };
+
+    class Texture2D
+    {
+    private:
+        void createTexture(Utils::Image* const image);
+        void createView();
+        void createSampler();
+    public:
+        RenderContext* p_context;
+        Utils::Vec2<uint32_t> size; 
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Texture2D();
+        ~Texture2D();
+        friend class RenderContext;
     };
 }
 
 namespace PWEngine::Render
 {
-    
-
-    class CommandPool
-    {
-    private:
-        /* owner */
-        Device* p_device;
-        /* self */
-        VkCommandPool ptr;
-    public:
-        ~CommandPool();
-        PipelineCommand createPipelineCommand();
-        void createSimpleTimeCommand(std::function<void(SimpleTimeCommand cmd)> func);
-        void copyBuffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-        void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-        void copyBufferToImage(VkBuffer buffer, Texture texture);
-        __PWEngine_Render_Friend_Class_Define()
-    };
-
     class FrameSubmitCommand
     {
     public:
+        RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
         FrameSubmitCommand();
         void setViewPort();
         void setScissor();
-        void addMesh(Mesh* mesh);
+        void addMesh2D(Mesh2D* mesh);
+        void updateUBO(UBO* ubo, float time);
     };  
-
-
-    template<typename T>
-    class UniformBuffer
-    {
-        T object;
-        VkBuffer indexBuffer;
-        VkDeviceMemory indexBufferMemory;
-
-        std::vector<VkBuffer> uniformBuffers;
-        std::vector<VkDeviceMemory> uniformBuffersMemory;
-        std::vector<void*> uniformBuffersMapped;
-    };
+    
 }
 
 
