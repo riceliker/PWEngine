@@ -15,7 +15,7 @@ namespace PWEngine::Render
 
     }
     
-    void RenderContext::drawFrameCommand(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func)
+    void RenderContext::drawFrameCommand(Pipeline* pipeline, size_t descriptor_set_index, std::function<void(FrameSubmitCommand& cmd)> func)
     {
         vkWaitForFences(this->self->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
 
@@ -55,6 +55,7 @@ namespace PWEngine::Render
         vkCmdBeginRenderPass(this->self->command_buffers[this->current_frame], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
+        vkCmdBindDescriptorSets(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, 1, &this->self->descriptor_sets[descriptor_set_index][this->current_frame], 0, nullptr);
         FrameSubmitCommand cmd{};
         cmd.p_context = this;
         cmd.self->currect_image = image_index;
@@ -136,13 +137,9 @@ namespace PWEngine::Render
 
     void FrameSubmitCommand::updateUBO(UBO* ubo, float time)
     {
-        ubo->data.model = Utils::Mat4(1);
-        ubo->data.view = Utils::Mat4(1);
-        ubo->data.project = Utils::Mat4(1);
         ubo->data.model = Utils::rotate(Utils::Mat4(1.0f), time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
         ubo->data.view = Utils::look(Utils::Vec3<float>(0.0f, 2.0f, 2.0f), Utils::Vec3<float>(0.0f, 0.0f, 0.0f), Utils::Vec3<float>(0.0f, 1.0f, 0.0f));
         ubo->data.project = Utils::perspective(Utils::deg2rad(45), this->self->swapchain_extent->width / (float) this->self->swapchain_extent->height, 0.1f , 10.0f);
         memcpy(ubo->self->uniform_buffers_mapped[this->self->currect_image], &ubo->data, sizeof(UBO::UBOData));
-        vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->self->pipeline_layout, 0, 1, &ubo->self->descriptor_sets[this->self->currect_image], 0, nullptr);
-    }
+    }  
 }

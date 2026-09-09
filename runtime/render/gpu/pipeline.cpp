@@ -2,6 +2,7 @@
 #include "impl.hpp"
 #include "../buffer/impl.hpp"
 #include "stream.hpp"
+#include "utils.hpp"
 #include <cstddef>
 #include <fstream>
 #include <memory>
@@ -69,7 +70,7 @@ namespace PWEngine::Render
         return shaderStages;
     }
 
-    static inline VkPipelineVertexInputStateCreateInfo createVertexFormat(VkVertexInputBindingDescription& bind, std::array<VkVertexInputAttributeDescription, 2>& attribute)
+    static inline VkPipelineVertexInputStateCreateInfo createVertexFormat(VkVertexInputBindingDescription& bind, std::array<VkVertexInputAttributeDescription, 3>& attribute)
     {
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -88,8 +89,8 @@ namespace PWEngine::Render
         VkPipeline graphics_pipeline;
 
         auto shaderStages = createShader(this);
-        auto bind = getBindingDescription();
-        auto attribute = getAttributeDescriptions();
+        auto bind = getBindingDescription<Utils::Vertex2D>();
+        auto attribute = getAttributeDescriptions<Utils::Vertex2D>();
         auto vertexInputInfo = createVertexFormat(bind, attribute);
         
         /* InputAssembly: default */

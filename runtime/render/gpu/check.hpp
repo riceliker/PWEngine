@@ -155,7 +155,7 @@ namespace PWEngine::Render
 
         VkPhysicalDeviceFeatures supportedFeatures;
         vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-
+        supportedFeatures.samplerAnisotropy = VK_TRUE;
 
         return indices.isComplete() && extensions_supported && swap_chain_adequate && supportedFeatures.samplerAnisotropy;
     }

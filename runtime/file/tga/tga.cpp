@@ -4,7 +4,9 @@
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
+#include <vector>
 
 namespace PWEngine::File
 {
@@ -67,17 +69,18 @@ namespace PWEngine::File
             {
                 Stream::log(log, Stream::LogType::Warn, Stream::LogFrom::FileIO ,"The pixel format is not support.");
             }
-        }
-        
-    }
-
-    // std::unique_ptr<Utils::Image> TgaStream::makeImage()
-    // {
-    //     std::unique_ptr<Utils::Image> image;
-    //     image->data = std::move(this->pixels);
-    //     image->size = Utils::Vec2<size_t>(this->info.width, this->info.height);
-    //     image->depth = this->info.pixel_depth;
-    //     return image;
-    // }
+        } 
+    }  
     
+    std::unique_ptr<Utils::ImageRGBA8> TgaStream::asImage()
+    {
+        std::unique_ptr<Utils::ImageRGBA8> obj = std::make_unique<Utils::ImageRGBA8>();
+        std::vector<uint8_t> data;
+        data.resize(pixels.size() * sizeof(Utils::PixelRGBA8));
+        memcpy(data.data(), this->pixels.data(), data.size());
+        obj->data = std::move(data);
+        obj->size = Utils::Vec2<uint32_t>(this->info.width, this->info.height);
+        obj->depth = this->info.pixel_depth;
+        return obj;
+    }
 }

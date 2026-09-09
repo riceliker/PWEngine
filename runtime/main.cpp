@@ -10,6 +10,7 @@ int main()
     auto log = PWEngine::Stream::LogSystem(true);
 
     auto tga = PWEngine::File::TgaStream(&log, "./assets/icon.tga");
+    auto image = tga.asImage();
 
     PWEngine::Render::InstanceInfo instance_info{};
     instance_info.is_debug = true;
@@ -28,13 +29,16 @@ int main()
     context->createSwapchain(render_pass);
 
     auto descriptor_set_layout = context->addDescriptorSetLayout();
-    auto ubo = context->createUBO(descriptor_set_layout);
+    auto descriptor_sets = context->addDescriptorSet(descriptor_set_layout);
+    auto ubo = context->createUBO();
+    auto texture = context->createTexture2D(image.get());
+    context->updateDescriptor(descriptor_sets, ubo.get(), texture.get());
     
     const std::vector<PWEngine::Utils::Vertex2D> vertices = {
-    {{-0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
-    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+        {{-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
+        {{0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
+        {{0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
+        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
     };
     const std::vector<uint32_t> indices = {
         0, 1, 2, 2, 3, 0
@@ -48,7 +52,7 @@ int main()
     {
         static auto startTime = std::chrono::high_resolution_clock::now();
         glfwPollEvents();
-        context->drawFrameCommand(pipeline.get(), [&](PWEngine::Render::FrameSubmitCommand& cmd){
+        context->drawFrameCommand(pipeline.get(), descriptor_sets, [&](PWEngine::Render::FrameSubmitCommand& cmd){
             cmd.setViewPort();
             cmd.setScissor();
             cmd.updateUBO(ubo.get(), time);

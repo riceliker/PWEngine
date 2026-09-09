@@ -17,7 +17,7 @@
 
 #include "utils.hpp"
 
-#define MAX_FRAMES_IN_FLIGHT 8
+#define MAX_FRAMES_IN_FLIGHT 3
 
 #define __PWEngine_Render_Friend_Class_Define() \
 friend class Instance; \
@@ -123,18 +123,20 @@ namespace PWEngine::Render
         /* Constructor */
         RenderContext();
         ~RenderContext();
-        /* Function */
+        /* Preload */
         size_t addDescriptorSetLayout();
+        size_t addDescriptorSet(size_t descriptor_set_layout_index);
         size_t addRenderPass();
         void createSwapchain(size_t render_pass_index);
         void recreateSwapchain();
         std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index, size_t descriptor_set_layout_index);
         /* Buffer */
         std::unique_ptr<Mesh2D> createMesh2D(std::vector<Utils::Vertex2D> vertices, std::vector<uint32_t> indices);
-        std::unique_ptr<UBO> createUBO(size_t descriptor_set_layout_index);
-        std::unique_ptr<Texture2D> createTexture2D(Utils::Image* const image);
-        /* Command */
-        void drawFrameCommand(Pipeline* pipeline, std::function<void(FrameSubmitCommand& cmd)> func);
+        std::unique_ptr<UBO> createUBO();
+        std::unique_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* const image);
+        /* Loop */
+        void updateDescriptor(size_t descriptor_set_index, UBO* ubo, Texture2D* texture);
+        void drawFrameCommand(Pipeline* pipeline, size_t descriptor_set_index, std::function<void(FrameSubmitCommand& cmd)> func);
         /* check the window is closed? */
         bool getIsClosed();
         /* when leave the main loop, call it. */
@@ -198,7 +200,7 @@ namespace PWEngine::Render
     class Texture2D
     {
     private:
-        void createTexture(Utils::Image* const image);
+        void createTexture(RenderContext* context, Utils::ImageRGBA8* const image);
         void createView();
         void createSampler();
     public:

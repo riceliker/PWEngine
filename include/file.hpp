@@ -30,6 +30,7 @@ namespace PWEngine::File
         FileInfo info;
     public:
         TgaStream(Stream::LogSystem* log, std::string load_path);
-        std::unique_ptr<Utils::Image> makeImage();
+        std::unique_ptr<Utils::ImageRGBA8> makeImage();
+        std::unique_ptr<Utils::ImageRGBA8> asImage();
     };
 }

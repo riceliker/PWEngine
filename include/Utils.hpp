@@ -173,15 +173,13 @@ namespace PWEngine::Utils
     {    
         Utils::Vec2<float> position;
         Utils::Vec3<float> color;
-        
-        Vertex2D(Utils::Vec2<float> position, Utils::Vec3<float> color):position(position),color(color){};
-        friend class RenderPass;
+        Utils::Vec2<float> uv;
     };
 
-    struct Image
+    struct ImageRGBA8
     {
         Utils::Vec2<uint32_t> size;
-        std::vector<float> data;
+        std::vector<uint8_t> data;
         uint8_t depth;
     };
 

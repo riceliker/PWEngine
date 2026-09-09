@@ -46,7 +46,12 @@ namespace PWEngine::Render
         queue_create_info.pQueuePriorities = &queue_priority;
         queue_create_infos.push_back(queue_create_info);
 
-        VkPhysicalDeviceFeatures device_features{};
+        VkPhysicalDeviceFeatures physics_features{};
+        vkGetPhysicalDeviceFeatures(adapter, &physics_features);
+
+        VkPhysicalDeviceFeatures need_features{};
+        if (physics_features.samplerAnisotropy) need_features.samplerAnisotropy = VK_TRUE;
+        
 
         VkDeviceCreateInfo device_create_info{};
         device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -54,7 +59,7 @@ namespace PWEngine::Render
         device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
         device_create_info.pQueueCreateInfos = queue_create_infos.data();
 
-        device_create_info.pEnabledFeatures = &device_features;
+        device_create_info.pEnabledFeatures = &need_features;
 
         device_create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
         device_create_info.ppEnabledExtensionNames = device_extensions.data();
@@ -145,15 +150,17 @@ namespace PWEngine::Render
     {
         VkDescriptorPool descriptorPool;
 
-        VkDescriptorPoolSize poolSize{};
-        poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = 1;
-        poolInfo.pPoolSizes = &poolSize;
-        poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.pPoolSizes = poolSizes.data();
+        poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
 
         if (vkCreateDescriptorPool(this->self->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool!");

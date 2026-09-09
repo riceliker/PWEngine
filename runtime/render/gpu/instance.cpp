@@ -78,7 +78,7 @@ namespace PWEngine::Render
             VK_MAKE_VERSION(info.version.x, info.version.y, info.version.z);
         app_info.pEngineName = "PWEngine";
         app_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
-        app_info.apiVersion = VK_API_VERSION_1_0;
+        app_info.apiVersion = VK_API_VERSION_1_2;
 
         VkInstanceCreateInfo instance_create_info{};
         instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
