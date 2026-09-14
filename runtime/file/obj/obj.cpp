@@ -73,8 +73,9 @@ namespace PWEngine::File
         {
             for (const auto& index : this->f[i])
             {
-                
-                this->vertices.emplace_back(Utils::Vertex3D{this->v[index.x-1], {1, 1, 1}, this->vt[index.y-1]});
+                auto right_uv = this->vt[index.y-1];
+                right_uv.y = 1 - right_uv.y;
+                this->vertices.emplace_back(Utils::Vertex3D{this->v[index.x-1], {1, 1, 1}, right_uv});
             }
         }
         for (size_t i = 0; i <= this->f.size()*3; ++i)

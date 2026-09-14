@@ -51,7 +51,7 @@ int main()
             cmd.setViewPort();
             cmd.setScissor();
             PWEngine::Render::CameraInfo camera_info = {
-                .camera_pos = PWEngine::Utils::Vec3<float>(0.0f, -5.0f, 0.0f),
+                .camera_pos = PWEngine::Utils::Vec3<float>(0.0f, -2.0f, 2.0f),
                 .camera_look_pos = PWEngine::Utils::Vec3<float>(0.0f, 0.0f, 0.0f)
             };
             cmd.updateUBO(ubo.get(), time, camera_info);

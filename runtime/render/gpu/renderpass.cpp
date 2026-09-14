@@ -83,8 +83,6 @@ namespace PWEngine::Render
         render_pass_info.dependencyCount = 1;
         render_pass_info.pDependencies = &dependency;
 
-        
-
         if (vkCreateRenderPass(this->self->device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create render pass!");
 

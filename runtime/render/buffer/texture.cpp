@@ -28,12 +28,12 @@ namespace PWEngine::Render
         VkImage texture_image;
         VkDeviceMemory texture_image_memory;
 
-        createImageBuffer(context, image->size, texture_image, texture_image_memory);
+        createImageBuffer(context, image->size, this->self->mip_level, texture_image, texture_image_memory);
 
-        transitionImageLayout(this->p_context, texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+        transitionImageLayout(this->p_context, this->self->mip_level, texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copyBufferToImage(this->p_context, staging_buffer, texture_image, image->size);
-        transitionImageLayout(this->p_context, texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
+        generateMipmap(this->p_context, this->self->mip_level, this->size, texture_image);
+        
         vkDestroyBuffer(this->p_context->self->device, staging_buffer, nullptr);
         vkFreeMemory(this->p_context->self->device, staging_buffer_memory, nullptr);
 
@@ -51,7 +51,7 @@ namespace PWEngine::Render
         viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
         viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         viewInfo.subresourceRange.baseMipLevel = 0;
-        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.levelCount = this->self->mip_level;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
         if (vkCreateImageView(this->p_context->self->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS) {
@@ -82,7 +82,7 @@ namespace PWEngine::Render
         samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
         samplerInfo.mipLodBias = 0.0f;
         samplerInfo.minLod = 0.0f;
-        samplerInfo.maxLod = 0.0f;
+        samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
         if (vkCreateSampler(this->p_context->self->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
@@ -95,6 +95,7 @@ namespace PWEngine::Render
         std::unique_ptr<Texture2D> obj = std::make_unique<Texture2D>();
         obj->p_context = this;
         obj->size = image->size;
+        obj->self->mip_level = static_cast<uint32_t>(std::floor(std::log2(std::max(image->size.x, image->size.y)))) + 1;
         obj->createTexture(this, image);
         obj->createView();
         obj->createSampler();

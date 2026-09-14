@@ -141,11 +141,10 @@ namespace PWEngine::Render
 
     void FrameSubmitCommand::updateUBO(UBO* ubo, float time, CameraInfo camera)
     {
-        auto mirror_mat4 = Utils::Mat4(1);
-        mirror_mat4.cr(2, 2) = -1;
-        ubo->data.model = Utils::rotate(mirror_mat4, time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
+        ubo->data.model = Utils::rotate(Utils::Mat4(1), time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
         ubo->data.view = Utils::look(camera.camera_pos, camera.camera_look_pos, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
         ubo->data.project = Utils::perspective(Utils::deg2rad(45), this->self->swapchain_extent->width / (float) this->self->swapchain_extent->height, 0.1f , 100.0f);
+        ubo->data.project.rc(1, 1) *= -1;
         memcpy(ubo->self->uniform_buffers_mapped[this->self->currect_image], &ubo->data, sizeof(UBO::UBOData));
     }  
 }

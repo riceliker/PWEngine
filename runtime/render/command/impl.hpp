@@ -1,6 +1,7 @@
 #pragma once
 #include "render.hpp"
 #include <cstddef>
+#include <cstdint>
 
 namespace PWEngine::Render 
 {
@@ -16,5 +17,6 @@ namespace PWEngine::Render
 
     void copyBufferCommand(RenderContext* context, VkBuffer staging, VkBuffer real, size_t size);
     void copyBufferToImage(RenderContext* context, VkBuffer buffer, VkImage image, Utils::Vec2<uint32_t> size);
-    void transitionImageLayout(RenderContext* context, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(RenderContext* context, uint32_t min_level, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void generateMipmap(RenderContext* context, uint32_t mip_level, Utils::Vec2<uint32_t> size, VkImage image);
 }

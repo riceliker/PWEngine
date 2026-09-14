@@ -220,18 +220,6 @@ namespace PWEngine::Render
         ~Texture2D();
         friend class RenderContext;
     };
-
-    class Depth
-    {
-    private:
-    public:
-        RenderContext* p_context;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        Depth();
-        ~Depth();
-        friend class RenderContext;
-    };
 }
 
 namespace PWEngine::Render
