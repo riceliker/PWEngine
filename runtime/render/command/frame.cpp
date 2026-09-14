@@ -48,9 +48,13 @@ namespace PWEngine::Render
         render_pass_info.renderArea.offset = {0, 0};
         render_pass_info.renderArea.extent = this->self->swapchain_extent;
 
-        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
-        render_pass_info.clearValueCount = 1;
-        render_pass_info.pClearValues = &clearColor;
+        std::array<VkClearValue, 2> clear_values{};
+        clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
+        clear_values[1].depthStencil = {1.0f, 0};
+        render_pass_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
+        render_pass_info.pClearValues = clear_values.data();
+        
+        
 
         vkCmdBeginRenderPass(this->self->command_buffers[this->current_frame], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -125,7 +129,7 @@ namespace PWEngine::Render
         vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void FrameSubmitCommand::addMesh2D(Mesh2D* mesh)
+    void FrameSubmitCommand::addMesh3D(Mesh3D* mesh)
     {
         VkBuffer vertex_buffers[] = {mesh->self->vertex_buffer};
         VkBuffer index_buffer = mesh->self->indices_buffer;
@@ -135,11 +139,13 @@ namespace PWEngine::Render
         vkCmdDrawIndexed(*this->self->command_buffer, static_cast<uint32_t>(mesh->indices.size()), 1, 0, 0, 0);
     }
 
-    void FrameSubmitCommand::updateUBO(UBO* ubo, float time)
+    void FrameSubmitCommand::updateUBO(UBO* ubo, float time, CameraInfo camera)
     {
-        ubo->data.model = Utils::rotate(Utils::Mat4(1.0f), time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
-        ubo->data.view = Utils::look(Utils::Vec3<float>(0.0f, 2.0f, 2.0f), Utils::Vec3<float>(0.0f, 0.0f, 0.0f), Utils::Vec3<float>(0.0f, 1.0f, 0.0f));
-        ubo->data.project = Utils::perspective(Utils::deg2rad(45), this->self->swapchain_extent->width / (float) this->self->swapchain_extent->height, 0.1f , 10.0f);
+        auto mirror_mat4 = Utils::Mat4(1);
+        mirror_mat4.cr(2, 2) = -1;
+        ubo->data.model = Utils::rotate(mirror_mat4, time * Utils::deg2rad(90), Utils::Vec3(0.0f, 0.0f, 1.0f));
+        ubo->data.view = Utils::look(camera.camera_pos, camera.camera_look_pos, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
+        ubo->data.project = Utils::perspective(Utils::deg2rad(45), this->self->swapchain_extent->width / (float) this->self->swapchain_extent->height, 0.1f , 100.0f);
         memcpy(ubo->self->uniform_buffers_mapped[this->self->currect_image], &ubo->data, sizeof(UBO::UBOData));
     }  
 }

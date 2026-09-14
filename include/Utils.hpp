@@ -1,5 +1,6 @@
 #pragma once
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 
@@ -32,7 +33,7 @@ namespace PWEngine::Utils
     {
         T x; T y;
         Vec2(T x, T y):x(x), y(y){}
-        Vec2(){};
+        Vec2(){}
     };
 
     template<typename T>
@@ -40,15 +41,14 @@ namespace PWEngine::Utils
     {
         T x; T y; T z;
         Vec3(T x, T y, T z):x(x), y(y), z(z){}
-        Vec3(){};
     };
 
-    inline constexpr Vec3<float> operator-(Vec3<float>& a, Vec3<float>& b) noexcept
+    inline constexpr Vec3<float> operator-(Vec3<float> a, Vec3<float> b) noexcept
     {
         return {a.x - b.x, a.y - b.y, a.z - b.z};
     }
 
-    inline constexpr Vec3<float> cross(Vec3<float>& a, Vec3<float>& b) noexcept
+    inline constexpr Vec3<float> cross(Vec3<float> a, Vec3<float> b) noexcept
     {
         return {
             a.y * b.z - a.z * b.y,
@@ -57,7 +57,7 @@ namespace PWEngine::Utils
         };
     }
 
-    inline constexpr float dot(Vec3<float>& a, Vec3<float>& b) noexcept
+    inline constexpr float dot(Vec3<float> a, Vec3<float> b) noexcept
     {
         return a.x*b.x + a.y*b.y + a.z*b.z;
     }
@@ -142,7 +142,17 @@ namespace PWEngine::Utils
     inline constexpr Mat4 look(Vec3<float> view, Vec3<float> center, Vec3<float> world) noexcept
     {
         Vec3<float> f = normal(center - view);
-        Vec3<float> r = normal(cross(f, world));
+        Vec3<float> r = cross(f, world);
+
+        float lenSq = dot(r, r);
+        if (lenSq < 1e-8f)
+        {
+            r = cross(f, Vec3<float>{1.0f, 0.0f, 0.0f});
+            lenSq = dot(r, r);
+            if (lenSq < 1e-8f)
+                r = cross(f, Vec3<float>{0.0f, 1.0f, 0.0f});
+        }
+
         Vec3<float> u = cross(r, f);
 
         Mat4 R = Mat4(1);
@@ -169,9 +179,84 @@ namespace PWEngine::Utils
         return m;
     }
 
-    struct Vertex2D
+    inline float str2float(const char* str)
+    {
+        const char* w = str;
+        while(*w) ++w;
+        const char* begin = str;
+        const char* end = w;
+
+        if (begin >= end) return 0.0f;
+
+        const char* p = begin;
+        bool negative = false;
+        if (*p == '-')
+        {
+            negative = true;
+            p++;
+        }
+        else if (*p == '+')
+        {
+            p++;
+        }
+
+        float result = 0.0f;
+        // XX.
+        while (p < end && *p >= '0' && *p <= '9')
+        {
+            result = result * 10.0f + (*p - '0');
+            p++;
+        }
+
+        // .XX
+        if (p < end && *p == '.')
+        {
+            p++;
+            float frac = 0.1f;
+            while (p < end && *p >= '0' && *p <= '9')
+            {
+                result += (*p - '0') * frac;
+                frac *= 0.1f;
+                p++;
+            }
+        }
+
+        // XXeXX
+        if (p < end && (*p == 'e' || *p == 'E'))
+        {
+            p++;
+            int exp_neg = 0;
+            int exponent = 0;
+            if (p < end && *p == '-')
+            {
+                exp_neg = 1;
+                p++;
+            }
+            else if (p < end && *p == '+')
+            {
+                p++;
+            }
+
+            while (p < end && *p >= '0' && *p <= '9')
+            {
+                exponent = exponent * 10 + (*p - '0');
+                p++;
+            }
+            if (exp_neg) exponent = -exponent;
+
+            result *= powf(10.0f, static_cast<float>(exponent));
+        }
+
+        if (negative)
+            result = -result;
+
+        return result;
+    }
+
+
+    struct Vertex3D
     {    
-        Utils::Vec2<float> position;
+        Utils::Vec3<float> position;
         Utils::Vec3<float> color;
         Utils::Vec2<float> uv;
     };

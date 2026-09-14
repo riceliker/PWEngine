@@ -1,8 +1,10 @@
 #pragma once
 #include "stream.hpp"
 #include "utils.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace PWEngine::File 
@@ -32,5 +34,21 @@ namespace PWEngine::File
         TgaStream(Stream::LogSystem* log, std::string load_path);
         std::unique_ptr<Utils::ImageRGBA8> makeImage();
         std::unique_ptr<Utils::ImageRGBA8> asImage();
+    };
+    
+    class ObjStream
+    {
+    private:
+        std::vector<Utils::Vertex3D> vertices;
+        std::vector<uint32_t> indics;
+
+        std::vector<Utils::Vec3<float>> v;
+        std::vector<Utils::Vec2<float>> vt;
+        std::vector<Utils::Vec3<float>> vn;
+        std::vector<std::vector<Utils::Vec3<uint32_t>>> f;
+    public:
+        ObjStream(Stream::LogSystem* log, std::string load_path);
+        std::vector<PWEngine::Utils::Vertex3D> asVertex3D();
+        std::vector<uint32_t> asIndices();
     };
 }

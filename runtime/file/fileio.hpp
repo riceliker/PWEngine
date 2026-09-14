@@ -28,13 +28,19 @@ namespace PWEngine::File
             Stream::log(log, Stream::LogType::Info, Stream::LogFrom::FileIO, "Can not read the file.");
             return std::nullopt;
         }
-        Stream::log(log, Stream::LogType::Info, Stream::LogFrom::FileIO, "Read file:" + path);
         return buffer;
+    }
+
+    inline uint8_t su8(std::vector<uint8_t> ptr, size_t offset)
+    {
+        uint8_t out = 0;
+        out |= ptr[offset];
+        return out;
     }
 
     inline uint16_t su16(std::vector<uint8_t> ptr, size_t offset)
     {
-        uint32_t out = 0;
+        uint16_t out = 0;
         for (int i = 0; i < 2; i++)
         {
             out |= ptr[offset + i] << (8 * i);
@@ -71,6 +77,5 @@ namespace PWEngine::File
         }
         return out;
     }
-
     
 }

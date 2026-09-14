@@ -68,6 +68,12 @@ namespace PWEngine::Render
         bool is_resizable;
     };
 
+    struct CameraInfo
+    {
+        Utils::Vec3<float> camera_pos;
+        Utils::Vec3<float> camera_look_pos;
+    };
+
     class Instance;
     class RenderContext;
     class Texture;
@@ -77,7 +83,7 @@ namespace PWEngine::Render
     class SimpleTimeCommand;
     class Sync;
     class FrameSubmitCommand;
-    class Mesh2D;
+    class Mesh3D;
     class Texture2D;
     class UBO;
 
@@ -109,11 +115,13 @@ namespace PWEngine::Render
     {
     private:
         size_t index;
+        /* init */
         void createDevice();
         void createWindow(WindowInfo info);
         void createSync();
         void createCommandPool();
         void createDescriptorPool();
+        void createDepth();
     public:
         Stream::LogSystem* log;
         Instance* p_instance;
@@ -131,7 +139,7 @@ namespace PWEngine::Render
         void recreateSwapchain();
         std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index, size_t descriptor_set_layout_index);
         /* Buffer */
-        std::unique_ptr<Mesh2D> createMesh2D(std::vector<Utils::Vertex2D> vertices, std::vector<uint32_t> indices);
+        std::unique_ptr<Mesh3D> createMesh3D(std::vector<Utils::Vertex3D> vertices, std::vector<uint32_t> indices);
         std::unique_ptr<UBO> createUBO();
         std::unique_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* const image);
         /* Loop */
@@ -162,19 +170,19 @@ namespace PWEngine::Render
 namespace PWEngine::Render
 {
 
-    class Mesh2D
+    class Mesh3D
     {
     private:
         void setVertices();
         void setIndices();
     public:
         RenderContext* p_context;
-        std::vector<Utils::Vertex2D> vertices;
+        std::vector<Utils::Vertex3D> vertices;
         std::vector<uint32_t> indices;
         struct Impl;
         std::unique_ptr<Impl> self;
-        Mesh2D();
-        ~Mesh2D();
+        Mesh3D();
+        ~Mesh3D();
         friend class RenderContext;
     };
 
@@ -212,6 +220,18 @@ namespace PWEngine::Render
         ~Texture2D();
         friend class RenderContext;
     };
+
+    class Depth
+    {
+    private:
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Depth();
+        ~Depth();
+        friend class RenderContext;
+    };
 }
 
 namespace PWEngine::Render
@@ -225,8 +245,8 @@ namespace PWEngine::Render
         FrameSubmitCommand();
         void setViewPort();
         void setScissor();
-        void addMesh2D(Mesh2D* mesh);
-        void updateUBO(UBO* ubo, float time);
+        void addMesh3D(Mesh3D* mesh);
+        void updateUBO(UBO* ubo, float time, CameraInfo camera);
     };  
     
 }

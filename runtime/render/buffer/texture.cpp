@@ -14,7 +14,7 @@ namespace PWEngine::Render
     }
     void Texture2D::createTexture(RenderContext* context, Utils::ImageRGBA8* const image)
     {
-        size_t size = image->size.x * image->size.y * image->depth;
+        size_t size = image->size.x * image->size.y * image->depth / 8;
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
 
@@ -28,7 +28,7 @@ namespace PWEngine::Render
         VkImage texture_image;
         VkDeviceMemory texture_image_memory;
 
-        createImageBuffer(context, size, image->size, texture_image, texture_image_memory);
+        createImageBuffer(context, image->size, texture_image, texture_image_memory);
 
         transitionImageLayout(this->p_context, texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
         copyBufferToImage(this->p_context, staging_buffer, texture_image, image->size);

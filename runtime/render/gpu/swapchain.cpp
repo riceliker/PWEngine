@@ -1,5 +1,6 @@
 #include "render.hpp"
 #include "impl.hpp"
+#include "../buffer/buffer.hpp"
 #include "check.hpp"
 #include "stream.hpp"
 #include <cstddef>
@@ -7,6 +8,33 @@
 
 namespace PWEngine::Render
 {
+    void RenderContext::createDepth()
+    {
+        VkImage depth_image;
+        VkDeviceMemory depth_image_memory;
+        VkImageView depth_image_view;
+        createDepthBuffer(this, depth_image, depth_image_memory);
+
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = depth_image;
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+        if (vkCreateImageView(this->self->device, &viewInfo, nullptr, &depth_image_view) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create depth image view!");
+        }
+
+        this->self->depth_image = depth_image;
+        this->self->depth_image_memory = depth_image_memory;
+        this->self->depth_image_view = depth_image_view;
+
+    }
+    
     void RenderContext::createSwapchain(size_t render_pass_index)
     {
         VkRenderPass render_pass = this->self->render_passes.at(render_pass_index);
@@ -65,6 +93,15 @@ namespace PWEngine::Render
 
         swapchain_image_format = surface_format.format;
         swapchain_extent = extent;
+
+        this->self->currect_render_pass_index = index;
+        this->self->swapchain = swapchain;
+        this->self->swapchain_extent = swapchain_extent;
+        this->self->swapchain_image_format = swapchain_image_format;
+        this->self->swapchain_images = swapchain_images;
+
+        this->createDepth();
+
         /* Image View */
         swapchain_image_views.resize(swapchain_images.size());
 
@@ -94,15 +131,16 @@ namespace PWEngine::Render
         swapchain_framebuffers.resize(swapchain_image_views.size());
 
         for (size_t i = 0; i < swapchain_image_views.size(); i++) {
-            VkImageView attachments[] = {
-                swapchain_image_views[i]
+            std::array<VkImageView, 2> attachments = {
+                swapchain_image_views[i],
+                this->self->depth_image_view
             };
 
             VkFramebufferCreateInfo framebufferInfo{};
             framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
             framebufferInfo.renderPass = render_pass;
-            framebufferInfo.attachmentCount = 1;
-            framebufferInfo.pAttachments = attachments;
+            framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+            framebufferInfo.pAttachments = attachments.data();
             framebufferInfo.width = swapchain_extent.width;
             framebufferInfo.height = swapchain_extent.height;
             framebufferInfo.layers = 1;
@@ -113,13 +151,9 @@ namespace PWEngine::Render
             
         }
 
-        this->self->currect_render_pass_index = index;
-        this->self->swapchain = swapchain;
-        this->self->swapchain_extent = swapchain_extent;
-        this->self->swapchain_image_format = swapchain_image_format;
-        this->self->swapchain_images = swapchain_images;
         this->self->swapchain_image_views = std::move(swapchain_image_views);
         this->self->swapchain_framebuffers = std::move(swapchain_framebuffers);
+        
     }
 
     void RenderContext::recreateSwapchain()

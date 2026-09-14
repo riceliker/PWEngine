@@ -89,8 +89,8 @@ namespace PWEngine::Render
         VkPipeline graphics_pipeline;
 
         auto shaderStages = createShader(this);
-        auto bind = getBindingDescription<Utils::Vertex2D>();
-        auto attribute = getAttributeDescriptions<Utils::Vertex2D>();
+        auto bind = getBindingDescription<Utils::Vertex3D>();
+        auto attribute = getAttributeDescriptions<Utils::Vertex3D>();
         auto vertexInputInfo = createVertexFormat(bind, attribute);
         
         /* InputAssembly: default */
@@ -111,7 +111,7 @@ namespace PWEngine::Render
         rasterizer.rasterizerDiscardEnable = VK_FALSE; /* default: It must be render */
         rasterizer.polygonMode = VK_POLYGON_MODE_FILL; /* default */
         rasterizer.lineWidth = 1.0f; /* default */
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT; /* default: backend face must be ignored */
+        rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT; /* default: backend face must be ignored */
         rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE; /* default */
         rasterizer.depthBiasEnable = VK_FALSE; /* dynamic: see setDepthBias() */
 
@@ -153,23 +153,37 @@ namespace PWEngine::Render
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
 
-        VkGraphicsPipelineCreateInfo pipelineInfo{};
-        pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-        pipelineInfo.stageCount = 2;
-        pipelineInfo.pStages = shaderStages.data();
-        pipelineInfo.pVertexInputState = &vertexInputInfo;
-        pipelineInfo.pInputAssemblyState = &inputAssembly;
-        pipelineInfo.pViewportState = &viewportState;
-        pipelineInfo.pRasterizationState = &rasterizer;
-        pipelineInfo.pMultisampleState = &multisampling;
-        pipelineInfo.pColorBlendState = &colorBlending;
-        pipelineInfo.pDynamicState = &dynamicState;
-        pipelineInfo.layout = pipeline_layout;
-        pipelineInfo.renderPass = render_pass;
-        pipelineInfo.subpass = 0;
-        pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
+        VkPipelineDepthStencilStateCreateInfo depth_stencil{};
+        depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+        depth_stencil.depthTestEnable = VK_TRUE;
+        depth_stencil.depthWriteEnable = VK_TRUE;
+        depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
+        depth_stencil.depthBoundsTestEnable = VK_FALSE;
+        depth_stencil.minDepthBounds = 0.0f; // Optional
+        depth_stencil.maxDepthBounds = 1.0f; // Optional
+        depth_stencil.stencilTestEnable = VK_FALSE;
+        depth_stencil.front = {}; // Optional
+        depth_stencil.back = {}; // Optional
+        
 
-        if (vkCreateGraphicsPipelines(this->self->device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+        VkGraphicsPipelineCreateInfo pipeline_info{};
+        pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.stageCount = 2;
+        pipeline_info.pStages = shaderStages.data();
+        pipeline_info.pVertexInputState = &vertexInputInfo;
+        pipeline_info.pInputAssemblyState = &inputAssembly;
+        pipeline_info.pViewportState = &viewportState;
+        pipeline_info.pRasterizationState = &rasterizer;
+        pipeline_info.pMultisampleState = &multisampling;
+        pipeline_info.pColorBlendState = &colorBlending;
+        pipeline_info.pDynamicState = &dynamicState;
+        pipeline_info.layout = pipeline_layout;
+        pipeline_info.renderPass = render_pass;
+        pipeline_info.subpass = 0;
+        pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+        pipeline_info.pDepthStencilState = &depth_stencil;
+
+        if (vkCreateGraphicsPipelines(this->self->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
         }

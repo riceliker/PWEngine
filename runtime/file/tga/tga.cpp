@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace PWEngine::File
@@ -32,6 +33,7 @@ namespace PWEngine::File
             height = su16(file, 14);
             this->info.height = height;
             this->info.pixel_depth = file[16];
+            Stream::log(log, Stream::LogType::Debug, Stream::LogFrom::Debug, "the value"+std::to_string(file[16]));
             this->info.image_descriptor = file[17];
 
             offset += 18;

@@ -159,4 +159,5 @@ namespace PWEngine::Render
 
         return indices.isComplete() && extensions_supported && swap_chain_adequate && supportedFeatures.samplerAnisotropy;
     }
+
 }

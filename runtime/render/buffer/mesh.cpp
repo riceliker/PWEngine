@@ -10,12 +10,12 @@
 namespace PWEngine::Render
 {
     
-    Mesh2D::Mesh2D(): self(std::make_unique<Impl>())
+    Mesh3D::Mesh3D(): self(std::make_unique<Impl>())
     {
 
     }
 
-    void Mesh2D::setVertices()
+    void Mesh3D::setVertices()
     {
         size_t size = sizeof(this->vertices[0]) * this->vertices.size();
 
@@ -41,7 +41,7 @@ namespace PWEngine::Render
         this->self->vertex_buffer = vertex_buffer;
         this->self->vertex_buffer_memory = vertex_buffer_memory;
     }
-    void Mesh2D::setIndices()
+    void Mesh3D::setIndices()
     {
         size_t size = sizeof(this->indices[0]) * this->indices.size();
 
@@ -68,9 +68,9 @@ namespace PWEngine::Render
         this->self->indices_buffer_memory = index_buffer_memory;
     }
 
-    std::unique_ptr<Mesh2D> RenderContext::createMesh2D(std::vector<Utils::Vertex2D> vertices, std::vector<uint32_t> indices)
+    std::unique_ptr<Mesh3D> RenderContext::createMesh3D(std::vector<Utils::Vertex3D> vertices, std::vector<uint32_t> indices)
     {
-        std::unique_ptr<Mesh2D> obj = std::make_unique<Mesh2D>();
+        std::unique_ptr<Mesh3D> obj = std::make_unique<Mesh3D>();
         obj->p_context = this;
         obj->vertices = std::move(vertices);
         obj->indices = std::move(indices);
@@ -79,7 +79,7 @@ namespace PWEngine::Render
         return obj;
     }
 
-    Mesh2D::~Mesh2D()
+    Mesh3D::~Mesh3D()
     {
         vkDestroyBuffer(this->p_context->self->device, this->self->vertex_buffer, nullptr);
         vkFreeMemory(this->p_context->self->device, this->self->vertex_buffer_memory, nullptr);

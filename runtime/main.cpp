@@ -9,13 +9,14 @@ int main()
 {
     auto log = PWEngine::Stream::LogSystem(true);
 
-    auto tga = PWEngine::File::TgaStream(&log, "./assets/icon.tga");
+    auto tga = PWEngine::File::TgaStream(&log, "./assets/viking_room.tga");
     auto image = tga.asImage();
 
-    PWEngine::Render::InstanceInfo instance_info{};
+    PWEngine::Render::InstanceInfo instance_info = {
+        .name = "Test",
+        .version = PWEngine::Utils::Vec3<uint8_t>(1, 0, 0)
+    };
     instance_info.is_debug = true;
-    instance_info.name = "Test";
-    instance_info.version = PWEngine::Utils::Vec3<uint8_t>(1, 0, 0);
     PWEngine::Render::Instance instance =
         PWEngine::Render::Instance(instance_info, &log);
 
@@ -34,16 +35,10 @@ int main()
     auto texture = context->createTexture2D(image.get());
     context->updateDescriptor(descriptor_sets, ubo.get(), texture.get());
     
-    const std::vector<PWEngine::Utils::Vertex2D> vertices = {
-        {{-0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 0.0f}},
-        {{0.5f, -0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 0.0f}},
-        {{0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {0.0f, 1.0f}},
-        {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f}}
-    };
-    const std::vector<uint32_t> indices = {
-        0, 1, 2, 2, 3, 0
-    };
-    auto mesh = context->createMesh2D(vertices, indices);
+    auto obj = PWEngine::File::ObjStream(&log, "./assets/viking_room.obj");
+    auto vertices = obj.asVertex3D();
+    auto indices = obj.asIndices();
+    auto mesh = context->createMesh3D(vertices, indices);
 
     auto pipeline = context->createPipeline(render_pass, descriptor_set_layout);
 
@@ -55,8 +50,12 @@ int main()
         context->drawFrameCommand(pipeline.get(), descriptor_sets, [&](PWEngine::Render::FrameSubmitCommand& cmd){
             cmd.setViewPort();
             cmd.setScissor();
-            cmd.updateUBO(ubo.get(), time);
-            cmd.addMesh2D(mesh.get());
+            PWEngine::Render::CameraInfo camera_info = {
+                .camera_pos = PWEngine::Utils::Vec3<float>(0.0f, -5.0f, 0.0f),
+                .camera_look_pos = PWEngine::Utils::Vec3<float>(0.0f, 0.0f, 0.0f)
+            };
+            cmd.updateUBO(ubo.get(), time, camera_info);
+            cmd.addMesh3D(mesh.get());
         });
         auto currentTime = std::chrono::high_resolution_clock::now();
         time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();

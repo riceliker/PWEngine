@@ -101,7 +101,7 @@ namespace PWEngine::Render
         vkBindBufferMemory(context->self->device, buffer, memory, 0);
     }
 
-    inline void createImageBuffer(RenderContext* context, size_t memory_size, Utils::Vec2<uint32_t> size, VkImage& image, VkDeviceMemory& memory)
+    inline void createImageBuffer(RenderContext* context, Utils::Vec2<uint32_t> size, VkImage& image, VkDeviceMemory& memory)
     {
         VkImageCreateInfo image_info{};
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -130,6 +130,43 @@ namespace PWEngine::Render
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize = mem_requirements.size;
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        if (vkAllocateMemory(context->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate buffer memory!");
+        }
+
+        vkBindImageMemory(context->self->device, image, memory, 0);
+    }
+
+    inline void createDepthBuffer(RenderContext* context, VkImage& image, VkDeviceMemory& memory)
+    {
+        VkImageCreateInfo image_info{};
+        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_info.imageType = VK_IMAGE_TYPE_2D;
+        image_info.extent.width = context->self->swapchain_extent.width;
+        image_info.extent.height = context->self->swapchain_extent.height;
+        image_info.extent.depth = 1;
+        image_info.mipLevels = 1;
+        image_info.arrayLayers = 1;
+        image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+        image_info.tiling = VK_IMAGE_TILING_OPTIMAL; //1
+        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT; //2
+        image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_info.flags = 0; // Optional
+
+        if (vkCreateImage(context->self->device, &image_info, nullptr, &image) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image!");
+        }
+
+        VkMemoryRequirements mem_requirements;
+        vkGetImageMemoryRequirements(context->self->device, image, &mem_requirements);
+
+        VkMemoryAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT); //3
 
         if (vkAllocateMemory(context->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate buffer memory!");
