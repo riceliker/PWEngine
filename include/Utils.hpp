@@ -41,6 +41,7 @@ namespace PWEngine::Utils
     {
         T x; T y; T z;
         Vec3(T x, T y, T z):x(x), y(y), z(z){}
+        Vec3(){};
     };
 
     inline constexpr Vec3<float> operator-(Vec3<float> a, Vec3<float> b) noexcept

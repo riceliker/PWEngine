@@ -1,6 +1,6 @@
 #include "render.hpp"
 #include "impl.hpp"
-#include "../gpu/impl.hpp"
+#include "../context/impl.hpp"
 #include "../command/impl.hpp"
 #include "buffer.hpp"
 #include <cstddef>
@@ -25,9 +25,9 @@ namespace PWEngine::Render
 
         /* data */
         void* data;
-        vkMapMemory(this->p_context->self->device, staging_buffer_memory, 0, size, 0, &data);
+        vkMapMemory(this->p_context->m_device->device, staging_buffer_memory, 0, size, 0, &data);
         memcpy(data, this->vertices.data(), (size_t) size);
-        vkUnmapMemory(this->p_context->self->device, staging_buffer_memory);
+        vkUnmapMemory(this->p_context->m_device->device, staging_buffer_memory);
 
         VkBuffer vertex_buffer;
         VkDeviceMemory vertex_buffer_memory;
@@ -35,8 +35,8 @@ namespace PWEngine::Render
 
         copyBufferCommand(this->p_context, staging_buffer, vertex_buffer, size);
 
-        vkDestroyBuffer(this->p_context->self->device, staging_buffer, nullptr);
-        vkFreeMemory(this->p_context->self->device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(this->p_context->m_device->device, staging_buffer, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, staging_buffer_memory, nullptr);
 
         this->self->vertex_buffer = vertex_buffer;
         this->self->vertex_buffer_memory = vertex_buffer_memory;
@@ -51,9 +51,9 @@ namespace PWEngine::Render
 
         /* data */
         void* data;
-        vkMapMemory(this->p_context->self->device, staging_buffer_memory, 0, size, 0, &data);
+        vkMapMemory(this->p_context->m_device->device, staging_buffer_memory, 0, size, 0, &data);
         memcpy(data, this->indices.data(), (size_t) size);
-        vkUnmapMemory(this->p_context->self->device, staging_buffer_memory);
+        vkUnmapMemory(this->p_context->m_device->device, staging_buffer_memory);
 
         VkBuffer index_buffer;
         VkDeviceMemory index_buffer_memory;
@@ -61,8 +61,8 @@ namespace PWEngine::Render
 
         copyBufferCommand(this->p_context, staging_buffer, index_buffer, size);
 
-        vkDestroyBuffer(this->p_context->self->device, staging_buffer, nullptr);
-        vkFreeMemory(this->p_context->self->device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(this->p_context->m_device->device, staging_buffer, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, staging_buffer_memory, nullptr);
         
         this->self->indices_buffer = index_buffer;
         this->self->indices_buffer_memory = index_buffer_memory;
@@ -81,11 +81,11 @@ namespace PWEngine::Render
 
     Mesh3D::~Mesh3D()
     {
-        vkDestroyBuffer(this->p_context->self->device, this->self->vertex_buffer, nullptr);
-        vkFreeMemory(this->p_context->self->device, this->self->vertex_buffer_memory, nullptr);
+        vkDestroyBuffer(this->p_context->m_device->device, this->self->vertex_buffer, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, this->self->vertex_buffer_memory, nullptr);
 
-        vkDestroyBuffer(this->p_context->self->device, this->self->indices_buffer, nullptr);
-        vkFreeMemory(this->p_context->self->device, this->self->indices_buffer_memory, nullptr);
+        vkDestroyBuffer(this->p_context->m_device->device, this->self->indices_buffer, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, this->self->indices_buffer_memory, nullptr);
     }
 
     

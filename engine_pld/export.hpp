@@ -46,7 +46,7 @@ namespace PWEngine::Runtime
         double num;
     };
     /*
-     * Event Module [Engine Instance]
+     * Event Module [Engine RenderInstance]
      * Event is just record the enum status. Use function call back.
      * The function will be run in the event threads. 
      * So you use make should the threads condition.

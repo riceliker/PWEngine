@@ -28,8 +28,6 @@ namespace PWEngine::File
         return out;
     }
 
-
-
     ObjStream::ObjStream(Stream::LogSystem* log, std::string load_path)
     {
         std::fstream file(load_path);

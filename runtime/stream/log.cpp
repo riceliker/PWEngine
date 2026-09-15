@@ -33,7 +33,7 @@ namespace PWEngine::Stream
             switch (message.type)
             {
             case LogType::Info:
-                color = "";
+                color = "\033[32m";
                 type = "Info";
                 break;
             case LogType::Warn:
@@ -45,7 +45,7 @@ namespace PWEngine::Stream
                 type = "Error";
                 break;
             case LogType::Debug:
-                color = "\033[32m";
+                color = "\033[35m";
                 type = "Debug";
                 break;
             }

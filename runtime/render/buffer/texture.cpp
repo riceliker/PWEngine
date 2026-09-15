@@ -21,9 +21,9 @@ namespace PWEngine::Render
         createStagingBuffer(this->p_context, size, staging_buffer, staging_buffer_memory);
 
         void* data;
-        vkMapMemory(this->p_context->self->device, staging_buffer_memory, 0, size, 0, &data);
+        vkMapMemory(this->p_context->m_device->device, staging_buffer_memory, 0, size, 0, &data);
         memcpy(data, image->data.data(), size);
-        vkUnmapMemory(this->p_context->self->device, staging_buffer_memory);
+        vkUnmapMemory(this->p_context->m_device->device, staging_buffer_memory);
 
         VkImage texture_image;
         VkDeviceMemory texture_image_memory;
@@ -34,8 +34,8 @@ namespace PWEngine::Render
         copyBufferToImage(this->p_context, staging_buffer, texture_image, image->size);
         generateMipmap(this->p_context, this->self->mip_level, this->size, texture_image);
         
-        vkDestroyBuffer(this->p_context->self->device, staging_buffer, nullptr);
-        vkFreeMemory(this->p_context->self->device, staging_buffer_memory, nullptr);
+        vkDestroyBuffer(this->p_context->m_device->device, staging_buffer, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, staging_buffer_memory, nullptr);
 
         this->self->texture_image = texture_image;
         this->self->texture_image_memory = staging_buffer_memory;
@@ -54,7 +54,7 @@ namespace PWEngine::Render
         viewInfo.subresourceRange.levelCount = this->self->mip_level;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(this->p_context->self->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS) {
+        if (vkCreateImageView(this->p_context->m_device->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
         this->self->texture_image_view = texture_image_view;
@@ -73,7 +73,7 @@ namespace PWEngine::Render
         samplerInfo.anisotropyEnable = VK_TRUE;
 
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(this->p_context->self->adapter, &properties);
+        vkGetPhysicalDeviceProperties(this->p_context->m_device->adapter, &properties);
         samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
         samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
         samplerInfo.unnormalizedCoordinates = VK_FALSE;
@@ -83,7 +83,7 @@ namespace PWEngine::Render
         samplerInfo.mipLodBias = 0.0f;
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-        if (vkCreateSampler(this->p_context->self->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS) {
+        if (vkCreateSampler(this->p_context->m_device->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
 
@@ -104,9 +104,9 @@ namespace PWEngine::Render
 
     Texture2D::~Texture2D()
     {
-        vkDestroySampler(this->p_context->self->device, this->self->texture_sampler, nullptr);
-        vkDestroyImageView(this->p_context->self->device, this->self->texture_image_view, nullptr);
-        vkDestroyImage(this->p_context->self->device, this->self->texture_image, nullptr);
-        vkFreeMemory(this->p_context->self->device, this->self->texture_image_memory, nullptr);
+        vkDestroySampler(this->p_context->m_device->device, this->self->texture_sampler, nullptr);
+        vkDestroyImageView(this->p_context->m_device->device, this->self->texture_image_view, nullptr);
+        vkDestroyImage(this->p_context->m_device->device, this->self->texture_image, nullptr);
+        vkFreeMemory(this->p_context->m_device->device, this->self->texture_image_memory, nullptr);
     }
 }

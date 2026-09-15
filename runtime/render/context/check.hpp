@@ -17,7 +17,11 @@ namespace PWEngine::Render
     #if (__APPLE__)
         VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
     #endif
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+        /* swapchain */
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+        /* dynamic rendering */
+        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
+    };
 
     struct QueueFamilyIndices
     {

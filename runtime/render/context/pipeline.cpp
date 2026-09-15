@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <fstream>
 #include <memory>
+#include <vector>
 
 namespace PWEngine::Render 
 {
@@ -51,8 +52,8 @@ namespace PWEngine::Render
         auto vertShaderCode = readFile("./shaders/vert.spv");
         auto fragShaderCode = readFile("./shaders/frag.spv");
 
-        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, context->self->device).value();
-        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, context->self->device).value();
+        VkShaderModule vertShaderModule = createShaderModule(vertShaderCode, context->m_device->device).value();
+        VkShaderModule fragShaderModule = createShaderModule(fragShaderCode, context->m_device->device).value();
 
         VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
         vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -81,9 +82,8 @@ namespace PWEngine::Render
         return vertexInputInfo;
     }
 
-    std::unique_ptr<Pipeline> RenderContext::createPipeline(size_t render_pass_index, size_t descriptor_set_layout_index)
+    std::unique_ptr<Pipeline> RenderContext::createPipeline(size_t descriptor_set_layout_index)
     {   
-        VkRenderPass render_pass = this->self->render_passes.at(render_pass_index);
         VkDescriptorSetLayout descriptor_set_layout = this->self->descriptor_set_layouts.at(descriptor_set_layout_index);
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
@@ -149,7 +149,7 @@ namespace PWEngine::Render
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &descriptor_set_layout;
 
-        if (vkCreatePipelineLayout(this->self->device, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(this->m_device->device, &pipelineLayoutInfo, nullptr, &pipeline_layout) != VK_SUCCESS) {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
 
@@ -164,10 +164,19 @@ namespace PWEngine::Render
         depth_stencil.stencilTestEnable = VK_FALSE;
         depth_stencil.front = {}; // Optional
         depth_stencil.back = {}; // Optional
+
+
+        VkPipelineRenderingCreateInfo rendering_create_info{};
+        rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        rendering_create_info.colorAttachmentCount = 1;
+        rendering_create_info.pColorAttachmentFormats = &this->m_swapchain->swapchain_image_format;
+        rendering_create_info.depthAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+        rendering_create_info.stencilAttachmentFormat = VK_FORMAT_D24_UNORM_S8_UINT;
         
 
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.pNext = &rendering_create_info;
         pipeline_info.stageCount = 2;
         pipeline_info.pStages = shaderStages.data();
         pipeline_info.pVertexInputState = &vertexInputInfo;
@@ -178,32 +187,32 @@ namespace PWEngine::Render
         pipeline_info.pColorBlendState = &colorBlending;
         pipeline_info.pDynamicState = &dynamicState;
         pipeline_info.layout = pipeline_layout;
-        pipeline_info.renderPass = render_pass;
+        pipeline_info.renderPass = VK_NULL_HANDLE;
         pipeline_info.subpass = 0;
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         pipeline_info.pDepthStencilState = &depth_stencil;
 
-        if (vkCreateGraphicsPipelines(this->self->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+
+        if (vkCreateGraphicsPipelines(this->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("failed to create graphics pipeline!");
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
         }
 
         for (auto shader_module : shaderStages)
         {
-            vkDestroyShaderModule(this->self->device, shader_module.module, nullptr);
+            vkDestroyShaderModule(this->m_device->device, shader_module.module, nullptr);
         }
 
         std::unique_ptr<Pipeline> obj = std::make_unique<Pipeline>();
         obj->p_context = this;
         obj->self->graphics_pipeline = graphics_pipeline;
         obj->self->pipeline_layout = pipeline_layout;
-        obj->self->p_render_pass = render_pass;
         return obj;
     }
 
     Pipeline::~Pipeline()
     {
-        vkDestroyPipeline(this->p_context->self->device, this->self->graphics_pipeline, nullptr);
-        vkDestroyPipelineLayout(this->p_context->self->device, this->self->pipeline_layout, nullptr);
+        vkDestroyPipeline(this->p_context->m_device->device, this->self->graphics_pipeline, nullptr);
+        vkDestroyPipelineLayout(this->p_context->m_device->device, this->self->pipeline_layout, nullptr);
     }
 }

@@ -1,5 +1,5 @@
 #include "render.hpp"
-#include "../gpu/impl.hpp"
+#include "../context/impl.hpp"
 #include "../buffer/buffer.hpp"
 #include <cstddef>
 #include <memory>
@@ -28,7 +28,7 @@ namespace PWEngine::Render
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
         {
             createDirectBuffer(this, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, obj->self->uniform_buffers[i], obj->self->uniform_buffers_memory[i]);
-            vkMapMemory(this->self->device, obj->self->uniform_buffers_memory[i], 0, bufferSize, 0, &obj->self->uniform_buffers_mapped[i]);
+            vkMapMemory(this->m_device->device, obj->self->uniform_buffers_memory[i], 0, bufferSize, 0, &obj->self->uniform_buffers_mapped[i]);
         }
         
         return obj;

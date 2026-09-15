@@ -1,5 +1,5 @@
 #include "render.hpp"
-#include "../gpu/impl.hpp"
+#include "../context/impl.hpp"
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -17,7 +17,7 @@ namespace PWEngine::Render
         alloc_info.commandBufferCount = 1;
 
         VkCommandBuffer command_buffer;
-        vkAllocateCommandBuffers(context->self->device, &alloc_info, &command_buffer);
+        vkAllocateCommandBuffers(context->m_device->device, &alloc_info, &command_buffer);
         VkCommandBufferBeginInfo begin_info{};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
@@ -31,10 +31,10 @@ namespace PWEngine::Render
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers = &command_buffer;
 
-        vkQueueSubmit(context->self->graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
-        vkQueueWaitIdle(context->self->graphics_queue);
+        vkQueueSubmit(context->m_device->graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(context->m_device->graphics_queue);
 
-        vkFreeCommandBuffers(context->self->device, context->self->command_pool, 1, &command_buffer);
+        vkFreeCommandBuffers(context->m_device->device, context->self->command_pool, 1, &command_buffer);
     }
  
     void copyBufferCommand(RenderContext* context, VkBuffer staging, VkBuffer real, size_t size)

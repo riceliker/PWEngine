@@ -5,37 +5,45 @@
 
 namespace PWEngine::Render
 {
-    struct Instance::Impl
-    {
-        bool is_debug = false;
-        VkInstance instance;
-        VkDebugUtilsMessengerEXT debug_messenger;
-        std::vector<VkPhysicalDevice> adapters;
-         
-    };
-
-    struct RenderContext::Impl
+    struct RenderContext::Device
     {
         VkPhysicalDevice adapter;
         VkDevice device;
         VkQueue graphics_queue;
+        Device(RenderContext* super);
+    };
+
+    struct RenderContext::Window
+    {
         GLFWwindow* window;
         VkSurfaceKHR surface;
+        
+        Window(RenderContext* super, bool is_resizable, Utils::Vec2<uint32_t> window_default_resolution, std::string window_title);
+    };
 
-        std::vector<VkRenderPass> render_passes;
-        size_t currect_render_pass_index;
-        std::vector<UBO> UBOs;
-
+    struct RenderContext::Swapchain
+    {
         VkSwapchainKHR swapchain;
         std::vector<VkImage> swapchain_images;
         VkFormat swapchain_image_format;
         VkExtent2D swapchain_extent;
-        std::vector<VkImageView> swapchain_image_views;
-        std::vector<VkFramebuffer> swapchain_framebuffers;
 
         VkImage depth_image;
         VkDeviceMemory depth_image_memory;
         VkImageView depth_image_view;
+
+        std::vector<VkImageView> swapchain_image_views;
+
+        Swapchain(RenderContext* super);
+        void createSwapchain(RenderContext* super, VkExtent2D& swapchain_extent);
+        void createDepth(RenderContext* super, VkExtent2D swapchain_extent);
+        void createImageView(RenderContext* super);
+    };
+
+    struct RenderContext::Impl
+    {
+        std::vector<UBO> UBOs;
+        
 
         std::vector<VkSemaphore> image_available_semaphores;
         std::vector<VkSemaphore> render_finished_semaphores;
@@ -59,7 +67,6 @@ namespace PWEngine::Render
 
     struct Pipeline::Impl
     {
-        VkRenderPass p_render_pass;
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
         size_t currect_descriptor_set_layout_index;

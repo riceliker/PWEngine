@@ -1,6 +1,6 @@
 #include "render.hpp"
 #include "impl.hpp"
-#include "../gpu/impl.hpp"
+#include "../context/impl.hpp"
 #include "../buffer/impl.hpp"
 #include "utils.hpp"
 #include <cstddef>
@@ -17,10 +17,10 @@ namespace PWEngine::Render
     
     void RenderContext::drawFrameCommand(Pipeline* pipeline, size_t descriptor_set_index, std::function<void(FrameSubmitCommand& cmd)> func)
     {
-        vkWaitForFences(this->self->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
 
         uint32_t image_index;
-        VkResult result = vkAcquireNextImageKHR(this->self->device, this->self->swapchain, UINT64_MAX, this->self->image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
+        VkResult result = vkAcquireNextImageKHR(this->m_device->device, this->m_swapchain->swapchain, UINT64_MAX, this->self->image_available_semaphores[current_frame], VK_NULL_HANDLE, &image_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) 
         {
@@ -30,7 +30,7 @@ namespace PWEngine::Render
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(this->self->device, 1, &this->self->in_flight_fences[this->current_frame]);
+        vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame]);
         vkResetCommandBuffer(this->self->command_buffers[this->current_frame], /*VkCommandBufferResetFlagBits*/ 0);
 
         /* submit */
@@ -41,22 +41,42 @@ namespace PWEngine::Render
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
         }
 
-        VkRenderPassBeginInfo render_pass_info{};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.renderPass = pipeline->self->p_render_pass;
-        render_pass_info.framebuffer = this->self->swapchain_framebuffers[image_index];
-        render_pass_info.renderArea.offset = {0, 0};
-        render_pass_info.renderArea.extent = this->self->swapchain_extent;
+        VkRenderingAttachmentInfo color_attachment_info{};
+        color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        color_attachment_info.imageView = this->m_swapchain->swapchain_image_views[this->current_frame];
+        color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment_info.clearValue.color = {{0.1f,0.1f,0.15f,1.0f}};
 
-        std::array<VkClearValue, 2> clear_values{};
-        clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
-        clear_values[1].depthStencil = {1.0f, 0};
-        render_pass_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
-        render_pass_info.pClearValues = clear_values.data();
+        VkRenderingAttachmentInfo depth_attachment_info{};
+        depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        depth_attachment_info.imageView = this->m_swapchain->depth_image_view;
+        depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        depth_attachment_info.clearValue.depthStencil.depth = 1.0f;
+
+        VkRenderingAttachmentInfo stencil_attachment_info{};
+        stencil_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        stencil_attachment_info.imageView = this->m_swapchain->depth_image_view;
+        stencil_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        stencil_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        stencil_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        stencil_attachment_info.clearValue.depthStencil.stencil = 0;
+
+        VkRenderingInfoKHR rendering_info{};
+        rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
+        rendering_info.renderArea.offset = {0, 0};
+        rendering_info.renderArea.extent = this->m_swapchain->swapchain_extent;
+        rendering_info.layerCount = 1;
+        rendering_info.colorAttachmentCount = 1;
+        rendering_info.pColorAttachments = &color_attachment_info;
+        rendering_info.pDepthAttachment = &depth_attachment_info;
+        rendering_info.pStencilAttachment = &stencil_attachment_info;
         
         
-
-        vkCmdBeginRenderPass(this->self->command_buffers[this->current_frame], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderingKHR(this->self->command_buffers[this->current_frame], &rendering_info);
 
         vkCmdBindPipeline(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
         vkCmdBindDescriptorSets(this->self->command_buffers[this->current_frame], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, 1, &this->self->descriptor_sets[descriptor_set_index][this->current_frame], 0, nullptr);
@@ -64,7 +84,7 @@ namespace PWEngine::Render
         cmd.p_context = this;
         cmd.self->currect_image = image_index;
         cmd.self->command_buffer = &(this->self->command_buffers[this->current_frame]);
-        cmd.self->swapchain_extent = &(this->self->swapchain_extent);
+        cmd.self->swapchain_extent = &(this->m_swapchain->swapchain_extent);
         cmd.self->pipeline_layout = pipeline->self->pipeline_layout;
         func(cmd);
 
@@ -90,7 +110,7 @@ namespace PWEngine::Render
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(this->self->graphics_queue, 1, &submitInfo, this->self->in_flight_fences[this->current_frame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(this->m_device->graphics_queue, 1, &submitInfo, this->self->in_flight_fences[this->current_frame]) != VK_SUCCESS) {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
         }
 
@@ -99,12 +119,12 @@ namespace PWEngine::Render
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = {this->self->swapchain};
+        VkSwapchainKHR swapChains[] = {this->m_swapchain->swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &image_index;
 
-        vkQueuePresentKHR(this->self->graphics_queue, &presentInfo);
+        vkQueuePresentKHR(this->m_device->graphics_queue, &presentInfo);
         
         this->current_frame = (this->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
     }

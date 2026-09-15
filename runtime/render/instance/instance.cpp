@@ -1,6 +1,9 @@
 #include "render.hpp"
 #include "impl.hpp"
 #include "stream.hpp"
+#include "utils.hpp"
+#include "validlayer.hpp"
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -12,32 +15,25 @@ namespace PWEngine::Render
         "VK_LAYER_KHRONOS_validation"
     };
 
-    static VKAPI_ATTR VkBool32 VKAPI_CALL
-    debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data)
     {
-        std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+        std::cerr <<  "validation layer: " << p_callback_data->pMessage << std::endl;
         return VK_FALSE;
     }
 
-    static inline VkResult createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+    RenderInstance::RenderInstance(Stream::LogSystem* log)
     {
-        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-        if (func != nullptr)
-            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-        else
-            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        glfwInit();
+        this->self = std::make_unique<Impl>();
+        this->is_debug = false;
+        this->application_name = "unknown";
+        this->application_version = Utils::Vec3<uint32_t>(0, 0, 0);
     }
 
-    /*
-        ██░ ▓███    ████ ▒███████  ██▒
-        ██░ ▓████  █████ ▒██   ▒██ ██▒
-        ██░ ▓██▒██▓█▒███ ▒███████  ██▒
-        ██░ ▓██ ████ ███ ▒██       ██▒
-        ██░ ▓██  ██  ███ ▒██       ███████▒
-    */
-
-    bool Instance::checkValidationLayer()
+    void RenderInstance::openValidationLayer()
     {
+        this->is_debug = true;
+
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
 
@@ -47,7 +43,6 @@ namespace PWEngine::Render
         for (const char* layer_name : validation_layers)
         {
             bool layer_found = false;
-
             for (const auto& layer_properties : available_layers)
             {
                 if (strcmp(layer_name, layer_properties.layerName) == 0)
@@ -56,26 +51,33 @@ namespace PWEngine::Render
                     break;
                 }
             }
-
             if (!layer_found)
             {
-                Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
-                return false;
+                Stream::log(this->log, Stream::LogType::Warn, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
+                this->is_debug = false;
             }
         }
-        return true;
     }
 
-    void Instance::createInstance(InstanceInfo info)
+    void RenderInstance::setApplicationName(std::string name)
+    {
+        this->application_name = name;
+    }
+
+    void RenderInstance::setApplicationVersion(Utils::Vec3<uint32_t> version)
+    {
+        this->application_version = version;
+    }
+
+    void RenderInstance::build()
     {
         VkInstance instance;
 
         /* application */
         VkApplicationInfo app_info{};
         app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = info.name.c_str();
-        app_info.applicationVersion =
-            VK_MAKE_VERSION(info.version.x, info.version.y, info.version.z);
+        app_info.pApplicationName = this->application_name.c_str();
+        app_info.applicationVersion = VK_MAKE_VERSION(this->application_version.x, this->application_version.y, this->application_version.z);
         app_info.pEngineName = "PWEngine";
         app_info.engineVersion = VK_MAKE_VERSION(0, 1, 0);
         app_info.apiVersion = VK_API_VERSION_1_2;
@@ -89,7 +91,7 @@ namespace PWEngine::Render
 
         std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
-        if (info.is_debug)
+        if (this->is_debug)
         {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
@@ -105,7 +107,7 @@ namespace PWEngine::Render
         instance_create_info.ppEnabledExtensionNames = extensions.data();
         /* debug layer */
        
-        if (info.is_debug)
+        if (this->is_debug)
         {
             instance_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
             instance_create_info.ppEnabledLayerNames = validation_layers.data();
@@ -128,11 +130,7 @@ namespace PWEngine::Render
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create instance!");
 
         this->self->instance = instance;
-    }
-
-    void Instance::getBestAdapter()
-    {
-        /* find all physics device */
+        /* get best adapter */
         uint32_t adapter_count = 0;
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, nullptr);
 
@@ -142,38 +140,18 @@ namespace PWEngine::Render
         std::vector<VkPhysicalDevice> adapters(adapter_count);
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, adapters.data());
 
-        this->self->adapters = adapters;
+        this->self->adapters = adapters[0];
     }
 
-    Instance::Instance(InstanceInfo info, Stream::LogSystem* log): self(std::make_unique<Impl>())
+    RenderInstance::~RenderInstance()
     {
-        glfwInit();
-
-        bool is_debug = info.is_debug;
-        if (is_debug)
-            is_debug = this->checkValidationLayer();
-
-        this->createInstance(info);
-
-        this->getBestAdapter();
-    }
-
-    static inline void DestroyDebugUtilsMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-        if (func != nullptr) {
-            func(instance, debugMessenger, pAllocator);
-        }
-    }
-
-    Instance::~Instance()
-    {
-        for (const auto& context: this->context_list)
+        for (const auto& context: this->self->context_list)
         {
             delete context;
         }
-        if (this->self->is_debug) 
+        if (this->is_debug) 
         {
-            DestroyDebugUtilsMessengerEXT(this->self->instance, this->self->debug_messenger, nullptr);
+            destroyDebugUtilsMessengerEXT(this->self->instance, this->self->debug_messenger, nullptr);
         }
         vkDestroyInstance(this->self->instance, nullptr);
     }

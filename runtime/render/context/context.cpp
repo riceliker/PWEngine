@@ -1,37 +1,35 @@
 #include "render.hpp"
 #include "impl.hpp"
+#include "../instance/impl.hpp"
 #include "check.hpp"
+#include "utils.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace PWEngine::Render
 {
-    RenderContext::RenderContext(): self(std::make_unique<Impl>())
-    {
+    RenderContext::RenderContext(): self(std::make_unique<Impl>()) {}
 
-    }
-
-    RenderContext* Instance::createContext(WindowInfo info)
+    std::shared_ptr<RenderContext> RenderInstance::createContext(ContextInfo info)
     {
-        RenderContext* obj = new RenderContext();
+        auto obj = std::make_shared<RenderContext>();
         obj->p_instance = this;
         obj->log = this->log;
-        obj->createDevice();
+        obj->m_device = std::make_unique<RenderContext::Device>(RenderContext::Device(obj.get()));
         obj->createCommandPool();
         obj->createDescriptorPool();
         obj->createSync();
-        obj->createWindow(info);
-        this->context_list.push_back(obj);
-        obj->index = context_list.size();
+        obj->m_window = std::make_unique<RenderContext::Window>(RenderContext::Window(obj.get(), info.is_window_resizable, info.window_default_resolution, info.window_title));
+        obj->m_swapchain = std::make_unique<RenderContext::Swapchain>(RenderContext::Swapchain(obj.get()));
         return obj;
     }
 
-    void RenderContext::createDevice()
+    RenderContext::Device::Device(RenderContext* super)
     {
-        VkPhysicalDevice adapter = this->p_instance->self->adapters[0];
-        this->self->adapter = this->p_instance->self->adapters[0];
-        /* make device*/
+        VkPhysicalDevice adapter = super->p_instance->self->adapters;
         VkDevice device;
         VkQueue graphics_queue;
         QueueFamilyIndices indices = findQueueFamilies(adapter);
@@ -64,27 +62,36 @@ namespace PWEngine::Render
         device_create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
         device_create_info.ppEnabledExtensionNames = device_extensions.data();
 
+        const VkPhysicalDeviceDynamicRenderingFeatures dynamic_rendering_feature
+        {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+            .pNext = nullptr,
+            .dynamicRendering = VK_TRUE,
+        };
+        device_create_info.pNext = &dynamic_rendering_feature;
+
         if (vkCreateDevice(adapter, &device_create_info, nullptr, &device) != VK_SUCCESS)
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
+            Stream::log(super->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
 
-        this->self->device = device;
-        this->self->graphics_queue = graphics_queue;
+        this->adapter = adapter;
+        this->device = device;
+        this->graphics_queue = graphics_queue;
     }
 
-    void RenderContext::createWindow(WindowInfo info)
+    RenderContext::Window::Window(RenderContext* super, bool is_window_resizable, Utils::Vec2<uint32_t> window_default_resolution, std::string window_title)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, info.is_resizable ? GLFW_TRUE : GLFW_FALSE);
-        auto window = glfwCreateWindow(info.size.x, info.size.y, info.title.c_str(), nullptr, nullptr);
+        glfwWindowHint(GLFW_RESIZABLE, is_window_resizable ? GLFW_TRUE : GLFW_FALSE);
+        auto window = glfwCreateWindow(window_default_resolution.x, window_default_resolution.y, window_title.c_str(), nullptr, nullptr);
         
         VkSurfaceKHR surface;
-        if (glfwCreateWindowSurface(this->p_instance->self->instance, window, nullptr, &surface) != VK_SUCCESS)
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
+        if (glfwCreateWindowSurface(super->p_instance->self->instance, window, nullptr, &surface) != VK_SUCCESS)
+            Stream::log(super->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create window surface!");
 
-        this->self->window = window;
-        this->self->surface = surface;
+        this->window = window;
+        this->surface = surface;
     }
 
     void RenderContext::createSync()
@@ -105,9 +112,9 @@ namespace PWEngine::Render
         fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(this->self->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(this->self->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(this->self->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) {
+            if (vkCreateSemaphore(this->m_device->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(this->m_device->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(this->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create synchronization objects for a frame!");
             }
         }
@@ -123,14 +130,14 @@ namespace PWEngine::Render
         std::vector<VkCommandBuffer> command_buffers;
         command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->self->adapter);
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->m_device->adapter);
 
         VkCommandPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
-        if (vkCreateCommandPool(this->self->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
+        if (vkCreateCommandPool(this->m_device->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
 
         VkCommandBufferAllocateInfo alloc_info{};
@@ -139,7 +146,7 @@ namespace PWEngine::Render
         alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
         alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
-        if (vkAllocateCommandBuffers(this->self->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
+        if (vkAllocateCommandBuffers(this->m_device->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
 
         this->self->command_pool = command_pool;
@@ -162,7 +169,7 @@ namespace PWEngine::Render
         poolInfo.pPoolSizes = poolSizes.data();
         poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
 
-        if (vkCreateDescriptorPool(this->self->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+        if (vkCreateDescriptorPool(this->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
             throw std::runtime_error("failed to create descriptor pool!");
         }
 
@@ -171,62 +178,54 @@ namespace PWEngine::Render
 
     bool RenderContext::getIsClosed()
     {
-        return glfwWindowShouldClose(this->self->window);
+        return glfwWindowShouldClose(this->m_window->window);
     }
 
     void RenderContext::waitIdle()
     {
-        vkDeviceWaitIdle(this->self->device);
+        vkDeviceWaitIdle(this->m_device->device);
     }
 
     RenderContext::~RenderContext()
     {
         /* createSwapchain */
-        for (auto framebuffer : this->self->swapchain_framebuffers) {
-            vkDestroyFramebuffer(this->self->device, framebuffer, nullptr);
+        for (auto image_view : this->m_swapchain->swapchain_image_views) {
+            vkDestroyImageView(this->m_device->device, image_view, nullptr);
         }
-        for (auto image_view : this->self->swapchain_image_views) {
-            vkDestroyImageView(this->self->device, image_view, nullptr);
-        }
-        vkDestroySwapchainKHR(this->self->device, this->self->swapchain, nullptr);
+        vkDestroySwapchainKHR(this->m_device->device, this->m_swapchain->swapchain, nullptr);
         /* createCommandPool */
-        vkDestroyCommandPool(this->self->device, this->self->command_pool, nullptr);
+        vkDestroyCommandPool(this->m_device->device, this->self->command_pool, nullptr);
         /* createSync */
         for (auto render_finished_semaphore: this->self->render_finished_semaphores)
         {
-            vkDestroySemaphore(this->self->device, render_finished_semaphore, nullptr);
+            vkDestroySemaphore(this->m_device->device, render_finished_semaphore, nullptr);
         }
         for (auto image_available_semaphore: this->self->image_available_semaphores)
         {
-            vkDestroySemaphore(this->self->device, image_available_semaphore, nullptr);
+            vkDestroySemaphore(this->m_device->device, image_available_semaphore, nullptr);
         }
         for (auto in_flight_fence: this->self->in_flight_fences)
         {
-            vkDestroyFence(this->self->device, in_flight_fence, nullptr);
+            vkDestroyFence(this->m_device->device, in_flight_fence, nullptr);
         }
         for (auto& UBO : this->self->UBOs)
         {
             for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
             {
-                vkDestroyBuffer(this->self->device, UBO.self->uniform_buffers[i], nullptr);
-                vkFreeMemory(this->self->device, UBO.self->uniform_buffers_memory[i], nullptr);
+                vkDestroyBuffer(this->m_device->device, UBO.self->uniform_buffers[i], nullptr);
+                vkFreeMemory(this->m_device->device, UBO.self->uniform_buffers_memory[i], nullptr);
             }
         }
         /* addDescriptorSetLayout */
-        vkDestroyDescriptorPool(this->self->device, this->self->descriptor_pool, nullptr);
+        vkDestroyDescriptorPool(this->m_device->device, this->self->descriptor_pool, nullptr);
         for (auto descriptor_set_layout : this->self->descriptor_set_layouts)
         {
-            vkDestroyDescriptorSetLayout(this->self->device, descriptor_set_layout, nullptr);
-        }
-        /* addRenderPass */
-        for (auto render_pass : this->self->render_passes)
-        {
-            vkDestroyRenderPass(this->self->device, render_pass, nullptr);
+            vkDestroyDescriptorSetLayout(this->m_device->device, descriptor_set_layout, nullptr);
         }
         /* createWindow */
-        vkDestroySurfaceKHR(this->p_instance->self->instance, this->self->surface, nullptr);
-        glfwDestroyWindow(this->self->window);
+        vkDestroySurfaceKHR(this->p_instance->self->instance, this->m_window->surface, nullptr);
+        glfwDestroyWindow(this->m_window->window);
         /* createDevice */
-        vkDestroyDevice(this->self->device, nullptr);
+        vkDestroyDevice(this->m_device->device, nullptr);
     }
 }

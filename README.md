@@ -23,8 +23,8 @@ int main()
     instance_info.is_debug = true;
     instance_info.name = "Test";
     instance_info.version = PWEngine::Utils::Vec3<uint8_t>(1, 0, 0);
-    PWEngine::Render::Instance instance =
-        PWEngine::Render::Instance(instance_info, &log);
+    PWEngine::Render::RenderInstance instance =
+        PWEngine::Render::RenderInstance(instance_info, &log);
 
     PWEngine::Render::WindowInfo window_info{};
     window_info.is_resizable = false;

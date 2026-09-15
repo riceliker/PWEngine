@@ -1,3 +1,16 @@
+/*
+                PWEngine Render Module      
+
+    This module will use Vulkan API to help you build the 
+    basic render system.
+    The Render Module is a explicit API, not status machine.
+    Don't worry. It's very easy.
+    The first thing is RenderInstance. All RenderContext will
+    be create by it. RenderContext bind a Window, Device and
+    Swapchain. You just registry the RenderPass and RenderPipeline.
+
+ */
+
 #pragma once
 #include "stream.hpp"
 #include <cstddef>
@@ -19,39 +32,6 @@
 
 #define MAX_FRAMES_IN_FLIGHT 3
 
-#define __PWEngine_Render_Friend_Class_Define() \
-friend class Instance; \
-friend class Device; \
-friend class Window; \
-friend class RenderPass; \
-friend class Pipeline; \
-friend class Swapchain; \
-friend class CommandPool; \
-friend class CommandBuffer; \
-friend class Sync; \
-friend class VertexBuffer; \
-friend class PipelineCommand; \
-friend class SimpleTimeCommand;
-
-
-/*
------ GPU Module -----
-The GPU module is control the vulkan instance with C++ class.
-Use it is simple, you should not write the template code.
-
-Registry:
-Instance -> N * Device
-Device -> N * Window
-Device -> N * RenderPass
-Window + RenderPass -> Swapchain
-RenderPass -> N * Pipeline
-Device -> N * CommandPool
-CommandPool -> N * CommandBuffer
-Device -> N * Sync
-Loop:
-Swapchain <- 
-
-*/
 namespace PWEngine::Render
 {
     struct InstanceInfo
@@ -61,11 +41,11 @@ namespace PWEngine::Render
         bool is_debug;
     };
 
-    struct WindowInfo
+    struct ContextInfo
     {
-        Utils::Vec2<uint32_t> size;
-        std::string title;
-        bool is_resizable;
+        Utils::Vec2<uint32_t> window_default_resolution;
+        std::string window_title;
+        bool is_window_resizable;
     };
 
     struct CameraInfo
@@ -74,7 +54,7 @@ namespace PWEngine::Render
         Utils::Vec3<float> camera_look_pos;
     };
 
-    class Instance;
+    class RenderInstance;
     class RenderContext;
     class Texture;
     class Pipeline;
@@ -89,15 +69,15 @@ namespace PWEngine::Render
 
     /*
         The class control the vulkan instance.
-        Instance -> Device;
+        RenderInstance -> Device;
     */
-    class Instance
+    class RenderInstance
     {
     private:
-        std::vector<RenderContext*> context_list;
-        bool checkValidationLayer();
-        void createInstance(InstanceInfo info);
-        void getBestAdapter();
+        bool is_debug;
+        std::string application_name;
+        Utils::Vec3<uint32_t> application_version;
+        std::vector<RenderContext> contexts;
     public:
         /* Log */
         Stream::LogSystem* log;
@@ -105,10 +85,14 @@ namespace PWEngine::Render
         struct Impl;
         std::unique_ptr<Impl> self;
         /* Constructor */
-        Instance(InstanceInfo info, Stream::LogSystem* log);
-        ~Instance();
+        RenderInstance(Stream::LogSystem* log);
+        void openValidationLayer();
+        void setApplicationName(std::string name);
+        void setApplicationVersion(Utils::Vec3<uint32_t> version);
+        void build();
+        ~RenderInstance();
         /* User Function*/
-        RenderContext* createContext(WindowInfo info);
+        std::shared_ptr<RenderContext> createContext(ContextInfo info);
     };
 
     class RenderContext
@@ -116,16 +100,19 @@ namespace PWEngine::Render
     private:
         size_t index;
         /* init */
-        void createDevice();
-        void createWindow(WindowInfo info);
         void createSync();
         void createCommandPool();
         void createDescriptorPool();
-        void createDepth();
     public:
         Stream::LogSystem* log;
-        Instance* p_instance;
+        RenderInstance* p_instance;
         uint32_t current_frame = 0;
+        struct Device;
+        std::unique_ptr<Device> m_device;
+        struct Window;
+        std::unique_ptr<Window> m_window;
+        struct Swapchain;
+        std::unique_ptr<Swapchain> m_swapchain;
         struct Impl;
         std::unique_ptr<Impl> self;
         /* Constructor */
@@ -134,10 +121,8 @@ namespace PWEngine::Render
         /* Preload */
         size_t addDescriptorSetLayout();
         size_t addDescriptorSet(size_t descriptor_set_layout_index);
-        size_t addRenderPass();
-        void createSwapchain(size_t render_pass_index);
         void recreateSwapchain();
-        std::unique_ptr<Pipeline> createPipeline(size_t render_pass_index, size_t descriptor_set_layout_index);
+        std::unique_ptr<Pipeline> createPipeline(size_t descriptor_set_layout_index);
         /* Buffer */
         std::unique_ptr<Mesh3D> createMesh3D(std::vector<Utils::Vertex3D> vertices, std::vector<uint32_t> indices);
         std::unique_ptr<UBO> createUBO();
@@ -149,7 +134,7 @@ namespace PWEngine::Render
         bool getIsClosed();
         /* when leave the main loop, call it. */
         void waitIdle();
-        friend class Instance;
+        friend class RenderInstance;
     };
 
     class Pipeline

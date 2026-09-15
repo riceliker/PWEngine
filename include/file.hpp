@@ -47,7 +47,7 @@ namespace PWEngine::File
         std::vector<Utils::Vec3<float>> vn;
         std::vector<std::vector<Utils::Vec3<uint32_t>>> f;
     public:
-        ObjStream(Stream::LogSystem* log, std::string load_path);
+        ObjStream(Stream::LogSystem*, std::string load_path);
         std::vector<PWEngine::Utils::Vertex3D> asVertex3D();
         std::vector<uint32_t> asIndices();
     };
