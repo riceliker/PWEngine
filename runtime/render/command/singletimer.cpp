@@ -110,6 +110,7 @@ namespace PWEngine::Render
 
     void generateMipmap(RenderContext* context, uint32_t mip_level, Utils::Vec2<uint32_t> size, VkImage image)
     {
+        
         singleTimerCommand(context, [&](VkCommandBuffer cmd){
             VkImageMemoryBarrier barrier{};
             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -123,7 +124,7 @@ namespace PWEngine::Render
 
             int32_t mip_w = size.x;
             int32_t mip_h = size.y;
-            for (uint32_t i = 1; i <= mip_level; ++i)
+            for (uint32_t i = 1; i < mip_level; ++i)
             {
                 barrier.subresourceRange.baseMipLevel = i - 1;
                 barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;

@@ -13,6 +13,7 @@
 
 #pragma once
 #include "stream.hpp"
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -25,7 +26,6 @@
 
 #include <string>
 #include <vector>
-#include <functional>
 #include <memory>
 
 #include "utils.hpp"
@@ -56,16 +56,12 @@ namespace PWEngine::Render
 
     class RenderInstance;
     class RenderContext;
-    class Texture;
-    class Pipeline;
-    class CommandBuffer;
-    class PipelineCommand;
-    class SimpleTimeCommand;
-    class Sync;
-    class FrameSubmitCommand;
+    class Pipeline3D;
     class Mesh3D;
-    class Texture2D;
-    class UBO;
+    class Camera;
+    class DescriptorSet;
+    class FrameCommandFactory;
+    class FrameCommandRendering;
 
     /*
         The class control the vulkan instance.
@@ -98,15 +94,22 @@ namespace PWEngine::Render
     class RenderContext
     {
     private:
-        size_t index;
         /* init */
         void createSync();
         void createCommandPool();
         void createDescriptorPool();
+        
     public:
+        bool __getIsWindowClosed();
+        void __waitIdle();
+        FrameCommandFactory* __frameCommandStart();
+        void __frameCommandEnd(FrameCommandFactory* factory);
+        void __waitFence();
         Stream::LogSystem* log;
         RenderInstance* p_instance;
         uint32_t current_frame = 0;
+        uint32_t image_index = 0;
+        float delta = 0;
         struct Device;
         std::unique_ptr<Device> m_device;
         struct Window;
@@ -119,34 +122,69 @@ namespace PWEngine::Render
         RenderContext();
         ~RenderContext();
         /* Preload */
-        size_t addDescriptorSetLayout();
+        size_t addModelDescriptorSetLayout();
+        size_t addCameraDescriptorSetLayout();
         size_t addDescriptorSet(size_t descriptor_set_layout_index);
         void recreateSwapchain();
-        std::unique_ptr<Pipeline> createPipeline(size_t descriptor_set_layout_index);
+        std::unique_ptr<Pipeline3D> createPipeline(std::vector<size_t> descriptor_set_layout_indexs);
         /* Buffer */
-        std::unique_ptr<Mesh3D> createMesh3D(std::vector<Utils::Vertex3D> vertices, std::vector<uint32_t> indices);
-        std::unique_ptr<UBO> createUBO();
-        std::unique_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* const image);
+        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image, size_t descriptor_set_layout_index);
+        std::unique_ptr<Camera> creatCamera(size_t descriptor_set_layout_index);
+        std::unique_ptr<DescriptorSet> createDescriptorSet(size_t descriptor_set_layout_index);
         /* Loop */
-        void updateDescriptor(size_t descriptor_set_index, UBO* ubo, Texture2D* texture);
-        void drawFrameCommand(Pipeline* pipeline, size_t descriptor_set_index, std::function<void(FrameSubmitCommand& cmd)> func);
-        /* check the window is closed? */
-        bool getIsClosed();
-        /* when leave the main loop, call it. */
-        void waitIdle();
+        template<typename F> void frameLoop(F&& func)
+        {
+            while (!this->__getIsWindowClosed()) 
+            {
+                auto start_time = std::chrono::high_resolution_clock::now();
+                glfwPollEvents();
+
+                func();
+
+                this->current_frame = (this->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+                
+                auto current_time = std::chrono::high_resolution_clock::now();
+                this->delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+            }
+            this->__waitIdle();
+        }
+        
+        template<std::invocable<FrameCommandFactory*> F> void frameCommand(F&& func)
+        {
+            auto factory = this->__frameCommandStart();
+            func(factory);
+            this->__frameCommandEnd(factory);
+        }
+        
+        void frameSubmit();
         friend class RenderInstance;
     };
 
-    class Pipeline
+    class Pipeline3D
     {
     private:
-        /* owner */
+        /* Owner */
         RenderContext* p_context;
     public:
         struct Impl;
         std::unique_ptr<Impl> self;
-        Pipeline();
-        ~Pipeline();
+        /* Constructor */
+        Pipeline3D();
+        ~Pipeline3D();
+        friend class RenderContext;
+    };
+
+    class DescriptorSet
+    {
+    private:
+        RenderContext* p_context;
+        size_t descriptor_set_layout_index;
+    public:
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        DescriptorSet();
+        ~DescriptorSet();
+        void update(Mesh3D* mesh, Camera* camera, uint32_t current_frame);
         friend class RenderContext;
     };
 
@@ -158,70 +196,93 @@ namespace PWEngine::Render
     class Mesh3D
     {
     private:
-        void setVertices();
-        void setIndices();
+        void setVertices(RenderContext* super, std::vector<Utils::Model3D::Vertex3D>& vertices);
+        void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
+        void setTexture2D(RenderContext* super, Utils::ImageRGBA8& surface);
+        void setTextureView(RenderContext* super);
+        void setTextureSampler(RenderContext* super);
+        void setUniform(RenderContext* super, size_t descriptor_set_layout_index);
     public:
+        struct UBOData
+        {
+            Utils::Mat4 model{0};
+        };
+        UBOData data;
+        size_t indices_size;
         RenderContext* p_context;
-        std::vector<Utils::Vertex3D> vertices;
-        std::vector<uint32_t> indices;
-        struct Impl;
-        std::unique_ptr<Impl> self;
+        struct Vertex3D;
+        std::unique_ptr<Vertex3D> m_vertex;
+        struct Uniform;
+        std::unique_ptr<Uniform> m_uniform;
+        struct Texture2D;
+        std::unique_ptr<Texture2D> m_texture;
+        void update(uint32_t current_frame);
+        void bind(FrameCommandRendering* rendering);
         Mesh3D();
         ~Mesh3D();
         friend class RenderContext;
     };
 
-    class UBO
+    class Camera
     {
     private:
+        RenderContext* p_context;
+        void setUniform(RenderContext* super, size_t descriptor_set_layout_index);
     public:
-        struct UBOData
+        struct CameraData
         {
-            Utils::Mat4 model{0};
             Utils::Mat4 view{0};
             Utils::Mat4 project{0};
         };
-        UBOData data;
-        RenderContext* p_context;
+        CameraData data;
         struct Impl;
         std::unique_ptr<Impl> self;
-        UBO();
-        ~UBO();
-        friend class RenderContext;
-    };
-
-    class Texture2D
-    {
-    private:
-        void createTexture(RenderContext* context, Utils::ImageRGBA8* const image);
-        void createView();
-        void createSampler();
-    public:
-        RenderContext* p_context;
-        Utils::Vec2<uint32_t> size; 
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        Texture2D();
-        ~Texture2D();
+        Camera();
+        ~Camera();
+        void setLookAt(Utils::Vec3<float> from, Utils::Vec3<float> to, float view_degree, float near, float far);
+        void update(uint32_t current_frame);
+        void bind(FrameCommandRendering* rendering);
         friend class RenderContext;
     };
 }
 
 namespace PWEngine::Render
 {
-    class FrameSubmitCommand
+    class FrameCommandFactory
+    {
+    private:
+        
+    public:
+        FrameCommandRendering* __frameRenderingStart();
+        void __frameRenderingEnd(FrameCommandRendering* cmd);
+        RenderContext* p_context;
+        FrameCommandFactory(RenderContext* context): p_context(context){};
+        template<std::invocable<FrameCommandRendering*> F> void frameRendering(F&& func)
+        {
+            
+            auto cmd = this->__frameRenderingStart();
+            func(cmd);
+            this->__frameRenderingEnd(cmd);
+        }
+    };
+
+    class FrameCommandRendering
     {
     public:
         RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
-        FrameSubmitCommand();
+        FrameCommandRendering(RenderContext* context);
         void setViewPort();
         void setScissor();
+        void setPipeline(Pipeline3D* pipeline);
+        void setDescriptorSet(DescriptorSet* descriptor_set);
+        void setCamera(Camera* camera);
         void addMesh3D(Mesh3D* mesh);
-        void updateUBO(UBO* ubo, float time, CameraInfo camera);
-    };  
-    
+        void addDescriptorSet(Mesh3D* mesh);
+        void addDescriptorSet(Camera* camera);
+        void bindDescriptorSets();
+    }; 
 }
 
 

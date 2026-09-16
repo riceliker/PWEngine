@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <fstream>
+#include <memory>
 #include <string>
 #include <vector>
 #include "utils.hpp"
@@ -73,7 +74,7 @@ namespace PWEngine::File
             {
                 auto right_uv = this->vt[index.y-1];
                 right_uv.y = 1 - right_uv.y;
-                this->vertices.emplace_back(Utils::Vertex3D{this->v[index.x-1], {1, 1, 1}, right_uv});
+                this->vertices.emplace_back(Utils::Model3D::Vertex3D{this->v[index.x-1], {1, 1, 1}, right_uv});
             }
         }
         for (size_t i = 0; i <= this->f.size()*3; ++i)
@@ -82,13 +83,11 @@ namespace PWEngine::File
         }
     }
 
-    std::vector<PWEngine::Utils::Vertex3D> ObjStream::asVertex3D()
+    std::unique_ptr<Utils::Model3D> ObjStream::asModel()
     {
-        return std::move(this->vertices);
-    }
-
-    std::vector<uint32_t> ObjStream::asIndices()
-    {
-        return std::move(this->indics);
+        auto obj = std::make_unique<Utils::Model3D>();
+        obj->vertices = std::move(this->vertices);
+        obj->indices = std::move(this->indics);
+        return obj;
     }
 }

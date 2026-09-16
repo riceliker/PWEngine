@@ -157,11 +157,13 @@ namespace PWEngine::Render
     {
         VkDescriptorPool descriptorPool;
 
-        std::array<VkDescriptorPoolSize, 2> poolSizes{};
+        std::array<VkDescriptorPoolSize, 3> poolSizes{};
         poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
         poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -176,12 +178,12 @@ namespace PWEngine::Render
         this->self->descriptor_pool = descriptorPool;
     }
 
-    bool RenderContext::getIsClosed()
+    bool RenderContext::__getIsWindowClosed()
     {
         return glfwWindowShouldClose(this->m_window->window);
     }
 
-    void RenderContext::waitIdle()
+    void RenderContext::__waitIdle()
     {
         vkDeviceWaitIdle(this->m_device->device);
     }
@@ -207,14 +209,6 @@ namespace PWEngine::Render
         for (auto in_flight_fence: this->self->in_flight_fences)
         {
             vkDestroyFence(this->m_device->device, in_flight_fence, nullptr);
-        }
-        for (auto& UBO : this->self->UBOs)
-        {
-            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
-            {
-                vkDestroyBuffer(this->m_device->device, UBO.self->uniform_buffers[i], nullptr);
-                vkFreeMemory(this->m_device->device, UBO.self->uniform_buffers_memory[i], nullptr);
-            }
         }
         /* addDescriptorSetLayout */
         vkDestroyDescriptorPool(this->m_device->device, this->self->descriptor_pool, nullptr);

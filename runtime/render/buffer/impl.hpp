@@ -1,6 +1,6 @@
 #pragma once
-
-#include "Render.hpp"
+#include "render.hpp"
+#include <vector>
 
 namespace PWEngine::Render 
 {
@@ -38,7 +38,7 @@ namespace PWEngine::Render
         return attributeDescriptions;
     }
 
-    struct Mesh3D::Impl
+    struct Mesh3D::Vertex3D
     {
         VkBuffer vertex_buffer;
         VkDeviceMemory vertex_buffer_memory;
@@ -46,7 +46,7 @@ namespace PWEngine::Render
         VkDeviceMemory indices_buffer_memory;
     };
 
-    struct Texture2D::Impl
+    struct Mesh3D::Texture2D
     {
         uint32_t mip_level;
         VkImage texture_image;
@@ -54,4 +54,21 @@ namespace PWEngine::Render
         VkImageView texture_image_view;
         VkSampler texture_sampler;
     };
-}
+
+    struct Mesh3D::Uniform
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Camera::Impl
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+}   

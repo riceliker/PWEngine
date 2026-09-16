@@ -9,8 +9,9 @@ int main()
 {
     auto log = PWEngine::Stream::LogSystem(true);
 
-    auto tga = PWEngine::File::TgaStream(&log, "./assets/viking_room.tga");
-    auto image = tga.asImage();
+    auto image = PWEngine::File::TgaStream(&log, "./assets/viking_room.tga").asImage();
+    auto model = PWEngine::File::ObjStream(&log, "./assets/viking_room.obj").asModel();
+
 
     auto instance = PWEngine::Render::RenderInstance(&log);
     instance.setApplicationName("Test");
@@ -24,38 +25,38 @@ int main()
 
     auto context = instance.createContext(context_info);
 
-    auto descriptor_set_layout = context->addDescriptorSetLayout();
-    auto descriptor_sets = context->addDescriptorSet(descriptor_set_layout);
-    auto ubo = context->createUBO();
-    auto texture = context->createTexture2D(image.get());
-    context->updateDescriptor(descriptor_sets, ubo.get(), texture.get());
+    auto model_descriptor_set_layout = context->addModelDescriptorSetLayout();
+    auto camera_descriptor_set_layout = context->addCameraDescriptorSetLayout();
+    auto mesh = context->createMesh3D(model.get(), image.get(), model_descriptor_set_layout);
+    auto camera = context->creatCamera(camera_descriptor_set_layout);
+    auto pipeline = context->createPipeline({model_descriptor_set_layout, camera_descriptor_set_layout});
     
-    auto obj = PWEngine::File::ObjStream(&log, "./assets/viking_room.obj");
-    auto vertices = obj.asVertex3D();
-    auto indices = obj.asIndices();
-    auto mesh = context->createMesh3D(vertices, indices);
-
-    auto pipeline = context->createPipeline(descriptor_set_layout);
-
     float time = 0;
-    while (!context->getIsClosed()) 
-    {
-        static auto startTime = std::chrono::high_resolution_clock::now();
-        glfwPollEvents();
-        context->drawFrameCommand(pipeline.get(), descriptor_sets, [&](PWEngine::Render::FrameSubmitCommand& cmd){
-            cmd.setViewPort();
-            cmd.setScissor();
-            PWEngine::Render::CameraInfo camera_info = {
-                .camera_pos = PWEngine::Utils::Vec3<float>(0.0f, -2.0f, 2.0f),
-                .camera_look_pos = PWEngine::Utils::Vec3<float>(0.0f, 0.0f, 0.0f)
-            };
-            cmd.updateUBO(ubo.get(), time, camera_info);
-            cmd.addMesh3D(mesh.get());
-        });
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
+    context->frameLoop([&](){
+        context->__waitFence();
 
-    }
-    context->waitIdle();
+        time += context->delta;
+        camera->setLookAt(PWEngine::Utils::Vec3<float>(0, -2, 2), PWEngine::Utils::Vec3<float>(0, 0, 0), 60, 0.01, 100);
+        mesh->data.model = PWEngine::Utils::rotate(PWEngine::Utils::Mat4(1.0), time * PWEngine::Utils::deg2rad(90), PWEngine::Utils::Vec3<float>(0, 0, 1));
+        camera->update(context->current_frame);
+        mesh->update(context->current_frame);
+        
+
+        auto cmd = context->__frameCommandStart();
+        auto rendering = cmd->__frameRenderingStart();
+
+        rendering->setViewPort();
+        rendering->setScissor();
+        rendering->setPipeline(pipeline.get());
+        rendering->addDescriptorSet(mesh.get());
+        rendering->addDescriptorSet(camera.get());
+        rendering->bindDescriptorSets();
+        mesh->bind(rendering);
+
+        cmd->__frameRenderingEnd(rendering);
+
+        context->__frameCommandEnd(cmd);
+        context->frameSubmit();
+    });
 
 }

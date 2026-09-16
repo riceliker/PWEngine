@@ -42,9 +42,6 @@ namespace PWEngine::Render
 
     struct RenderContext::Impl
     {
-        std::vector<UBO> UBOs;
-        
-
         std::vector<VkSemaphore> image_available_semaphores;
         std::vector<VkSemaphore> render_finished_semaphores;
         std::vector<VkFence> in_flight_fences;
@@ -57,18 +54,18 @@ namespace PWEngine::Render
         std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
     };
 
-    struct UBO::Impl
-    {
-        std::vector<VkBuffer> uniform_buffers;
-        std::vector<VkDeviceMemory> uniform_buffers_memory;
-        std::vector<void*> uniform_buffers_mapped;
-        std::vector<VkDescriptorSet> descriptor_sets;
-    };
 
-    struct Pipeline::Impl
+    struct Pipeline3D::Impl
     {
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
         size_t currect_descriptor_set_layout_index;
+        std::vector<VkDescriptorSet> descriptor_sets;
     };
+
+    struct DescriptorSet::Impl
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+    
 }

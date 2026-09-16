@@ -27,14 +27,16 @@ build $obj/PWEngine/runtime/stream/log.o: compile runtime/stream/log.cpp
 build $obj/PWEngine/runtime/stream/config.o: compile runtime/stream/config.cpp
 build $obj/PWEngine/runtime/render/context/descriptor.o: compile runtime/render/context/descriptor.cpp
 build $obj/PWEngine/runtime/render/context/context.o: compile runtime/render/context/context.cpp
+build $obj/PWEngine/runtime/render/context/layout.o: compile runtime/render/context/layout.cpp
 build $obj/PWEngine/runtime/render/context/pipeline.o: compile runtime/render/context/pipeline.cpp
 build $obj/PWEngine/runtime/render/context/swapchain.o: compile runtime/render/context/swapchain.cpp
 build $obj/PWEngine/runtime/render/instance/instance.o: compile runtime/render/instance/instance.cpp
 build $obj/PWEngine/runtime/render/command/frame.o: compile runtime/render/command/frame.cpp
 build $obj/PWEngine/runtime/render/command/singletimer.o: compile runtime/render/command/singletimer.cpp
 build $obj/PWEngine/runtime/render/buffer/mesh.o: compile runtime/render/buffer/mesh.cpp
-build $obj/PWEngine/runtime/render/buffer/uniform.o: compile runtime/render/buffer/uniform.cpp
+build $obj/PWEngine/runtime/render/buffer/camera.o: compile runtime/render/buffer/camera.cpp
 build $obj/PWEngine/runtime/render/buffer/texture.o: compile runtime/render/buffer/texture.cpp
+build $obj/PWEngine/runtime/render/buffer/vertex.o: compile runtime/render/buffer/vertex.cpp
 build $obj/PWEngine/runtime/main.o: compile runtime/main.cpp
-build $bin: binary $obj/PWEngine/runtime/file/obj/obj.o $obj/PWEngine/runtime/file/tga/tga.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/context/descriptor.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/buffer/mesh.o $obj/PWEngine/runtime/render/buffer/uniform.o $obj/PWEngine/runtime/render/buffer/texture.o $obj/PWEngine/runtime/main.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: binary $obj/PWEngine/runtime/file/obj/obj.o $obj/PWEngine/runtime/file/tga/tga.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/context/descriptor.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/layout.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/buffer/mesh.o $obj/PWEngine/runtime/render/buffer/camera.o $obj/PWEngine/runtime/render/buffer/texture.o $obj/PWEngine/runtime/render/buffer/vertex.o $obj/PWEngine/runtime/main.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin
