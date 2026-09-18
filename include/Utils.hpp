@@ -37,6 +37,18 @@ namespace PWEngine::Utils
     };
 
     template<typename T>
+    inline constexpr Vec2<T> operator+(Vec2<T> a, Vec2<T> b) noexcept
+    {
+        return {a.x + b.x, a.y + b.y};
+    }
+
+    template<typename T>
+    inline constexpr Vec2<T> operator-(Vec2<T> a, Vec2<T> b) noexcept
+    {
+        return {a.x - b.x, a.y - b.y};
+    }
+
+    template<typename T>
     struct Vec3
     {
         T x; T y; T z;
@@ -44,9 +56,20 @@ namespace PWEngine::Utils
         Vec3(){};
     };
 
+    inline constexpr Vec3<float> operator+(Vec3<float> a, Vec3<float> b) noexcept
+    {
+        return {a.x + b.x, a.y + b.y, a.z + b.z};
+    }
+
     inline constexpr Vec3<float> operator-(Vec3<float> a, Vec3<float> b) noexcept
     {
         return {a.x - b.x, a.y - b.y, a.z - b.z};
+    }
+
+
+    inline constexpr Vec3<float> operator*(float a, Vec3<float> b) noexcept
+    {
+        return {a * b.x, a * b.y, a * b.z};
     }
 
     inline constexpr Vec3<float> cross(Vec3<float> a, Vec3<float> b) noexcept
@@ -105,6 +128,7 @@ namespace PWEngine::Utils
         return out;
     }
 
+
     constexpr Mat4 translate(Vec3<float> v) noexcept
     {
         Mat4 m = Mat4(1);
@@ -143,7 +167,8 @@ namespace PWEngine::Utils
     inline constexpr Mat4 look(Vec3<float> view, Vec3<float> center, Vec3<float> world) noexcept
     {
         Vec3<float> f = normal(center - view);
-        Vec3<float> r = cross(f, world);
+        Vec3<float> fh = Vec3<float>(f.x , f.y , 0);
+        Vec3<float> r = cross(fh, world);
 
         float lenSq = dot(r, r);
         if (lenSq < 1e-8f)
@@ -153,13 +178,15 @@ namespace PWEngine::Utils
             if (lenSq < 1e-8f)
                 r = cross(f, Vec3<float>{0.0f, 1.0f, 0.0f});
         }
+        r = normal(r);
 
-        Vec3<float> u = cross(r, f);
+        Vec3<float> u = cross(f, r);
+        u = Vec3<float>(-u.x, -u.y, -u.z);
 
         Mat4 R = Mat4(1);
-        R.rc(0,0) = r.x; R.rc(0,1) = u.x; R.rc(0,2) = f.x;
-        R.rc(1,0) = r.y; R.rc(1,1) = u.y; R.rc(1,2) = f.y;
-        R.rc(2,0) = r.z; R.rc(2,1) = u.z; R.rc(2,2) = f.z;
+        R.rc(0,0) = r.x; R.rc(0,1) = r.y; R.rc(0,2) = r.z;
+        R.rc(1,0) = u.x; R.rc(1,1) = u.y; R.rc(1,2) = u.z;
+        R.rc(2,0) = f.x; R.rc(2,1) = f.y; R.rc(2,2) = f.z;
 
         Mat4 T = translate(Vec3<float>(-view.x, -view.y, -view.z));
         return R * T;

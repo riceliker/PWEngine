@@ -2,8 +2,10 @@
 #include "render.hpp"
 #include "stream.hpp"
 #include "utils.hpp"
+#include <algorithm>
 #include <cstdint>
 #include <memory>
+#include <print>
 
 int main()
 {
@@ -32,15 +34,52 @@ int main()
     auto pipeline = context->createPipeline({model_descriptor_set_layout, camera_descriptor_set_layout});
     
     float time = 0;
+    float speed = 0.02;
+    bool is_in_screen = false;
+    PWEngine::Utils::Vec2<int> last_mouse = {0, 0};
+    PWEngine::Utils::Vec2<float> look_degree;
     context->frameLoop([&](){
         context->__waitFence();
 
+        context->checkMouse(is_in_screen);
+        auto currect_mouse = last_mouse;
+        
+        if (is_in_screen)
+            currect_mouse = context->getMouse();
+            
+        auto dm = currect_mouse - last_mouse;
+        
+        look_degree = {
+            std::clamp(look_degree.x - (float)(dm.y*0.1), -89.0f , 89.0f),
+            look_degree.y - (float)(dm.x*0.1)
+        };
+
+        last_mouse = currect_mouse;
+
+        camera->calculateLookVector(look_degree);
+
+        float speed = 0.04;
+        if (context->checkIsInput(GLFW_KEY_W))
+        {
+            camera->cameraMoveFromLook({speed, 0});
+        } 
+        if (context->checkIsInput(GLFW_KEY_S)) 
+        {
+            camera->cameraMoveFromLook({-speed, 0});
+        }
+        if (context->checkIsInput(GLFW_KEY_A))
+        {
+            camera->cameraMoveFromLook({0, -speed});
+        }
+        if (context->checkIsInput(GLFW_KEY_D)) 
+        {
+            camera->cameraMoveFromLook({0, speed});
+        }  
+
         time += context->delta;
-        camera->setLookAt(PWEngine::Utils::Vec3<float>(0, -2, 2), PWEngine::Utils::Vec3<float>(0, 0, 0), 60, 0.01, 100);
-        mesh->data.model = PWEngine::Utils::rotate(PWEngine::Utils::Mat4(1.0), time * PWEngine::Utils::deg2rad(90), PWEngine::Utils::Vec3<float>(0, 0, 1));
+        mesh->data.model = PWEngine::Utils::translate(PWEngine::Utils::Vec3<float>(0, 0, 0)) * PWEngine::Utils::rotate(PWEngine::Utils::Mat4(1.0), 0 * PWEngine::Utils::deg2rad(90), PWEngine::Utils::Vec3<float>(0, 0, 1));
         camera->update(context->current_frame);
         mesh->update(context->current_frame);
-        
 
         auto cmd = context->__frameCommandStart();
         auto rendering = cmd->__frameRenderingStart();

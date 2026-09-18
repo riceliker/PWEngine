@@ -100,6 +100,9 @@ namespace PWEngine::Render
         void createDescriptorPool();
         
     public:
+        bool checkIsInput(int key);
+        void checkMouse(bool& flag);
+        Utils::Vec2<int> getMouse();
         bool __getIsWindowClosed();
         void __waitIdle();
         FrameCommandFactory* __frameCommandStart();
@@ -234,12 +237,17 @@ namespace PWEngine::Render
             Utils::Mat4 view{0};
             Utils::Mat4 project{0};
         };
+        Utils::Vec3<float> position;
+        Utils::Vec3<float> look_vector;
+        float view_degree = 45;
+        Utils::Vec2<float> view_depth = {0.01, 100};
         CameraData data;
         struct Impl;
         std::unique_ptr<Impl> self;
         Camera();
         ~Camera();
-        void setLookAt(Utils::Vec3<float> from, Utils::Vec3<float> to, float view_degree, float near, float far);
+        void calculateLookVector(Utils::Vec2<float> look_degree);
+        void cameraMoveFromLook(Utils::Vec2<float> step);
         void update(uint32_t current_frame);
         void bind(FrameCommandRendering* rendering);
         friend class RenderContext;

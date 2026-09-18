@@ -58,15 +58,12 @@ namespace PWEngine::Render
         this->self->descriptor_sets = std::move(descriptor_sets);
     }
 
-    void Camera::setLookAt(Utils::Vec3<float> from, Utils::Vec3<float> to, float view_degree, float near, float far)
-    {
-        this->data.view = Utils::look(from, to, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
-        this->data.project = Utils::perspective(Utils::deg2rad(view_degree), this->p_context->m_swapchain->swapchain_extent.width / (float) this->p_context->m_swapchain->swapchain_extent.height, near , far);
-        this->data.project.rc(1, 1) *= -1;
-    }
-
     void Camera::update(uint32_t current_frame)
     {
+        this->data.view = Utils::look(this->position, this->position + this->look_vector, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
+        this->data.project = Utils::perspective(Utils::deg2rad(view_degree), this->p_context->m_swapchain->swapchain_extent.width / (float) this->p_context->m_swapchain->swapchain_extent.height, this->view_depth.x , this->view_depth.y);
+        this->data.project.rc(1, 1) *= -1;
+
         VkDescriptorBufferInfo camera_info{};
         camera_info.buffer = this->self->uniform_buffers[current_frame];
         camera_info.offset = 0;
@@ -82,5 +79,21 @@ namespace PWEngine::Render
         descriptor_writes[0].pBufferInfo = &camera_info;
         
         vkUpdateDescriptorSets(this->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+    }
+
+    void Camera::calculateLookVector(Utils::Vec2<float> look_degree)
+    {
+        this->look_vector = PWEngine::Utils::Vec3<float>(cos(PWEngine::Utils::deg2rad(look_degree.y)), sin(PWEngine::Utils::deg2rad(look_degree.y)), sin(PWEngine::Utils::deg2rad(look_degree.x)));
+    }
+
+    void Camera::cameraMoveFromLook(Utils::Vec2<float> step)
+    {
+        this->position.x += step.x * this->look_vector.x;
+        this->position.y += step.x * this->look_vector.y;
+        this->position.z += step.x * this->look_vector.z;
+
+        this->position.x += step.y * this->look_vector.y;
+        this->position.y -= step.y * this->look_vector.x;
+        this->position.z -= step.y * this->look_vector.z;
     }
 }

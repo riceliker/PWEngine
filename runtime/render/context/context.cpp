@@ -222,4 +222,31 @@ namespace PWEngine::Render
         /* createDevice */
         vkDestroyDevice(this->m_device->device, nullptr);
     }
+
+    bool RenderContext::checkIsInput(int key)
+    {
+        return glfwGetKey(this->m_window->window, key);
+    }
+
+    void RenderContext::checkMouse(bool& flag)
+    {
+        if (glfwGetWindowAttrib(this->m_window->window, GLFW_HOVERED) != 0 && glfwGetMouseButton(this->m_window->window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+        {
+            glfwSetInputMode(this->m_window->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            flag = true;
+        }
+        if (checkIsInput(GLFW_KEY_ESCAPE))
+        {
+            glfwSetInputMode(this->m_window->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            
+            flag = false;
+        }
+    }
+
+    Utils::Vec2<int> RenderContext::getMouse()
+    {
+        double x, y;
+        glfwGetCursorPos(this->m_window->window, &x, &y);
+        return {(int)x, (int)y};
+    }
 }
