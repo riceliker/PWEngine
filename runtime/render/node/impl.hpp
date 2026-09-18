@@ -60,8 +60,6 @@ namespace PWEngine::Render
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void*> uniform_buffers_mapped;
-
-        std::vector<VkDescriptorSet> descriptor_sets;
     };
 
     struct Camera::Impl

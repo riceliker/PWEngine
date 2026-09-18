@@ -27,11 +27,10 @@ int main()
 
     auto context = instance.createContext(context_info);
 
-    auto model_descriptor_set_layout = context->addModelDescriptorSetLayout();
-    auto camera_descriptor_set_layout = context->addCameraDescriptorSetLayout();
-    auto mesh = context->createMesh3D(model.get(), image.get(), model_descriptor_set_layout);
-    auto camera = context->creatCamera(camera_descriptor_set_layout);
-    auto pipeline = context->createPipeline({model_descriptor_set_layout, camera_descriptor_set_layout});
+    
+    auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
+    auto mesh = pipeline->createMesh3D(model.get(), image.get());
+    auto camera = pipeline->creatCamera();
     
     float time = 0;
     float speed = 0.02;
@@ -78,8 +77,8 @@ int main()
 
         time += context->delta;
         mesh->data.model = PWEngine::Utils::translate(PWEngine::Utils::Vec3<float>(0, 0, 0)) * PWEngine::Utils::rotate(PWEngine::Utils::Mat4(1.0), 0 * PWEngine::Utils::deg2rad(90), PWEngine::Utils::Vec3<float>(0, 0, 1));
-        camera->update(context->current_frame);
         mesh->update(context->current_frame);
+        camera->update(context->current_frame);
 
         auto cmd = context->__frameCommandStart();
         auto rendering = cmd->__frameRenderingStart();
@@ -87,9 +86,13 @@ int main()
         rendering->setViewPort();
         rendering->setScissor();
         rendering->setPipeline(pipeline.get());
-        rendering->addDescriptorSet(mesh.get());
-        rendering->addDescriptorSet(camera.get());
-        rendering->bindDescriptorSets();
+
+        rendering->setDescriptorSet(pipeline.get());
+
+        camera->setData(context->current_frame);
+        mesh->setData();
+
+
         mesh->bind(rendering);
 
         cmd->__frameRenderingEnd(rendering);

@@ -28,6 +28,7 @@ namespace PWEngine::Render
         this->is_debug = false;
         this->application_name = "unknown";
         this->application_version = Utils::Vec3<uint32_t>(0, 0, 0);
+        this->log = log;
     }
 
     void RenderInstance::openValidationLayer()

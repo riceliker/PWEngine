@@ -1,5 +1,6 @@
 #include "render.hpp"
 #include "impl.hpp"
+#include "../node/impl.hpp"
 #include "../context/impl.hpp"
 #include "buffer.hpp"
 #include <cstddef>
@@ -18,45 +19,29 @@ namespace PWEngine::Render
         }
     }
     
-    std::unique_ptr<Camera> RenderContext::creatCamera(size_t descriptor_set_layout_index)
+    std::unique_ptr<Camera> Pipeline3D::creatCamera()
     {
         auto obj = std::make_unique<Camera>();
-        obj->p_context = this;
-        obj->setUniform(this, descriptor_set_layout_index);
-        return obj;
-    }
+        obj->p_context = this->p_context;
+        obj->p_pipeline = this;
 
-    void Camera::setUniform(RenderContext* super, size_t descriptor_set_layout_index)
-    {
         VkDeviceSize buffer_size = sizeof(Camera::CameraData);
 
-        this->self->uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-        this->self->uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
-        this->self->uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+        obj->self->uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+        obj->self->uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+        obj->self->uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
         {
-            createDirectBuffer(super, buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, this->self->uniform_buffers[i], this->self->uniform_buffers_memory[i]);
-            vkMapMemory(super->m_device->device, this->self->uniform_buffers_memory[i], 0, buffer_size, 0, &this->self->uniform_buffers_mapped[i]);
+            createDirectBuffer(this->p_context, buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, obj->self->uniform_buffers[i], obj->self->uniform_buffers_memory[i]);
+            vkMapMemory(this->p_context->m_device->device, obj->self->uniform_buffers_memory[i], 0, buffer_size, 0, &obj->self->uniform_buffers_mapped[i]);
         }
 
-        VkDescriptorSetLayout descriptor_set_layout = super->self->descriptor_set_layouts[descriptor_set_layout_index];
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = super->self->descriptor_pool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
+        obj->self->descriptor_sets = this->self->descriptor_sets[1]; /* set = 1 */
 
-        std::vector<VkDescriptorSet> descriptor_sets;
-
-        descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(super->m_device->device, &allocInfo, descriptor_sets.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
-
-        this->self->descriptor_sets = std::move(descriptor_sets);
+        return obj;
     }
+
 
     void Camera::update(uint32_t current_frame)
     {
@@ -71,7 +56,7 @@ namespace PWEngine::Render
 
         std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->self->descriptor_sets[current_frame];
+        descriptor_writes[0].dstSet = this->p_pipeline->self->descriptor_sets.at(1).at(current_frame);
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -79,6 +64,13 @@ namespace PWEngine::Render
         descriptor_writes[0].pBufferInfo = &camera_info;
         
         vkUpdateDescriptorSets(this->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+
+        
+    }
+
+    void Camera::setData(uint32_t current_frame)
+    {
+        memcpy(this->self->uniform_buffers_mapped[this->p_context->image_index], &this->data, sizeof(Camera::CameraData));
     }
 
     void Camera::calculateLookVector(Utils::Vec2<float> look_degree)

@@ -50,22 +50,15 @@ namespace PWEngine::Render
         std::vector<VkCommandBuffer> command_buffers;
 
         VkDescriptorPool descriptor_pool;
-        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-        std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
+        
     };
-
 
     struct Pipeline3D::Impl
     {
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
-        size_t currect_descriptor_set_layout_index;
-        std::vector<VkDescriptorSet> descriptor_sets;
-    };
 
-    struct DescriptorSet::Impl
-    {
-        std::vector<VkDescriptorSet> descriptor_sets;
+        std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
+        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
     };
-    
 }

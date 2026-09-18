@@ -1,6 +1,5 @@
 #include "render.hpp"
 #include "impl.hpp"
-#include "../buffer/impl.hpp"
 #include "../context/impl.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -222,26 +221,14 @@ namespace PWEngine::Render
         this->self->pipeline_layout = pipeline->self->pipeline_layout;
     }
 
-    void FrameCommandRendering::addDescriptorSet(Mesh3D* mesh)
+    void FrameCommandRendering::setDescriptorSet(Pipeline3D* pipeline)
     {
-        this->self->descriptor_sets.push_back(mesh->m_uniform->descriptor_sets);
-        memcpy(mesh->m_uniform->uniform_buffers_mapped[this->p_context->image_index], &mesh->data, sizeof(Mesh3D::UBOData));
-
-    }
-
-    void FrameCommandRendering::addDescriptorSet(Camera* camera)
-    {
-        this->self->descriptor_sets.push_back(camera->self->descriptor_sets);
-        memcpy(camera->self->uniform_buffers_mapped[this->p_context->image_index], &camera->data, sizeof(Camera::CameraData));
-    }
-
-    void FrameCommandRendering::bindDescriptorSets()
-    {
-        std::vector<VkDescriptorSet> descriptor_sets;
-        for (const auto descriptor_set : this->self->descriptor_sets)
+        std::vector<VkDescriptorSet> descriptor_sets_list;
+        for (const auto descriptor_set : pipeline->self->descriptor_sets)
         {
-            descriptor_sets.push_back(descriptor_set[this->p_context->image_index]);
+            descriptor_sets_list.push_back(descriptor_set[this->p_context->image_index]);
         }
-        vkCmdBindDescriptorSets(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->self->pipeline_layout, 0, descriptor_sets.size(), descriptor_sets.data(), 0, nullptr);
+        vkCmdBindDescriptorSets(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
     }
+
 }

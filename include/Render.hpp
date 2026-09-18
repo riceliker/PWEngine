@@ -34,13 +34,6 @@
 
 namespace PWEngine::Render
 {
-    struct InstanceInfo
-    {
-        std::string name;
-        Utils::Vec3<uint8_t> version;
-        bool is_debug;
-    };
-
     struct ContextInfo
     {
         Utils::Vec2<uint32_t> window_default_resolution;
@@ -48,10 +41,28 @@ namespace PWEngine::Render
         bool is_window_resizable;
     };
 
-    struct CameraInfo
+    enum class DescriptorType
     {
-        Utils::Vec3<float> camera_pos;
-        Utils::Vec3<float> camera_look_pos;
+        Uniform, Sampler
+    };
+
+    enum class ShaderType
+    {
+        Vertex, Fragment
+    };
+
+    struct ShaderPath
+    {
+        std::string vertex_shader;
+        std::string fragment_shader;
+    };
+
+    struct ShaderLayoutInfo
+    {
+        uint32_t binding_index;
+        uint32_t binding_array_count;
+        DescriptorType descriptor_type;
+        ShaderType shader_type;
     };
 
     class RenderInstance;
@@ -98,7 +109,6 @@ namespace PWEngine::Render
         void createSync();
         void createCommandPool();
         void createDescriptorPool();
-        
     public:
         bool checkIsInput(int key);
         void checkMouse(bool& flag);
@@ -125,15 +135,8 @@ namespace PWEngine::Render
         RenderContext();
         ~RenderContext();
         /* Preload */
-        size_t addModelDescriptorSetLayout();
-        size_t addCameraDescriptorSetLayout();
-        size_t addDescriptorSet(size_t descriptor_set_layout_index);
         void recreateSwapchain();
-        std::unique_ptr<Pipeline3D> createPipeline(std::vector<size_t> descriptor_set_layout_indexs);
-        /* Buffer */
-        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image, size_t descriptor_set_layout_index);
-        std::unique_ptr<Camera> creatCamera(size_t descriptor_set_layout_index);
-        std::unique_ptr<DescriptorSet> createDescriptorSet(size_t descriptor_set_layout_index);
+        std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
         /* Loop */
         template<typename F> void frameLoop(F&& func)
         {
@@ -166,28 +169,15 @@ namespace PWEngine::Render
     class Pipeline3D
     {
     private:
-        /* Owner */
-        RenderContext* p_context;
     public:
+        RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
         /* Constructor */
         Pipeline3D();
         ~Pipeline3D();
-        friend class RenderContext;
-    };
-
-    class DescriptorSet
-    {
-    private:
-        RenderContext* p_context;
-        size_t descriptor_set_layout_index;
-    public:
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        DescriptorSet();
-        ~DescriptorSet();
-        void update(Mesh3D* mesh, Camera* camera, uint32_t current_frame);
+        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image);
+        std::unique_ptr<Camera> creatCamera();
         friend class RenderContext;
     };
 
@@ -199,12 +189,12 @@ namespace PWEngine::Render
     class Mesh3D
     {
     private:
-        void setVertices(RenderContext* super, std::vector<Utils::Model3D::Vertex3D>& vertices);
+        void setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices);
         void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
         void setTexture2D(RenderContext* super, Utils::ImageRGBA8& surface);
         void setTextureView(RenderContext* super);
         void setTextureSampler(RenderContext* super);
-        void setUniform(RenderContext* super, size_t descriptor_set_layout_index);
+        void setUniform(Pipeline3D* super);
     public:
         struct UBOData
         {
@@ -213,6 +203,7 @@ namespace PWEngine::Render
         UBOData data;
         size_t indices_size;
         RenderContext* p_context;
+        Pipeline3D* p_pipeline;
         struct Vertex3D;
         std::unique_ptr<Vertex3D> m_vertex;
         struct Uniform;
@@ -220,23 +211,23 @@ namespace PWEngine::Render
         struct Texture2D;
         std::unique_ptr<Texture2D> m_texture;
         void update(uint32_t current_frame);
+        void setData();
         void bind(FrameCommandRendering* rendering);
         Mesh3D();
         ~Mesh3D();
-        friend class RenderContext;
+        friend class Pipeline3D;
     };
 
     class Camera
     {
-    private:
-        RenderContext* p_context;
-        void setUniform(RenderContext* super, size_t descriptor_set_layout_index);
     public:
         struct CameraData
         {
             Utils::Mat4 view{0};
             Utils::Mat4 project{0};
         };
+        RenderContext* p_context;
+        Pipeline3D* p_pipeline;
         Utils::Vec3<float> position;
         Utils::Vec3<float> look_vector;
         float view_degree = 45;
@@ -249,8 +240,8 @@ namespace PWEngine::Render
         void calculateLookVector(Utils::Vec2<float> look_degree);
         void cameraMoveFromLook(Utils::Vec2<float> step);
         void update(uint32_t current_frame);
-        void bind(FrameCommandRendering* rendering);
-        friend class RenderContext;
+        void setData(uint32_t current_frame);
+        friend class Pipeline3D;
     };
 }
 
@@ -284,12 +275,7 @@ namespace PWEngine::Render
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void setDescriptorSet(DescriptorSet* descriptor_set);
-        void setCamera(Camera* camera);
-        void addMesh3D(Mesh3D* mesh);
-        void addDescriptorSet(Mesh3D* mesh);
-        void addDescriptorSet(Camera* camera);
-        void bindDescriptorSets();
+        void setDescriptorSet(Pipeline3D* pipeline);
     }; 
 }
 

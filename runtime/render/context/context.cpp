@@ -212,10 +212,6 @@ namespace PWEngine::Render
         }
         /* addDescriptorSetLayout */
         vkDestroyDescriptorPool(this->m_device->device, this->self->descriptor_pool, nullptr);
-        for (auto descriptor_set_layout : this->self->descriptor_set_layouts)
-        {
-            vkDestroyDescriptorSetLayout(this->m_device->device, descriptor_set_layout, nullptr);
-        }
         /* createWindow */
         vkDestroySurfaceKHR(this->p_instance->self->instance, this->m_window->surface, nullptr);
         glfwDestroyWindow(this->m_window->window);

@@ -1,6 +1,6 @@
 #include "render.hpp"
 #include "impl.hpp"
-#include "../buffer/buffer.hpp"
+#include "../node/buffer.hpp"
 #include "check.hpp"
 #include "stream.hpp"
 #include <cstddef>

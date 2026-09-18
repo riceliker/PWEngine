@@ -11,21 +11,22 @@ namespace PWEngine::Render
 {
     Mesh3D::Mesh3D():m_vertex(std::make_unique<Vertex3D>()), m_texture(std::make_unique<Texture2D>()), m_uniform(std::make_unique<Uniform>()){}
 
-    std::unique_ptr<Mesh3D> RenderContext::createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image, size_t descriptor_set_layout_index)
+    std::unique_ptr<Mesh3D> Pipeline3D::createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image)
     {
         auto obj = std::make_unique<Mesh3D>();
-        obj->p_context = this;
+        obj->p_context = this->p_context;
+        obj->p_pipeline = this;
         obj->indices_size = model->indices.size();
-        obj->setVertices(this, model->vertices);
-        obj->setIndices(this, model->indices);
-        obj->setTexture2D(this, *image);
-        obj->setTextureView(this);
-        obj->setTextureSampler(this);
-        obj->setUniform(this, descriptor_set_layout_index);
+        obj->setVertices(this->p_context, model->vertices);
+        obj->setIndices(this->p_context, model->indices);
+        obj->setTexture2D(this->p_context, *image);
+        obj->setTextureView(this->p_context);
+        obj->setTextureSampler(this->p_context);
+        obj->setUniform(this);
         return obj;
     }
 
-    void Mesh3D::setUniform(RenderContext* super, size_t descriptor_set_layout_index)
+    void Mesh3D::setUniform(Pipeline3D* super)
     {
         VkDeviceSize bufferSize = sizeof(Mesh3D::UBOData);
 
@@ -35,26 +36,9 @@ namespace PWEngine::Render
 
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
         {
-            createDirectBuffer(super, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, this->m_uniform->uniform_buffers[i], this->m_uniform->uniform_buffers_memory[i]);
-            vkMapMemory(super->m_device->device, this->m_uniform->uniform_buffers_memory[i], 0, bufferSize, 0, &this->m_uniform->uniform_buffers_mapped[i]);
+            createDirectBuffer(super->p_context, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, this->m_uniform->uniform_buffers[i], this->m_uniform->uniform_buffers_memory[i]);
+            vkMapMemory(super->p_context->m_device->device, this->m_uniform->uniform_buffers_memory[i], 0, bufferSize, 0, &this->m_uniform->uniform_buffers_mapped[i]);
         }
-
-        VkDescriptorSetLayout descriptor_set_layout = super->self->descriptor_set_layouts[descriptor_set_layout_index];
-        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
-        VkDescriptorSetAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-        allocInfo.descriptorPool = super->self->descriptor_pool;
-        allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        allocInfo.pSetLayouts = layouts.data();
-
-        std::vector<VkDescriptorSet> descriptor_sets;
-
-        descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
-        if (vkAllocateDescriptorSets(super->m_device->device, &allocInfo, descriptor_sets.data()) != VK_SUCCESS) {
-            throw std::runtime_error("failed to allocate descriptor sets!");
-        }
-
-        this->m_uniform->descriptor_sets = std::move(descriptor_sets);
     }
 
     void Mesh3D::update(uint32_t current_frame)
@@ -71,7 +55,7 @@ namespace PWEngine::Render
 
         std::array<VkWriteDescriptorSet, 2> descriptor_writes{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->m_uniform->descriptor_sets[current_frame];
+        descriptor_writes[0].dstSet = this->p_pipeline->self->descriptor_sets.at(0).at(current_frame);
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -79,7 +63,7 @@ namespace PWEngine::Render
         descriptor_writes[0].pBufferInfo = &model_info;
 
         descriptor_writes[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[1].dstSet = this->m_uniform->descriptor_sets[current_frame];
+        descriptor_writes[1].dstSet = this->p_pipeline->self->descriptor_sets.at(0).at(current_frame);
         descriptor_writes[1].dstBinding = 1;
         descriptor_writes[1].dstArrayElement = 0;
         descriptor_writes[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -87,6 +71,12 @@ namespace PWEngine::Render
         descriptor_writes[1].pImageInfo = &image_info;
 
         vkUpdateDescriptorSets(this->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+       
+    }
+
+    void Mesh3D::setData()
+    {
+        memcpy(this->m_uniform->uniform_buffers_mapped[this->p_context->image_index], &this->data, sizeof(Mesh3D::UBOData));
     }
 
     void Mesh3D::bind(FrameCommandRendering* rendering)

@@ -11,7 +11,7 @@
 namespace PWEngine::Render
 {
     
-    void Mesh3D::setVertices(RenderContext* super, std::vector<Utils::Model3D::Vertex3D>& vertices)
+    void Mesh3D::setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices)
     {
         size_t size = sizeof(vertices[0]) * vertices.size();
 

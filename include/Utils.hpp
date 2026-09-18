@@ -281,14 +281,16 @@ namespace PWEngine::Utils
         return result;
     }
 
+    struct Vertex3D
+    {    
+        Utils::Vec3<float> position;
+        Utils::Vec3<float> color;
+        Utils::Vec2<float> uv;
+    };
+
     struct Model3D
     {
-        struct Vertex3D
-        {    
-            Utils::Vec3<float> position;
-            Utils::Vec3<float> color;
-            Utils::Vec2<float> uv;
-        };
+        
         std::vector<Vertex3D> vertices;
         std::vector<uint32_t> indices;
     };

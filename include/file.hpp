@@ -39,7 +39,7 @@ namespace PWEngine::File
     class ObjStream
     {
     private:
-        std::vector<Utils::Model3D::Vertex3D> vertices;
+        std::vector<Utils::Vertex3D> vertices;
         std::vector<uint32_t> indics;
 
         std::vector<Utils::Vec3<float>> v;
@@ -48,8 +48,10 @@ namespace PWEngine::File
         std::vector<std::vector<Utils::Vec3<uint32_t>>> f;
     public:
         ObjStream(Stream::LogSystem*, std::string load_path);
-        std::vector<Utils::Model3D::Vertex3D> asVertex3D();
+        std::vector<Utils::Vertex3D> asVertex3D();
         std::vector<uint32_t> asIndices();
         std::unique_ptr<Utils::Model3D> asModel();
     };
+
+    std::optional<std::vector<char>> shaderReader(Stream::LogSystem* log, std::string file_path);
 }
