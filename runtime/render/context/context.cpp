@@ -11,7 +11,102 @@
 
 namespace PWEngine::Render
 {
-    RenderContext::RenderContext(): self(std::make_unique<Impl>()) {}
+    RenderContext::RenderContext(): self(std::make_unique<Impl>())
+    {
+        
+    }
+
+    std::shared_ptr<Input> RenderContext::createInput()
+    {
+        auto obj = std::make_shared<Input>();
+        obj->p_context = this;
+        return obj;
+    }
+
+    static inline void createSync(RenderContext* context)
+    {
+        std::vector<VkSemaphore> image_available_semaphores;
+        std::vector<VkSemaphore> render_finished_semaphores;
+        std::vector<VkFence> in_flight_fences;
+
+        image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+        in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
+
+        VkSemaphoreCreateInfo semaphore_info{};
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        VkFenceCreateInfo fence_info{};
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+            if (vkCreateSemaphore(context->m_device->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(context->m_device->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(context->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) {
+                throw std::runtime_error("failed to create synchronization objects for a frame!");
+            }
+        }
+
+        context->self->image_available_semaphores = image_available_semaphores;
+        context->self->render_finished_semaphores = render_finished_semaphores;
+        context->self->in_flight_fences = in_flight_fences;
+    }
+
+    static inline void createCommandPool(RenderContext* context)
+    {
+        VkCommandPool command_pool;
+        std::vector<VkCommandBuffer> command_buffers;
+        command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+
+        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(context->m_device->adapter);
+
+        VkCommandPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+        if (vkCreateCommandPool(context->m_device->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
+            Stream::log(context->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
+
+        VkCommandBufferAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.commandPool = command_pool;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
+
+        if (vkAllocateCommandBuffers(context->m_device->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
+            Stream::log(context->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
+
+        context->self->command_pool = command_pool;
+        context->self->command_buffers = std::move(command_buffers);
+    }
+
+    static inline void createDescriptorPool(RenderContext* context)
+    {
+        VkDescriptorPool descriptorPool;
+
+        std::array<VkDescriptorPoolSize, 3> poolSizes{};
+        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+        VkDescriptorPoolCreateInfo poolInfo{};
+        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
+        poolInfo.pPoolSizes = poolSizes.data();
+        poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
+
+        if (vkCreateDescriptorPool(context->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create descriptor pool!");
+        }
+
+        context->self->descriptor_pool = descriptorPool;
+    }
+
 
     std::shared_ptr<RenderContext> RenderInstance::createContext(ContextInfo info)
     {
@@ -19,9 +114,9 @@ namespace PWEngine::Render
         obj->p_instance = this;
         obj->log = this->log;
         obj->m_device = std::make_unique<RenderContext::Device>(RenderContext::Device(obj.get()));
-        obj->createCommandPool();
-        obj->createDescriptorPool();
-        obj->createSync();
+        createCommandPool(obj.get());
+        createDescriptorPool(obj.get());
+        createSync(obj.get());
         obj->m_window = std::make_unique<RenderContext::Window>(RenderContext::Window(obj.get(), info.is_window_resizable, info.window_default_resolution, info.window_title));
         obj->m_swapchain = std::make_unique<RenderContext::Swapchain>(RenderContext::Swapchain(obj.get()));
         return obj;
@@ -93,91 +188,6 @@ namespace PWEngine::Render
         this->window = window;
         this->surface = surface;
     }
-
-    void RenderContext::createSync()
-    {
-        std::vector<VkSemaphore> image_available_semaphores;
-        std::vector<VkSemaphore> render_finished_semaphores;
-        std::vector<VkFence> in_flight_fences;
-
-        image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-        in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-
-        VkSemaphoreCreateInfo semaphore_info{};
-        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-        VkFenceCreateInfo fence_info{};
-        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
-        for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            if (vkCreateSemaphore(this->m_device->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
-                vkCreateSemaphore(this->m_device->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(this->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
-            }
-        }
-
-        this->self->image_available_semaphores = image_available_semaphores;
-        this->self->render_finished_semaphores = render_finished_semaphores;
-        this->self->in_flight_fences = in_flight_fences;
-    }
-
-    void RenderContext::createCommandPool()
-    {
-        VkCommandPool command_pool;
-        std::vector<VkCommandBuffer> command_buffers;
-        command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->m_device->adapter);
-
-        VkCommandPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-        if (vkCreateCommandPool(this->m_device->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
-
-        VkCommandBufferAllocateInfo alloc_info{};
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.commandPool = command_pool;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
-
-        if (vkAllocateCommandBuffers(this->m_device->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
-
-        this->self->command_pool = command_pool;
-        this->self->command_buffers = std::move(command_buffers);
-    }
-
-    void RenderContext::createDescriptorPool()
-    {
-        VkDescriptorPool descriptorPool;
-
-        std::array<VkDescriptorPoolSize, 3> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-
-        VkDescriptorPoolCreateInfo poolInfo{};
-        poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
-        poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
-
-        if (vkCreateDescriptorPool(this->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
-
-        this->self->descriptor_pool = descriptorPool;
-    }
-
     
 
     RenderContext::~RenderContext()
@@ -218,17 +228,7 @@ namespace PWEngine::Render
 
     void RenderContext::checkMouse(bool& flag)
     {
-        if (glfwGetWindowAttrib(this->m_window->window, GLFW_HOVERED) != 0 && glfwGetMouseButton(this->m_window->window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
-        {
-            glfwSetInputMode(this->m_window->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            flag = true;
-        }
-        if (checkIsInput(GLFW_KEY_ESCAPE))
-        {
-            glfwSetInputMode(this->m_window->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            
-            flag = false;
-        }
+        
     }
 
     Utils::Vec2<int> RenderContext::getMouse()

@@ -22,7 +22,4 @@ int main()
     auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
 
 
-    context->frameLoop([&](float delta){
-
-    });
 }

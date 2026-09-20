@@ -28,9 +28,12 @@ build $obj/PWEngine/runtime/stream/log.o: compile runtime/stream/log.cpp
 build $obj/PWEngine/runtime/stream/config.o: compile runtime/stream/config.cpp
 build $obj/PWEngine/runtime/test.o: compile runtime/test.cpp
 build $obj/PWEngine/runtime/render/context/loop.o: compile runtime/render/context/loop.cpp
+build $obj/PWEngine/runtime/render/context/window.o: compile runtime/render/context/window.cpp
 build $obj/PWEngine/runtime/render/context/context.o: compile runtime/render/context/context.cpp
 build $obj/PWEngine/runtime/render/context/pipeline.o: compile runtime/render/context/pipeline.cpp
 build $obj/PWEngine/runtime/render/context/swapchain.o: compile runtime/render/context/swapchain.cpp
+build $obj/PWEngine/runtime/render/input/mouse.o: compile runtime/render/input/mouse.cpp
+build $obj/PWEngine/runtime/render/input/keyborad.o: compile runtime/render/input/keyborad.cpp
 build $obj/PWEngine/runtime/render/instance/instance.o: compile runtime/render/instance/instance.cpp
 build $obj/PWEngine/runtime/render/command/frame.o: compile runtime/render/command/frame.cpp
 build $obj/PWEngine/runtime/render/command/singletimer.o: compile runtime/render/command/singletimer.cpp
@@ -41,5 +44,5 @@ build $obj/PWEngine/runtime/render/node/texture.o: compile runtime/render/node/t
 build $obj/PWEngine/runtime/render/node/unifrom.o: compile runtime/render/node/unifrom.cpp
 build $obj/PWEngine/runtime/render/node/material.o: compile runtime/render/node/material.cpp
 build $obj/PWEngine/runtime/render/node/vertex.o: compile runtime/render/node/vertex.cpp
-build $bin: binary $obj/PWEngine/runtime/file/obj/obj.o $obj/PWEngine/runtime/file/tga/tga.o $obj/PWEngine/runtime/file/shader.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/test.o $obj/PWEngine/runtime/render/context/loop.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/node/mesh.o $obj/PWEngine/runtime/render/node/camera.o $obj/PWEngine/runtime/render/node/node.o $obj/PWEngine/runtime/render/node/texture.o $obj/PWEngine/runtime/render/node/unifrom.o $obj/PWEngine/runtime/render/node/material.o $obj/PWEngine/runtime/render/node/vertex.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: binary $obj/PWEngine/runtime/file/obj/obj.o $obj/PWEngine/runtime/file/tga/tga.o $obj/PWEngine/runtime/file/shader.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/test.o $obj/PWEngine/runtime/render/context/loop.o $obj/PWEngine/runtime/render/context/window.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/input/mouse.o $obj/PWEngine/runtime/render/input/keyborad.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/node/mesh.o $obj/PWEngine/runtime/render/node/camera.o $obj/PWEngine/runtime/render/node/node.o $obj/PWEngine/runtime/render/node/texture.o $obj/PWEngine/runtime/render/node/unifrom.o $obj/PWEngine/runtime/render/node/material.o $obj/PWEngine/runtime/render/node/vertex.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin

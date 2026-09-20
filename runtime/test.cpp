@@ -7,7 +7,6 @@
 #include <memory>
 #include <print>
 #include <string>
-#include "glfw/glfw3.h"
 
 int main()
 {
@@ -40,15 +39,25 @@ int main()
     float time = 0;
     float speed = 0.02;
     bool is_in_screen = false;
-    PWEngine::Utils::Vec2<int> last_mouse = {0, 0};
+    PWEngine::Utils::Vec2<float> last_mouse = {0, 0};
     PWEngine::Utils::Vec2<float> look_degree;
-    context->frameLoop([&](float delta){
+    context->frameLoop([&](PWEngine::Render::Command* cmd, PWEngine::Render::Input* input, float delta){
 
-        context->checkMouse(is_in_screen);
+        if (input->checkIsHoverScreen() && input->checkIsMouseInput(PWEngine::Render::MouseKey::BtnLeft))
+        {
+            context->hideMouseCursor();
+            is_in_screen = true;
+        }
+        if (input->checkIsKeyInput(PWEngine::Render::Key::Escape))
+        {
+            context->showMouseCursor();
+            is_in_screen = false;
+        }
+        
         auto currect_mouse = last_mouse;
         
         if (is_in_screen)
-            currect_mouse = context->getMouse();
+            currect_mouse = input->checkMousePosition();
             
         auto dm = currect_mouse - last_mouse;
         
@@ -62,46 +71,37 @@ int main()
         camera->calculateLookVector(look_degree);
 
         float speed = 0.04;
-        if (context->checkIsInput(GLFW_KEY_W))
+        if (input->checkIsKeyInput(PWEngine::Render::Key::W))
         {
             camera->cameraMoveFromLook({speed, 0});
         } 
-        if (context->checkIsInput(GLFW_KEY_S)) 
+        if (input->checkIsKeyInput(PWEngine::Render::Key::S)) 
         {
             camera->cameraMoveFromLook({-speed, 0});
         }
-        if (context->checkIsInput(GLFW_KEY_A))
+        if (input->checkIsKeyInput(PWEngine::Render::Key::A))
         {
             camera->cameraMoveFromLook({0, -speed});
         }
-        if (context->checkIsInput(GLFW_KEY_D)) 
+        if (input->checkIsKeyInput(PWEngine::Render::Key::D)) 
         {
             camera->cameraMoveFromLook({0, speed});
         }  
 
-        PWEngine::Stream::log(instance.log, PWEngine::Stream::LogType::Debug, PWEngine::Stream::LogFrom::Debug, std::to_string(camera->position.x) + "," + std::to_string(camera->position.y) + "," + std::to_string(camera->position.z));
+        //PWEngine::Stream::log(instance.log, PWEngine::Stream::LogType::Debug, PWEngine::Stream::LogFrom::Debug, std::to_string(camera->position.x) + "," + std::to_string(camera->position.y) + "," + std::to_string(camera->position.z));
 
-        time += delta;
-        //mesh->addRotation({time * PWEngine::Utils::deg2rad(90), 0, 0});
-        
+        cmd->setViewPort();
+        cmd->setScissor();
+        cmd->setPipeline(pipeline.get());
 
-        auto cmd = context->__frameCommandStart();
-        auto rendering = cmd->__frameRenderingStart();
+        mesh->update(cmd->swapchain_loop_frame_index);
+        material->update(cmd->swapchain_loop_frame_index);
+        camera->update(cmd->swapchain_loop_frame_index);
 
-        rendering->setViewPort();
-        rendering->setScissor();
-        rendering->setPipeline(pipeline.get());
+        cmd->renderingBegin();
+        cmd->draw(cmd->swapchain_loop_frame_index, pipeline.get(), mesh.get(), material.get(), camera.get());
+        cmd->renderingEnd();
 
-        mesh->update(context->current_frame);
-        material->UpdateDescriptorSets(context->current_frame);
-        camera->update(context->current_frame);
-
-        rendering->draw(context->current_frame, mesh.get(), material.get(), camera.get());
-
-        cmd->__frameRenderingEnd(rendering);
-
-        context->__frameCommandEnd(cmd);
-        context->frameSubmit();
     });
 
 }

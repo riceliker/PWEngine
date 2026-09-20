@@ -9,52 +9,56 @@
 
 namespace PWEngine::Render 
 {
-    FrameCommandRendering::FrameCommandRendering(RenderContext* context): self(std::make_unique<Impl>()), p_context(context)
+    Command::Command() :self(std::make_unique<Impl>())
     {
+        
     }
 
-    
-
-    FrameCommandFactory* RenderContext::__frameCommandStart()
+    Command* RenderContext::commandBegin(size_t swapchain_loop_frame_index)
     {
-        auto factory = new FrameCommandFactory(this);
-        
+        Command* obj = new Command();
+        obj->p_context = this;
+        obj->self->extent = this->m_swapchain->swapchain_extent;
+        obj->swapchain_loop_frame_index = swapchain_loop_frame_index;
+
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-        if (vkBeginCommandBuffer(this->self->command_buffers[this->current_frame], &beginInfo) != VK_SUCCESS) {
+        obj->self->command_buffer = &this->self->command_buffers[swapchain_loop_frame_index];
+
+        if (vkBeginCommandBuffer(*obj->self->command_buffer, &beginInfo) != VK_SUCCESS) {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
         }
-
-        return factory;
+        
+        return obj;
     }
 
-    void RenderContext::__frameCommandEnd(FrameCommandFactory* factory)
+    void RenderContext::commandEnd(Command* command)
     {
-        if (vkEndCommandBuffer(this->self->command_buffers[this->current_frame]) != VK_SUCCESS) {
+        if (vkEndCommandBuffer(*command->self->command_buffer) != VK_SUCCESS) {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to record command buffer!");
         }
-        delete factory;
+        delete command;
     }
 
-    void RenderContext::frameSubmit()
+    void RenderContext::frameSubmit(size_t swapchain_loop_frame_index)
     {
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore waitSemaphores[] = {this->self->image_available_semaphores[this->current_frame]};
+        VkSemaphore waitSemaphores[] = {this->self->image_available_semaphores[swapchain_loop_frame_index]};
         VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
         submitInfo.pWaitDstStageMask = waitStages;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &this->self->command_buffers[this->current_frame];
+        submitInfo.pCommandBuffers = &this->self->command_buffers[swapchain_loop_frame_index];
 
-        VkSemaphore signalSemaphores[] = {this->self->render_finished_semaphores[this->current_frame]};
+        VkSemaphore signalSemaphores[] = {this->self->render_finished_semaphores[swapchain_loop_frame_index]};
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
-        if (vkQueueSubmit(this->m_device->graphics_queue, 1, &submitInfo, this->self->in_flight_fences[this->current_frame]) != VK_SUCCESS) {
+        if (vkQueueSubmit(this->m_device->graphics_queue, 1, &submitInfo, this->self->in_flight_fences[swapchain_loop_frame_index]) != VK_SUCCESS) {
             Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
         }
 
@@ -71,7 +75,7 @@ namespace PWEngine::Render
         vkQueuePresentKHR(this->m_device->graphics_queue, &presentInfo);
     }
 
-    FrameCommandRendering* FrameCommandFactory::__frameRenderingStart()
+    void Command::renderingBegin()
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -103,7 +107,7 @@ namespace PWEngine::Render
 
         VkImageMemoryBarrier barriers[] = {color_barrier, depth_barrier};
         vkCmdPipelineBarrier(
-            this->p_context->self->command_buffers[this->p_context->current_frame],
+            this->p_context->self->command_buffers[this->swapchain_loop_frame_index],
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
             0,
@@ -112,7 +116,6 @@ namespace PWEngine::Render
             2, barriers
         );
         
-        auto cmd = new FrameCommandRendering(this->p_context);
         VkRenderingAttachmentInfo color_attachment_info{};
         color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
         color_attachment_info.imageView = this->p_context->m_swapchain->swapchain_image_views[this->p_context->image_index];
@@ -140,18 +143,12 @@ namespace PWEngine::Render
         rendering_info.pDepthAttachment = &depth_attachment_info;
         rendering_info.pStencilAttachment = VK_NULL_HANDLE;
         
-        vkCmdBeginRendering(this->p_context->self->command_buffers[this->p_context->current_frame], &rendering_info);
-
-        cmd->p_context = this->p_context;
-        cmd->self->command_buffer = this->p_context->self->command_buffers[this->p_context->current_frame];
-        cmd->self->swapchain_extent = this->p_context->m_swapchain->swapchain_extent;
-
-        return cmd;
+        vkCmdBeginRendering(*this->self->command_buffer, &rendering_info);
     }
 
-    void FrameCommandFactory::__frameRenderingEnd(FrameCommandRendering* cmd)
+    void Command::renderingEnd()
     {
-        vkCmdEndRendering(this->p_context->self->command_buffers[this->p_context->current_frame]);
+        vkCmdEndRendering(this->p_context->self->command_buffers[this->swapchain_loop_frame_index]);
         VkImageMemoryBarrier present_barrier{};
         present_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         present_barrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -166,7 +163,7 @@ namespace PWEngine::Render
         present_barrier.subresourceRange.layerCount = 1;
 
         vkCmdPipelineBarrier(
-            this->p_context->self->command_buffers[this->p_context->current_frame],
+            this->p_context->self->command_buffers[this->swapchain_loop_frame_index],
             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             0,
@@ -174,36 +171,34 @@ namespace PWEngine::Render
             0, nullptr,
             1, &present_barrier
         );
-        delete cmd;
     }
 
-    void FrameCommandRendering::setViewPort()
+    void Command::setViewPort()
     {
         VkViewport viewport{};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
-        viewport.width = (float) this->self->swapchain_extent.width;
-        viewport.height = (float) this->self->swapchain_extent.height;
+        viewport.width = (float) this->self->extent.width;
+        viewport.height = (float) this->self->extent.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        vkCmdSetViewport(this->self->command_buffer, 0, 1, &viewport);
+        vkCmdSetViewport(*this->self->command_buffer, 0, 1, &viewport);
     }
 
-    void FrameCommandRendering::setScissor()
+    void Command::setScissor()
     {
         VkRect2D scissor{};
         scissor.offset = {0, 0};
-        scissor.extent = this->self->swapchain_extent;
-        vkCmdSetScissor(this->self->command_buffer, 0, 1, &scissor);            
+        scissor.extent = this->self->extent;
+        vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void FrameCommandRendering::setPipeline(Pipeline3D* pipeline)
+    void Command::setPipeline(Pipeline3D* pipeline)
     {
-        vkCmdBindPipeline(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
-        this->self->pipeline_layout = pipeline->self->pipeline_layout;
+        vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }
 
-    void FrameCommandRendering::draw(size_t currect_frame, Mesh3D* mesh, Material* material, Camera* camera)
+    void Command::draw(size_t currect_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera)
     {
         std::vector<VkDescriptorSet> descriptor_sets_list = {
             mesh->m_descriptor_set->descriptor_sets.at(currect_frame), 
@@ -211,12 +206,12 @@ namespace PWEngine::Render
             camera->m_descriptor_set->descriptor_sets.at(currect_frame)
         };
 
-        vkCmdBindDescriptorSets(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
+        vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
         VkBuffer vertex_buffers[] = {mesh->m_vertex->vertex_buffer};
         VkBuffer index_buffer = mesh->m_vertex->indices_buffer;
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(this->self->command_buffer, 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(this->self->command_buffer, mesh->indices_size, 1, 0, 0, 0);
+        vkCmdBindVertexBuffers(*this->self->command_buffer, 0, 1, vertex_buffers, offsets);
+        vkCmdBindIndexBuffer(*this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(*this->self->command_buffer, mesh->indices_size, 1, 0, 0, 0);
     }
 }

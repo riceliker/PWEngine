@@ -9,16 +9,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <vector>
 
 namespace PWEngine::Render 
 {
-    struct FrameCommandRendering::Impl
+    struct Command::Impl
     {
-        VkCommandBuffer command_buffer;
-        VkExtent2D swapchain_extent;
-        VkPipelineLayout pipeline_layout;
-        std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
+        VkCommandBuffer* command_buffer;
+        VkExtent2D extent;
     };
 
     void singleTimerCommand(RenderContext* context, std::function<void(VkCommandBuffer& cmd)> func);

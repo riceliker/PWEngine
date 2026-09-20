@@ -1,7 +1,6 @@
 #include "render.hpp"
 #include "utils.hpp"
 #include "impl.hpp"
-#include "../command/impl.hpp"
 #include "../context/impl.hpp"
 #include "buffer.hpp"
 #include <cstddef>
@@ -49,18 +48,18 @@ namespace PWEngine::Render
         this->data.transform = Utils::transform(this->position, this->scale, this->rotation);
     }
 
-    void Mesh3D::update(uint32_t current_frame)
+    void Mesh3D::update(uint32_t swapchain_loop_frame_index)
     {
         /* DescriptorSet */
         VkDescriptorBufferInfo model_info{};
-        model_info.buffer = this->m_uniform->uniform_buffers[current_frame];
+        model_info.buffer = this->m_uniform->uniform_buffers[swapchain_loop_frame_index];
         model_info.offset = 0;
         model_info.range = sizeof(Mesh3D::UniformData); /* size 64: 1 * mat4 */
 
         std::vector<VkWriteDescriptorSet> descriptor_writes{};
         descriptor_writes.resize(1);
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(current_frame);
+        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -71,17 +70,6 @@ namespace PWEngine::Render
 
         memcpy(this->m_uniform->uniform_buffers_mapped[this->p_pipeline->p_context->image_index], &this->data, sizeof(Mesh3D::UniformData));  
     }
-
-    void Mesh3D::draw(FrameCommandRendering* rendering)
-    {
-        VkBuffer vertex_buffers[] = {this->m_vertex->vertex_buffer};
-        VkBuffer index_buffer = this->m_vertex->indices_buffer;
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(rendering->self->command_buffer, 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(rendering->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(rendering->self->command_buffer, this->indices_size, 1, 0, 0, 0);
-    }
-
     Mesh3D::~Mesh3D()
     {
         /* vertex */

@@ -20,12 +20,36 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 #define MAX_FRAMES_IN_FLIGHT 3
 
 namespace PWEngine::Render
 {
+/*    Structure Of PWEngine Render Module   */
+ class RenderInstance;
+    /*    |    */
+    /*    |    */ 
+    /*    |--> */class RenderContext;/* ------------------------------------> */         
+    /*    |            |                               |                 |    */
+    /*    |            V                               V                 V    */
+    /*    |    */class Pipeline3D;/*->*/        class Texture2D;   class Input;
+    /*    |            |             |                 |                 |    */
+    /*    |            V             V                 V                 |    */
+    /*    |    */class Mesh3D;   class Camera;  class Material;    /*    |    */
+    /*    |            |             |                 |                 |    */
+    /*    V            V             V                 V    */     /*    V    */
+    class Command;/*<------------------------------------------------------------*/
+ 
+    
+/*
+     ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
+    ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
+   ███         ██▒     ▓██  ██ ██  ██░  ██▒▒▒▒▒  ███ ███              ▓█████       ███    ░██    ███  ███    ███ ░██            ███
+   ███         ██▒     ▓██  ██  ██▒██░  ███████  ███ ███   █████          █████    ███    ░████████   ███    ███ ░██            ███
+   ░██░   ░██  ▓██     ██▓  ██   ████░  ██       ███  ███    ███      ██░    ██    ███    ░██    ▓██  ███    ███  ███    ███    ███
+     ███████     ███████    ██    ███░  ██       ███   █████████       ███████     ███    ░██     ██   ████████    ▒██████▓     ███
+*/
+
     struct ContextInfo
     {
         Utils::Vec2<uint32_t> window_default_resolution;
@@ -57,21 +81,37 @@ namespace PWEngine::Render
         ShaderType shader_type;
     };
 
-    class RenderInstance;
-    class RenderContext;
-    class Pipeline3D;
-    class Mesh3D;
-    class Texture2D;
-    class Material;
-    class Camera;
-    class DescriptorSet;
-    class FrameCommandFactory;
-    class FrameCommandRendering;
+    enum class Key : uint16_t
+    {
+        Unknown = 0,    
+        A, B, C, D, E, F, G, H, I, J, K, L, M,
+        N, O, P, Q, R, S, T, U, V, W, X, Y, Z,  
+        Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
+        Space, Enter, Tab, Backspace,
+        Left, Right, Up, Down,
+        Insert, Delete, Home, End, PageUp, PageDown,
+        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+        Kp0, Kp1, Kp2, Kp3, Kp4, Kp5, Kp6, Kp7, Kp8, Kp9,
+        KpDecimal, KpDivide, KpMultiply, KpSubtract, KpAdd, KpEnter,
+        LShift, RShift, LCtrl,  RCtrl, LAlt, RAlt, LSuper, RSuper,
+        Menu, Escape
+    };
 
-    /*
-        The class control the vulkan instance.
-        RenderInstance -> Device;
-    */
+    enum MouseKey : uint8_t
+    {
+        Unknown = 0,
+        BtnLeft, BtnRight, BtnMiddle
+    };
+/*
+    ██  ░███    ███   ███████  ██████████  ████     ███    ░██    ███████    █████████
+    ██  ░████   ███  ██    ███    ▓██      ████▓    ████░  ░██  ▓██▒    ██▓  ██
+    ██  ░██ ██  ███  █████▓       ▓██     ██  ██    ██░███ ░██  ███          ████████
+    ██  ░██  ██▓███     ░█████    ▓██    ███  ▓██   ██░ ███░██  ██▓          ██
+    ██  ░██   █████ ███     ██    ▓██   ██████████  ██░  ▒████  ███     ██▓  ██
+    ██  ░██    ▓███  ▓███████     ▓██  ░██      ███ ██░    ███    ███████    █████████
+*/
+    
+
     class RenderInstance
     {
     private:
@@ -99,25 +139,25 @@ namespace PWEngine::Render
     class RenderContext
     {
     private:
-        /* init */
-        void createSync();
-        void createCommandPool();
-        void createDescriptorPool();
-    public:
-        bool checkIsInput(int key);
-        void checkMouse(bool& flag);
-        Utils::Vec2<int> getMouse();
+        void frameSubmit(size_t swapchain_loop_frame_index);
         void pollEvents();
         bool getIsWindowClosed();
         void waitIdle();
-        FrameCommandFactory* __frameCommandStart();
-        void __frameCommandEnd(FrameCommandFactory* factory);
-        void waitFence();
+        void waitFence(size_t swapchain_loop_frame_index);
+        Command* commandBegin(size_t swapchain_loop_frame_index);
+        void commandEnd(Command* command);
+        std::shared_ptr<Input> createInput();
+    public:
+        /* input */
+        bool checkIsInput(int key);
+        void checkMouse(bool& flag);
+        Utils::Vec2<int> getMouse();
+        void hideMouseCursor();
+        void showMouseCursor();
         /* log system */
         Stream::LogSystem* log;
         RenderInstance* p_instance;
         /* loop variable */
-        uint32_t current_frame = 0; /* the swapchain frame */
         uint32_t image_index = 0; /* the DS image index */
         /* PImpl */
         struct Device;
@@ -136,27 +176,30 @@ namespace PWEngine::Render
         std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
         std::shared_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* surface);
         /* Loop */
-        template<std::invocable<float> F> void frameLoop(F&& func)
-        {
-            float delta = 0;
-            while (!this->getIsWindowClosed()) 
-            {
-                auto start_time = std::chrono::high_resolution_clock::now();
-                this->pollEvents();
-                this->waitFence();
-
-                func(delta);
-
-                this->current_frame = (this->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-                
-                auto current_time = std::chrono::high_resolution_clock::now();
-                delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
-            }
-            this->waitIdle();
-        }        
-        void frameSubmit();
+        template<std::invocable<Command*, Input*, float> F> void frameLoop(F&& func);      
         friend class RenderInstance;
     };
+
+    template<std::invocable<Command*, Input*, float> F> void RenderContext::frameLoop(F&& func)
+    {
+        float delta = 0;
+        size_t swapchain_loop_frame_index = 0;
+        auto input = this->createInput();
+        while (!this->getIsWindowClosed()) 
+        {
+            auto start_time = std::chrono::high_resolution_clock::now();
+            this->waitFence(swapchain_loop_frame_index);
+            auto cmd = this->commandBegin(swapchain_loop_frame_index);
+            this->pollEvents();
+            func(cmd, input.get(), delta);
+            this->commandEnd(cmd);
+            this->frameSubmit(swapchain_loop_frame_index);
+            swapchain_loop_frame_index = (swapchain_loop_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
+            auto current_time = std::chrono::high_resolution_clock::now();
+            delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+        }
+        this->waitIdle();
+    }        
 
     class Pipeline3D
     {
@@ -174,10 +217,6 @@ namespace PWEngine::Render
         friend class RenderContext;
     };
 
-}
-
-namespace PWEngine::Render
-{
     class Texture2D
     {
     private:
@@ -238,8 +277,7 @@ namespace PWEngine::Render
         std::unique_ptr<Uniform> m_uniform;
         /* public */
         void calculateNodeMatrix();
-        void update(uint32_t current_frame);
-        void draw(FrameCommandRendering* rendering);
+        void update(uint32_t swapchain_loop_frame_index);
         /* constructor */
         Mesh3D();
         ~Mesh3D();
@@ -264,7 +302,7 @@ namespace PWEngine::Render
         struct Uniform;
         std::unique_ptr<Uniform> m_uniform;
         void bindBasicTexture(std::shared_ptr<Texture2D> texture);
-        void UpdateDescriptorSets(size_t current_frame);
+        void update(size_t swapchain_loop_frame_index);
         Material();
         ~Material();
         friend class Pipeline3D;
@@ -293,43 +331,42 @@ namespace PWEngine::Render
         ~Camera();
         void calculateLookVector(Utils::Vec2<float> look_degree);
         void cameraMoveFromLook(Utils::Vec2<float> step);
-        void update(uint32_t current_frame);
+        void update(uint32_t swapchain_loop_frame_index);
         friend class Pipeline3D;
     };
-}
 
-namespace PWEngine::Render
-{
-    class FrameCommandFactory
+    class Command
     {
     private:
-        
-    public:
-        FrameCommandRendering* __frameRenderingStart();
-        void __frameRenderingEnd(FrameCommandRendering* cmd);
-        RenderContext* p_context;
-        FrameCommandFactory(RenderContext* context): p_context(context){};
-        template<std::invocable<FrameCommandRendering*> F> void frameRendering(F&& func)
-        {
-            
-            auto cmd = this->__frameRenderingStart();
-            func(cmd);
-            this->__frameRenderingEnd(cmd);
-        }
-    };
-
-    class FrameCommandRendering
-    {
-    public:
-        RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
-        FrameCommandRendering(RenderContext* context);
+        RenderContext* p_context;
+    public:
+        Command(); 
+        ~Command()=default;
+        size_t swapchain_loop_frame_index;
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void draw(size_t currect_frame, Mesh3D* mesh, Material* material, Camera* camera);
-    }; 
+        void renderingBegin();
+        void renderingEnd();
+        void draw(size_t currect_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
+        friend class RenderContext;
+    };
+
+    class Input
+    {
+    private:
+        RenderContext* p_context;
+    public:
+        Input(){};
+        ~Input(){};
+        bool checkIsKeyInput(Key key);
+        bool checkIsMouseInput(MouseKey key);
+        Utils::Vec2<float> checkMousePosition();
+        bool checkIsHoverScreen();
+        friend class RenderContext;
+    };  
 }
 
 

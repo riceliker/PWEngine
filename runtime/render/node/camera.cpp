@@ -48,20 +48,20 @@ namespace PWEngine::Render
         return obj;
     }
 
-    void Camera::update(uint32_t current_frame)
+    void Camera::update(uint32_t swapchain_loop_frame_index)
     {
         this->data.view = Utils::look(this->position, this->position + this->look_vector, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
         this->data.project = Utils::perspective(Utils::deg2rad(view_degree), this->p_context->m_swapchain->swapchain_extent.width / (float) this->p_context->m_swapchain->swapchain_extent.height, this->view_depth.x , this->view_depth.y);
         this->data.project.rc(1, 1) *= -1;
 
         VkDescriptorBufferInfo camera_info{};
-        camera_info.buffer = this->m_uniform->uniform_buffers[current_frame];
+        camera_info.buffer = this->m_uniform->uniform_buffers[swapchain_loop_frame_index];
         camera_info.offset = 0;
         camera_info.range = sizeof(Camera::CameraData); /* size 128: 2 * mat4 */
 
         std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
         descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(current_frame);
+        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
         descriptor_writes[0].dstBinding = 0;
         descriptor_writes[0].dstArrayElement = 0;
         descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;

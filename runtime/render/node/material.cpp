@@ -26,7 +26,7 @@ namespace PWEngine::Render
         this->basic_texture = texture;
     }
 
-    void Material::UpdateDescriptorSets(size_t current_frame)
+    void Material::update(size_t swapchain_loop_frame_index)
     {
         VkDescriptorImageInfo basic_texture_info{};
         VkWriteDescriptorSet descriptor_write{};
@@ -38,7 +38,7 @@ namespace PWEngine::Render
             basic_texture_info.sampler = this->basic_texture.value()->self->texture_sampler;
 
             descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_write.dstSet = this->m_descriptor_set->descriptor_sets.at(current_frame);
+            descriptor_write.dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
             descriptor_write.dstBinding = 0;
             descriptor_write.dstArrayElement = 0;
             descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

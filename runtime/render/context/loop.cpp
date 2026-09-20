@@ -1,13 +1,14 @@
 #include "render.hpp"
 #include "impl.hpp"
+#include <cstddef>
 
 namespace PWEngine::Render
 {
-    void RenderContext::waitFence()
+    void RenderContext::waitFence(size_t swapchain_loop_frame_index)
     {
-        vkWaitForFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
+        vkWaitForFences(this->m_device->device, 1, &this->self->in_flight_fences[swapchain_loop_frame_index], VK_TRUE, UINT64_MAX);
 
-        VkResult result = vkAcquireNextImageKHR(this->m_device->device, this->m_swapchain->swapchain, UINT64_MAX, this->self->image_available_semaphores[current_frame], VK_NULL_HANDLE, &this->image_index);
+        VkResult result = vkAcquireNextImageKHR(this->m_device->device, this->m_swapchain->swapchain, UINT64_MAX, this->self->image_available_semaphores[swapchain_loop_frame_index], VK_NULL_HANDLE, &this->image_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) 
         {
@@ -16,8 +17,8 @@ namespace PWEngine::Render
             throw std::runtime_error("failed to acquire swap chain image!");
         }
 
-        vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame]);
-        vkResetCommandBuffer(this->self->command_buffers[this->current_frame], /*VkCommandBufferResetFlagBits*/ 0);
+        vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[swapchain_loop_frame_index]);
+        vkResetCommandBuffer(this->self->command_buffers[swapchain_loop_frame_index], /*VkCommandBufferResetFlagBits*/ 0);
 
     }
 

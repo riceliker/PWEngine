@@ -56,7 +56,6 @@ namespace PWEngine::Render
         std::vector<VkCommandBuffer> command_buffers;
 
         VkDescriptorPool descriptor_pool;
-        
     };
 
     struct Pipeline3D::Impl
