@@ -1,4 +1,10 @@
 #pragma once
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
+#if(__APPLE__)
+#include <vulkan/vulkan_beta.h>
+#endif
 #include "render.hpp"
 #include <cstddef>
 #include <vector>
@@ -58,7 +64,6 @@ namespace PWEngine::Render
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;
 
-        std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
     };
 }

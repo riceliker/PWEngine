@@ -1,4 +1,10 @@
 #pragma once
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
+#if(__APPLE__)
+#include <vulkan/vulkan_beta.h>
+#endif
 #include "render.hpp"
 #include <vector>
 
@@ -38,15 +44,7 @@ namespace PWEngine::Render
         return attributeDescriptions;
     }
 
-    struct Mesh3D::Vertex3D
-    {
-        VkBuffer vertex_buffer;
-        VkDeviceMemory vertex_buffer_memory;
-        VkBuffer indices_buffer;
-        VkDeviceMemory indices_buffer_memory;
-    };
-
-    struct Mesh3D::Texture2D
+    struct Texture2D::Impl
     {
         uint32_t mip_level;
         VkImage texture_image;
@@ -55,18 +53,48 @@ namespace PWEngine::Render
         VkSampler texture_sampler;
     };
 
+    struct Mesh3D::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Mesh3D::Vertex3D
+    {
+        VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
+        VkBuffer indices_buffer;
+        VkDeviceMemory indices_buffer_memory;
+    };
+
     struct Mesh3D::Uniform
     {
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void*> uniform_buffers_mapped;
     };
+   
+    struct Material::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
 
-    struct Camera::Impl
+    struct Material::Uniform
     {
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void*> uniform_buffers_mapped;
+    };
+
+    struct Camera::DescriptorSet
+    {
         std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Camera::Uniform
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+       
     };
 }   

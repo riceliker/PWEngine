@@ -6,6 +6,8 @@
 #include <cstdint>
 #include <memory>
 #include <print>
+#include <string>
+#include "glfw/glfw3.h"
 
 int main()
 {
@@ -26,10 +28,13 @@ int main()
     context_info.window_default_resolution = PWEngine::Utils::Vec2<uint32_t>(1280, 720);
 
     auto context = instance.createContext(context_info);
-
+    auto texture = context->createTexture2D(image.get());
     
     auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
-    auto mesh = pipeline->createMesh3D(model.get(), image.get());
+    auto mesh = pipeline->createMesh3D(model.get());
+    
+    auto material = pipeline->createMaterial();
+    material->bindBasicTexture(texture);
     auto camera = pipeline->creatCamera();
     
     float time = 0;
@@ -37,8 +42,7 @@ int main()
     bool is_in_screen = false;
     PWEngine::Utils::Vec2<int> last_mouse = {0, 0};
     PWEngine::Utils::Vec2<float> look_degree;
-    context->frameLoop([&](){
-        context->__waitFence();
+    context->frameLoop([&](float delta){
 
         context->checkMouse(is_in_screen);
         auto currect_mouse = last_mouse;
@@ -75,10 +79,11 @@ int main()
             camera->cameraMoveFromLook({0, speed});
         }  
 
-        time += context->delta;
-        mesh->data.model = PWEngine::Utils::translate(PWEngine::Utils::Vec3<float>(0, 0, 0)) * PWEngine::Utils::rotate(PWEngine::Utils::Mat4(1.0), 0 * PWEngine::Utils::deg2rad(90), PWEngine::Utils::Vec3<float>(0, 0, 1));
-        mesh->update(context->current_frame);
-        camera->update(context->current_frame);
+        PWEngine::Stream::log(instance.log, PWEngine::Stream::LogType::Debug, PWEngine::Stream::LogFrom::Debug, std::to_string(camera->position.x) + "," + std::to_string(camera->position.y) + "," + std::to_string(camera->position.z));
+
+        time += delta;
+        //mesh->addRotation({time * PWEngine::Utils::deg2rad(90), 0, 0});
+        
 
         auto cmd = context->__frameCommandStart();
         auto rendering = cmd->__frameRenderingStart();
@@ -87,13 +92,11 @@ int main()
         rendering->setScissor();
         rendering->setPipeline(pipeline.get());
 
-        rendering->setDescriptorSet(pipeline.get());
+        mesh->update(context->current_frame);
+        material->UpdateDescriptorSets(context->current_frame);
+        camera->update(context->current_frame);
 
-        camera->setData(context->current_frame);
-        mesh->setData();
-
-
-        mesh->bind(rendering);
+        rendering->draw(context->current_frame, mesh.get(), material.get(), camera.get());
 
         cmd->__frameRenderingEnd(rendering);
 

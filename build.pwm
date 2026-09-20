@@ -10,11 +10,14 @@ $same($is_macos, "macos", __platform__)
         framework("Metal")
     :fi
 ;
-:fi
 
 @files("PWEngine")
     recursion_folder("runtime", ".cpp")
 ;
+
+# @files("test")
+# 	add_file("test/main.cpp")
+# ;
 
 @project("PWEngine", "binary")
     source_files("PWEngine")
@@ -24,4 +27,8 @@ $same($is_macos, "macos", __platform__)
         add_library(molten_vk_library)
     :fi
 ;
-:fi
+
+# @project("test", "binary")
+# 	source_files("test")
+# 	add_library("./build/libPWEngine.dylib")
+# ;

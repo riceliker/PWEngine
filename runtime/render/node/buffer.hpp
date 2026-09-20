@@ -175,6 +175,23 @@ namespace PWEngine::Render
         vkBindImageMemory(context->m_device->device, image, memory, 0);
     }
     
+    inline std::vector<VkDescriptorSet> createDescriptorSet(Pipeline3D* pipeline, VkDescriptorSetLayout layout)
+    {
+        std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
+        VkDescriptorSetAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+        alloc_info.descriptorPool = pipeline->p_context->self->descriptor_pool;
+        alloc_info.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        alloc_info.pSetLayouts = layouts.data();
+
+        std::vector<VkDescriptorSet> descriptor_set;
+
+        descriptor_set.resize(MAX_FRAMES_IN_FLIGHT);
+        if (vkAllocateDescriptorSets(pipeline->p_context->m_device->device, &alloc_info, descriptor_set.data()) != VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate descriptor sets!");
+        }
+        return descriptor_set;
+    }
 
 
 }

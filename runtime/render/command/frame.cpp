@@ -1,8 +1,8 @@
 #include "render.hpp"
 #include "impl.hpp"
 #include "../context/impl.hpp"
+#include "../node/impl.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -13,23 +13,7 @@ namespace PWEngine::Render
     {
     }
 
-    void RenderContext::__waitFence()
-    {
-        vkWaitForFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame], VK_TRUE, UINT64_MAX);
-
-        VkResult result = vkAcquireNextImageKHR(this->m_device->device, this->m_swapchain->swapchain, UINT64_MAX, this->self->image_available_semaphores[current_frame], VK_NULL_HANDLE, &this->image_index);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) 
-        {
-            this->recreateSwapchain();
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw std::runtime_error("failed to acquire swap chain image!");
-        }
-
-        vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[this->current_frame]);
-        vkResetCommandBuffer(this->self->command_buffers[this->current_frame], /*VkCommandBufferResetFlagBits*/ 0);
-
-    }
+    
 
     FrameCommandFactory* RenderContext::__frameCommandStart()
     {
@@ -158,8 +142,6 @@ namespace PWEngine::Render
         
         vkCmdBeginRendering(this->p_context->self->command_buffers[this->p_context->current_frame], &rendering_info);
 
-        
-
         cmd->p_context = this->p_context;
         cmd->self->command_buffer = this->p_context->self->command_buffers[this->p_context->current_frame];
         cmd->self->swapchain_extent = this->p_context->m_swapchain->swapchain_extent;
@@ -221,14 +203,20 @@ namespace PWEngine::Render
         this->self->pipeline_layout = pipeline->self->pipeline_layout;
     }
 
-    void FrameCommandRendering::setDescriptorSet(Pipeline3D* pipeline)
+    void FrameCommandRendering::draw(size_t currect_frame, Mesh3D* mesh, Material* material, Camera* camera)
     {
-        std::vector<VkDescriptorSet> descriptor_sets_list;
-        for (const auto descriptor_set : pipeline->self->descriptor_sets)
-        {
-            descriptor_sets_list.push_back(descriptor_set[this->p_context->image_index]);
-        }
-        vkCmdBindDescriptorSets(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
-    }
+        std::vector<VkDescriptorSet> descriptor_sets_list = {
+            mesh->m_descriptor_set->descriptor_sets.at(currect_frame), 
+            material->m_descriptor_set->descriptor_sets.at(currect_frame),
+            camera->m_descriptor_set->descriptor_sets.at(currect_frame)
+        };
 
+        vkCmdBindDescriptorSets(this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, this->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
+        VkBuffer vertex_buffers[] = {mesh->m_vertex->vertex_buffer};
+        VkBuffer index_buffer = mesh->m_vertex->indices_buffer;
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(this->self->command_buffer, 0, 1, vertex_buffers, offsets);
+        vkCmdBindIndexBuffer(this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
+        vkCmdDrawIndexed(this->self->command_buffer, mesh->indices_size, 1, 0, 0, 0);
+    }
 }

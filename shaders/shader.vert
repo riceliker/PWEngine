@@ -4,7 +4,7 @@ layout(set = 0, binding = 0) uniform ModelUniform {
     mat4 model;
 } model;
 
-layout(set = 1, binding = 0) uniform CameraUniform {
+layout(set = 2, binding = 0) uniform CameraUniform {
     mat4 view;
     mat4 proj;
 } camera;

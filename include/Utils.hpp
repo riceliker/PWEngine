@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -100,6 +101,74 @@ namespace PWEngine::Utils
         Vec4(){};
     };
 
+    inline constexpr Vec4<float> euler2quat(Vec3<float> euler) noexcept
+    {
+        float cx = std::cos(euler.x * 0.5f);
+        float sx = std::sin(euler.x * 0.5f);
+        float cy = std::cos(euler.y * 0.5f);
+        float sy = std::sin(euler.y * 0.5f);
+        float cz = std::cos(euler.z * 0.5f);
+        float sz = std::sin(euler.z * 0.5f);
+
+        return {
+            sx*cy*cz - cx*sy*sz,
+            -cx*sy*cz - sx*cy*sz,
+            cx*cy*sz - sx*sy*cz,
+            cx*cy*cz + sx*sy*sz,
+        };
+    };  
+
+    inline constexpr Vec3<float> quat2euler(const Vec4<float> quat) noexcept
+    {
+        Vec3<float> e{};
+        float x = quat.x;
+        float y = quat.y;
+        float z = quat.z;
+        float w = quat.w;
+
+        // sin(pitch)
+        float sin_pitch = 2.0f * ( w*y - x*z );
+        sin_pitch = std::clamp(sin_pitch, -1.0f, 1.0f);
+        e.y = std::asin(sin_pitch); // pitch -> Y
+
+        float cp = std::cos(e.y);
+        if (std::fabs(cp) > 1e-6f)
+        {
+            e.x = std::atan2( 2*(w*x + y*z), 1 - 2*(x*x + y*y) ); // yaw -> X
+            e.z = std::atan2( 2*(w*z + x*y), 1 - 2*(y*y + z*z) ); // roll -> Z
+        }
+        else
+        {
+            // pitch -> ±90°
+            e.x = 0.0f;
+            e.z = std::atan2(2*(x*y + w*z), 1 - 2*(y*y + z*z));
+        }
+        return e;
+    }
+
+    inline constexpr Vec4<float> quat_mul(const Vec4<float>& a, const Vec4<float>& b) noexcept
+    {
+        Vec4<float> r;
+        r.w = a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z;
+        r.x = a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y;
+        r.y = a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x;
+        r.z = a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w;
+        return r;
+    }
+
+    inline constexpr Vec4<float> quat_normalize(Vec4<float> q) noexcept
+    {
+        float len_sq = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+        float len = std::sqrt(len_sq);
+        if(len < 1e-6f)
+            return {0,0,0,1};
+        q.x /= len;
+        q.y /= len;
+        q.z /= len;
+        q.w /= len;
+        return q;
+    }
+
     struct Mat4
     {
         float data[16];
@@ -163,6 +232,27 @@ namespace PWEngine::Utils
         auto mat4 = rotate(rad, axis);
         return left * mat4;
     }
+    
+    inline constexpr Mat4 transform(Vec3<float> p, Vec3<float> s, const Vec4<float> r) noexcept
+    {
+        Mat4 mat = Mat4(1);
+        /* rotate */
+        float xx = 2.0f * r.x * r.x; float xy = 2.0f * r.x * r.y; float wx = 2.0f * r.w * r.x;
+        float yy = 2.0f * r.y * r.y; float xz = 2.0f * r.x * r.z; float wy = 2.0f * r.w * r.y;
+        float zz = 2.0f * r.z * r.z; float yz = 2.0f * r.y * r.z; float wz = 2.0f * r.w * r.z;
+        mat.rc(0,0) = 1.0f - yy - zz; mat.rc(1,0) = xy + wz; mat.rc(2,0) = xz - wy;
+        mat.rc(0,1) = xy - wz; mat.rc(1,1) = 1.0f - xx - zz; mat.rc(2,1) = yz + wx;
+        mat.rc(0,2) = xz + wy; mat.rc(1,2) = yz - wx; mat.rc(2,2) = 1.0f - xx - yy;  
+        /* scale */
+        mat.rc(0,0) *= s.x; mat.rc(0,1) *= s.y; mat.rc(0,2) *= s.z;
+        mat.rc(1,0) *= s.x; mat.rc(1,1) *= s.y; mat.rc(1,2) *= s.z;
+        mat.rc(2,0) *= s.x; mat.rc(2,1) *= s.y; mat.rc(2,2) *= s.z;
+        /* postion */
+        mat.rc(3,0) = p.x;
+        mat.rc(3,1) = p.y;
+        mat.rc(3,2) = p.z;
+        return mat;
+    }
 
     inline constexpr Mat4 look(Vec3<float> view, Vec3<float> center, Vec3<float> world) noexcept
     {
@@ -205,80 +295,6 @@ namespace PWEngine::Utils
         m.rc(3,2) = 1;
         m.rc(3,3) = 0;
         return m;
-    }
-
-    inline float str2float(const char* str)
-    {
-        const char* w = str;
-        while(*w) ++w;
-        const char* begin = str;
-        const char* end = w;
-
-        if (begin >= end) return 0.0f;
-
-        const char* p = begin;
-        bool negative = false;
-        if (*p == '-')
-        {
-            negative = true;
-            p++;
-        }
-        else if (*p == '+')
-        {
-            p++;
-        }
-
-        float result = 0.0f;
-        // XX.
-        while (p < end && *p >= '0' && *p <= '9')
-        {
-            result = result * 10.0f + (*p - '0');
-            p++;
-        }
-
-        // .XX
-        if (p < end && *p == '.')
-        {
-            p++;
-            float frac = 0.1f;
-            while (p < end && *p >= '0' && *p <= '9')
-            {
-                result += (*p - '0') * frac;
-                frac *= 0.1f;
-                p++;
-            }
-        }
-
-        // XXeXX
-        if (p < end && (*p == 'e' || *p == 'E'))
-        {
-            p++;
-            int exp_neg = 0;
-            int exponent = 0;
-            if (p < end && *p == '-')
-            {
-                exp_neg = 1;
-                p++;
-            }
-            else if (p < end && *p == '+')
-            {
-                p++;
-            }
-
-            while (p < end && *p >= '0' && *p <= '9')
-            {
-                exponent = exponent * 10 + (*p - '0');
-                p++;
-            }
-            if (exp_neg) exponent = -exponent;
-
-            result *= powf(10.0f, static_cast<float>(exponent));
-        }
-
-        if (negative)
-            result = -result;
-
-        return result;
     }
 
     struct Vertex3D

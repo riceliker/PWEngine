@@ -13,22 +13,14 @@
 
 #pragma once
 #include "stream.hpp"
+#include "utils.hpp"
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
-#if(__APPLE__)
-#include <vulkan/vulkan_beta.h>
-#endif
-
 #include <string>
 #include <vector>
 #include <memory>
-
-#include "utils.hpp"
 
 #define MAX_FRAMES_IN_FLIGHT 3
 
@@ -69,6 +61,8 @@ namespace PWEngine::Render
     class RenderContext;
     class Pipeline3D;
     class Mesh3D;
+    class Texture2D;
+    class Material;
     class Camera;
     class DescriptorSet;
     class FrameCommandFactory;
@@ -113,16 +107,19 @@ namespace PWEngine::Render
         bool checkIsInput(int key);
         void checkMouse(bool& flag);
         Utils::Vec2<int> getMouse();
-        bool __getIsWindowClosed();
-        void __waitIdle();
+        void pollEvents();
+        bool getIsWindowClosed();
+        void waitIdle();
         FrameCommandFactory* __frameCommandStart();
         void __frameCommandEnd(FrameCommandFactory* factory);
-        void __waitFence();
+        void waitFence();
+        /* log system */
         Stream::LogSystem* log;
         RenderInstance* p_instance;
-        uint32_t current_frame = 0;
-        uint32_t image_index = 0;
-        float delta = 0;
+        /* loop variable */
+        uint32_t current_frame = 0; /* the swapchain frame */
+        uint32_t image_index = 0; /* the DS image index */
+        /* PImpl */
         struct Device;
         std::unique_ptr<Device> m_device;
         struct Window;
@@ -134,34 +131,29 @@ namespace PWEngine::Render
         /* Constructor */
         RenderContext();
         ~RenderContext();
-        /* Preload */
+        /* create */
         void recreateSwapchain();
         std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
+        std::shared_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* surface);
         /* Loop */
-        template<typename F> void frameLoop(F&& func)
+        template<std::invocable<float> F> void frameLoop(F&& func)
         {
-            while (!this->__getIsWindowClosed()) 
+            float delta = 0;
+            while (!this->getIsWindowClosed()) 
             {
                 auto start_time = std::chrono::high_resolution_clock::now();
-                glfwPollEvents();
+                this->pollEvents();
+                this->waitFence();
 
-                func();
+                func(delta);
 
                 this->current_frame = (this->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
                 
                 auto current_time = std::chrono::high_resolution_clock::now();
-                this->delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+                delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
             }
-            this->__waitIdle();
-        }
-        
-        template<std::invocable<FrameCommandFactory*> F> void frameCommand(F&& func)
-        {
-            auto factory = this->__frameCommandStart();
-            func(factory);
-            this->__frameCommandEnd(factory);
-        }
-        
+            this->waitIdle();
+        }        
         void frameSubmit();
         friend class RenderInstance;
     };
@@ -176,7 +168,8 @@ namespace PWEngine::Render
         /* Constructor */
         Pipeline3D();
         ~Pipeline3D();
-        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model, Utils::ImageRGBA8* image);
+        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model);
+        std::unique_ptr<Material> createMaterial();
         std::unique_ptr<Camera> creatCamera();
         friend class RenderContext;
     };
@@ -185,36 +178,95 @@ namespace PWEngine::Render
 
 namespace PWEngine::Render
 {
+    class Texture2D
+    {
+    private:
+        void setTexture2D(Utils::ImageRGBA8* surface);
+        void setTextureView();
+        void setTextureSampler();
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Texture2D();
+        ~Texture2D();
+        void setBasicTexture();        
+        friend class RenderContext;
+    };
 
-    class Mesh3D
+    class Node3D
+    {  
+    protected:
+        Utils::Vec3<float> position;
+        Utils::Vec4<float> rotation;
+        Utils::Vec3<float> scale;
+        virtual void calculateNodeMatrix() = 0;
+    public:
+        Utils::Vec3<float> getPosition();
+        void setPosition(Utils::Vec3<float> new_position);
+        void addPosition(Utils::Vec3<float> delta_postion);
+        Utils::Vec3<float> getRotation();
+        void setRotation(Utils::Vec3<float> new_rotation);
+        void addRotation(Utils::Vec3<float> delta_rotation);
+        Utils::Vec3<float> getScale();
+        void setScale(Utils::Vec3<float> new_scale);
+        void addScale(Utils::Vec3<float> delta_scale);
+    };
+
+    class Mesh3D : public Node3D
     {
     private:
         void setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices);
         void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
-        void setTexture2D(RenderContext* super, Utils::ImageRGBA8& surface);
-        void setTextureView(RenderContext* super);
-        void setTextureSampler(RenderContext* super);
         void setUniform(Pipeline3D* super);
     public:
-        struct UBOData
-        {
-            Utils::Mat4 model{0};
-        };
-        UBOData data;
-        size_t indices_size;
-        RenderContext* p_context;
+        /* parent */
         Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        /* uniform */
+        struct UniformData
+        {
+            Utils::Mat4 transform = Utils::Mat4(1);
+        };
+        UniformData data;
+        size_t indices_size;
+        /* impl */
         struct Vertex3D;
         std::unique_ptr<Vertex3D> m_vertex;
         struct Uniform;
         std::unique_ptr<Uniform> m_uniform;
-        struct Texture2D;
-        std::unique_ptr<Texture2D> m_texture;
+        /* public */
+        void calculateNodeMatrix();
         void update(uint32_t current_frame);
-        void setData();
-        void bind(FrameCommandRendering* rendering);
+        void draw(FrameCommandRendering* rendering);
+        /* constructor */
         Mesh3D();
         ~Mesh3D();
+        friend class Pipeline3D;
+    };
+
+    /* set 1 */
+    class Material
+    {
+    private:
+        void createDescriptorSet();
+        std::optional<std::shared_ptr<Texture2D>> basic_texture;
+        std::optional<std::shared_ptr<Texture2D>> normal_texture;
+        std::optional<std::shared_ptr<Texture2D>> metallic_roughness_texture;
+        std::optional<std::shared_ptr<Texture2D>> ao_texture;
+        std::optional<std::shared_ptr<Texture2D>> emissive_texture;
+    public:
+
+        Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        struct Uniform;
+        std::unique_ptr<Uniform> m_uniform;
+        void bindBasicTexture(std::shared_ptr<Texture2D> texture);
+        void UpdateDescriptorSets(size_t current_frame);
+        Material();
+        ~Material();
         friend class Pipeline3D;
     };
 
@@ -233,14 +285,15 @@ namespace PWEngine::Render
         float view_degree = 45;
         Utils::Vec2<float> view_depth = {0.01, 100};
         CameraData data;
-        struct Impl;
-        std::unique_ptr<Impl> self;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        struct Uniform;
+        std::unique_ptr<Uniform> m_uniform;
         Camera();
         ~Camera();
         void calculateLookVector(Utils::Vec2<float> look_degree);
         void cameraMoveFromLook(Utils::Vec2<float> step);
         void update(uint32_t current_frame);
-        void setData(uint32_t current_frame);
         friend class Pipeline3D;
     };
 }
@@ -275,7 +328,7 @@ namespace PWEngine::Render
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void setDescriptorSet(Pipeline3D* pipeline);
+        void draw(size_t currect_frame, Mesh3D* mesh, Material* material, Camera* camera);
     }; 
 }
 

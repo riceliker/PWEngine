@@ -178,15 +178,7 @@ namespace PWEngine::Render
         this->self->descriptor_pool = descriptorPool;
     }
 
-    bool RenderContext::__getIsWindowClosed()
-    {
-        return glfwWindowShouldClose(this->m_window->window);
-    }
-
-    void RenderContext::__waitIdle()
-    {
-        vkDeviceWaitIdle(this->m_device->device);
-    }
+    
 
     RenderContext::~RenderContext()
     {

@@ -39,10 +39,13 @@ namespace PWEngine::Render
 
         /* Mesh3D set = 0 */
         infos.push_back({
-            {0, 1, DescriptorType::Uniform, ShaderType::Vertex},
-            {1, 1, DescriptorType::Sampler, ShaderType::Fragment}
+            {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
         });
-        /* Camera set = 1 */
+        /* Material set = 1*/
+        infos.push_back({
+            {0, 1, DescriptorType::Sampler, ShaderType::Fragment}
+        });
+        /* Camera set = 2 */
         infos.push_back({
             {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
         });
@@ -97,22 +100,7 @@ namespace PWEngine::Render
             if (vkCreateDescriptorSetLayout(this->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS) {
                 throw std::runtime_error("failed to create descriptor set layout!");
             }
-            descriptor_set_layouts.push_back(descriptor_set_layout);
-            /* set */
-            std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, descriptor_set_layout);
-            VkDescriptorSetAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            allocInfo.descriptorPool = this->self->descriptor_pool;
-            allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-            allocInfo.pSetLayouts = layouts.data();
-
-            std::vector<VkDescriptorSet> descriptor_set;
-
-            descriptor_set.resize(MAX_FRAMES_IN_FLIGHT);
-            if (vkAllocateDescriptorSets(this->m_device->device, &allocInfo, descriptor_set.data()) != VK_SUCCESS) {
-                throw std::runtime_error("failed to allocate descriptor sets!");
-            }
-            descriptor_sets.push_back(descriptor_set);
+            descriptor_set_layouts.push_back(descriptor_set_layout);            
         }
         
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
@@ -264,7 +252,6 @@ namespace PWEngine::Render
         obj->p_context = this;
         obj->self->graphics_pipeline = graphics_pipeline;
         obj->self->pipeline_layout = pipeline_layout;
-        obj->self->descriptor_sets = std::move(descriptor_sets);
         obj->self->descriptor_set_layouts = std::move(descriptor_set_layouts);
         return obj;
     }
