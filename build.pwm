@@ -15,11 +15,11 @@ $same($is_macos, "macos", __platform__)
     recursion_folder("runtime", ".cpp")
 ;
 
-# @files("test")
-# 	add_file("test/main.cpp")
-# ;
+@files("test")
+	add_file("test/main.cpp")
+;
 
-@project("PWEngine", "binary")
+@project("PWEngine", "shared")
     source_files("PWEngine")
     add_library(glfw_library)
     add_library(vulkan_library)
@@ -28,7 +28,7 @@ $same($is_macos, "macos", __platform__)
     :fi
 ;
 
-# @project("test", "binary")
-# 	source_files("test")
-# 	add_library("./build/libPWEngine.dylib")
-# ;
+@project("test", "binary")
+	source_files("test")
+	add_library("./build/libPWEngine.dylib")
+;

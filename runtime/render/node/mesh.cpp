@@ -13,7 +13,7 @@ namespace PWEngine::Render
     {
         this->position = {0, 0, 0};
         this->rotation = {0, 0, 0, 1};
-        this->scale = {0, 0, 0};
+        this->scale = {1, 1, 1};
     }
 
     std::unique_ptr<Mesh3D> Pipeline3D::createMesh3D(Utils::Model3D* model)

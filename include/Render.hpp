@@ -213,7 +213,7 @@ namespace PWEngine::Render
         ~Pipeline3D();
         std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model);
         std::unique_ptr<Material> createMaterial();
-        std::unique_ptr<Camera> creatCamera();
+        std::unique_ptr<Camera> createCamera();
         friend class RenderContext;
     };
 
@@ -348,9 +348,9 @@ namespace PWEngine::Render
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void renderingBegin();
+        void renderingBegin(Utils::Vec4<float> color);
         void renderingEnd();
-        void draw(size_t currect_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
+        void draw(size_t current_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
         friend class RenderContext;
     };
 

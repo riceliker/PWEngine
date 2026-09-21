@@ -30,7 +30,7 @@ It is mean you should know what does the code do. That the root of control the p
 The AI can not modify the all program. AI is just modify a module.
 If you pull your request. You should tell me want does the AI do.
 3. Use AI as a assistant
-Use AI to answer the question, search article or check code are allowed.
+Use AI to answer the question, searching article or checking code are allowed.
 
 ## Help PWTorch
 PWTorch is a machine learning framework. Committed to local agent for community.

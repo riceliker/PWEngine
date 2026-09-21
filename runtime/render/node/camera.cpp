@@ -25,7 +25,7 @@ namespace PWEngine::Render
         }
     }
     
-    std::unique_ptr<Camera> Pipeline3D::creatCamera()
+    std::unique_ptr<Camera> Pipeline3D::createCamera()
     {
         auto obj = std::make_unique<Camera>();
         obj->p_context = this->p_context;

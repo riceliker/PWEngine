@@ -20,7 +20,9 @@ namespace PWEngine::Render
         available_format.colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 
         VkSurfaceFormatKHR surface_format = available_format;
-        VkPresentModeKHR present_mode = chooseSwapPresentMode(swapchain_support.presentModes);
+        //VkPresentModeKHR present_mode = chooseSwapPresentMode(swapchain_support.presentModes);
+        VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+
         VkExtent2D extent = chooseSwapExtent(super->m_window->window, swapchain_support.capabilities);
 
         uint32_t image_count = swapchain_support.capabilities.minImageCount + 1;

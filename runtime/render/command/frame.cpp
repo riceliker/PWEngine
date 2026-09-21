@@ -2,6 +2,7 @@
 #include "impl.hpp"
 #include "../context/impl.hpp"
 #include "../node/impl.hpp"
+#include "utils.hpp"
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -75,7 +76,7 @@ namespace PWEngine::Render
         vkQueuePresentKHR(this->m_device->graphics_queue, &presentInfo);
     }
 
-    void Command::renderingBegin()
+    void Command::renderingBegin(Utils::Vec4<float> color)
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -122,7 +123,7 @@ namespace PWEngine::Render
         color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color_attachment_info.clearValue.color = {{0.1f,0.1f,0.15f,1.0f}};
+        color_attachment_info.clearValue.color = {{color.x ,color.y ,color.z, color.w}};
 
         VkRenderingAttachmentInfo depth_attachment_info{};
         depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
@@ -198,12 +199,12 @@ namespace PWEngine::Render
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }
 
-    void Command::draw(size_t currect_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera)
+    void Command::draw(size_t current_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera)
     {
         std::vector<VkDescriptorSet> descriptor_sets_list = {
-            mesh->m_descriptor_set->descriptor_sets.at(currect_frame), 
-            material->m_descriptor_set->descriptor_sets.at(currect_frame),
-            camera->m_descriptor_set->descriptor_sets.at(currect_frame)
+            mesh->m_descriptor_set->descriptor_sets.at(current_frame), 
+            material->m_descriptor_set->descriptor_sets.at(current_frame),
+            camera->m_descriptor_set->descriptor_sets.at(current_frame)
         };
 
         vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);
