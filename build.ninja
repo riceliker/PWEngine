@@ -1,6 +1,6 @@
 # PWMake 0.1.0
 # ===== Compiler =====
-compiler_path = /opt/homebrew/opt/llvm@19/bin/clang++
+compiler_path = /opt/homebrew/opt/llvm/bin/clang++
 compiler_flags = -std=c++23 -stdlib=libc++ -I./include  -I/opt/homebrew/opt/GLFW/include  -I/opt/homebrew/opt/vulkan-headers/include  -g -O0
 rule compile
   command = $compiler_path $compiler_flags -c $in -o $out -MD -MF $out.d
@@ -40,10 +40,9 @@ build $obj/PWEngine/runtime/render/node/mesh.o: compile runtime/render/node/mesh
 build $obj/PWEngine/runtime/render/node/camera.o: compile runtime/render/node/camera.cpp
 build $obj/PWEngine/runtime/render/node/node.o: compile runtime/render/node/node.cpp
 build $obj/PWEngine/runtime/render/node/texture.o: compile runtime/render/node/texture.cpp
-build $obj/PWEngine/runtime/render/node/unifrom.o: compile runtime/render/node/unifrom.cpp
 build $obj/PWEngine/runtime/render/node/material.o: compile runtime/render/node/material.cpp
 build $obj/PWEngine/runtime/render/node/vertex.o: compile runtime/render/node/vertex.cpp
-build $bin: shared_library $obj/PWEngine/runtime/file/shader.o $obj/PWEngine/runtime/file/obj.o $obj/PWEngine/runtime/file/tga.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/context/loop.o $obj/PWEngine/runtime/render/context/window.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/input/mouse.o $obj/PWEngine/runtime/render/input/keyborad.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/node/mesh.o $obj/PWEngine/runtime/render/node/camera.o $obj/PWEngine/runtime/render/node/node.o $obj/PWEngine/runtime/render/node/texture.o $obj/PWEngine/runtime/render/node/unifrom.o $obj/PWEngine/runtime/render/node/material.o $obj/PWEngine/runtime/render/node/vertex.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: shared_library $obj/PWEngine/runtime/file/shader.o $obj/PWEngine/runtime/file/obj.o $obj/PWEngine/runtime/file/tga.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/render/context/loop.o $obj/PWEngine/runtime/render/context/window.o $obj/PWEngine/runtime/render/context/context.o $obj/PWEngine/runtime/render/context/pipeline.o $obj/PWEngine/runtime/render/context/swapchain.o $obj/PWEngine/runtime/render/input/mouse.o $obj/PWEngine/runtime/render/input/keyborad.o $obj/PWEngine/runtime/render/instance/instance.o $obj/PWEngine/runtime/render/command/frame.o $obj/PWEngine/runtime/render/command/singletimer.o $obj/PWEngine/runtime/render/node/mesh.o $obj/PWEngine/runtime/render/node/camera.o $obj/PWEngine/runtime/render/node/node.o $obj/PWEngine/runtime/render/node/texture.o $obj/PWEngine/runtime/render/node/material.o $obj/PWEngine/runtime/render/node/vertex.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin
 # ===== Make Object =====
 obj = ./build/obj

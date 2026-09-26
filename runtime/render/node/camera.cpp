@@ -5,7 +5,6 @@
 #include "../context/impl.hpp"
 #include "buffer.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <vector>
 
@@ -48,29 +47,35 @@ namespace PWEngine::Render
         return obj;
     }
 
-    void Camera::update(uint32_t swapchain_loop_frame_index)
+    void Camera::updateData(Command* command)
     {
         this->data.view = Utils::look(this->position, this->position + this->look_vector, Utils::Vec3<float>(0.0f, 0.0f, 1.0f));
         this->data.project = Utils::perspective(Utils::deg2rad(view_degree), this->p_context->m_swapchain->swapchain_extent.width / (float) this->p_context->m_swapchain->swapchain_extent.height, this->view_depth.x , this->view_depth.y);
         this->data.project.rc(1, 1) *= -1;
 
-        VkDescriptorBufferInfo camera_info{};
-        camera_info.buffer = this->m_uniform->uniform_buffers[swapchain_loop_frame_index];
-        camera_info.offset = 0;
-        camera_info.range = sizeof(Camera::CameraData); /* size 128: 2 * mat4 */
+        memcpy(this->m_uniform->uniform_buffers_mapped[command->swapchain_image_index], &this->data, sizeof(Camera::CameraData));
+    }
 
-        std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &camera_info;
-        
-        vkUpdateDescriptorSets(this->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);        
+    void Camera::updateDescriptor()
+    {
+        for (size_t slot = 0; slot < MAX_FRAMES_IN_FLIGHT; slot++)
+        {
+            VkDescriptorBufferInfo camera_info{};
+            camera_info.buffer = this->m_uniform->uniform_buffers[slot];
+            camera_info.offset = 0;
+            camera_info.range = sizeof(Camera::CameraData); /* size 128: 2 * mat4 */
 
-        memcpy(this->m_uniform->uniform_buffers_mapped[this->p_context->image_index], &this->data, sizeof(Camera::CameraData));
+            std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
+            descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(slot);
+            descriptor_writes[0].dstBinding = 0;
+            descriptor_writes[0].dstArrayElement = 0;
+            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_writes[0].descriptorCount = 1;
+            descriptor_writes[0].pBufferInfo = &camera_info;
+            
+            vkUpdateDescriptorSets(this->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);        
+        }
     }
 
     void Camera::calculateLookVector(Utils::Vec2<float> look_degree)

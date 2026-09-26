@@ -26,28 +26,31 @@ namespace PWEngine::Render
         this->basic_texture = texture;
     }
 
-    void Material::update(size_t swapchain_loop_frame_index)
+    void Material::updateDescriptor()
     {
-        VkDescriptorImageInfo basic_texture_info{};
-        VkWriteDescriptorSet descriptor_write{};
-        std::vector<VkWriteDescriptorSet> descriptor_writes;
-        if (this->basic_texture.has_value())
+        for (size_t slot = 0; slot < MAX_FRAMES_IN_FLIGHT; slot++)
         {
-            basic_texture_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            basic_texture_info.imageView = this->basic_texture.value()->self->texture_image_view;
-            basic_texture_info.sampler = this->basic_texture.value()->self->texture_sampler;
+            VkDescriptorImageInfo basic_texture_info{};
+            VkWriteDescriptorSet descriptor_write{};
+            std::vector<VkWriteDescriptorSet> descriptor_writes;
+            if (this->basic_texture.has_value())
+            {
+                basic_texture_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+                basic_texture_info.imageView = this->basic_texture.value()->self->texture_image_view;
+                basic_texture_info.sampler = this->basic_texture.value()->self->texture_sampler;
 
-            descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptor_write.dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
-            descriptor_write.dstBinding = 0;
-            descriptor_write.dstArrayElement = 0;
-            descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            descriptor_write.descriptorCount = 1;
-            descriptor_write.pImageInfo = &basic_texture_info;
+                descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptor_write.dstSet = this->m_descriptor_set->descriptor_sets.at(slot);
+                descriptor_write.dstBinding = 0;
+                descriptor_write.dstArrayElement = 0;
+                descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptor_write.descriptorCount = 1;
+                descriptor_write.pImageInfo = &basic_texture_info;
 
-            descriptor_writes.push_back(descriptor_write);
+                descriptor_writes.push_back(descriptor_write);
+            }
+            vkUpdateDescriptorSets(this->p_pipeline->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
         }
-        vkUpdateDescriptorSets(this->p_pipeline->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
     }
 
     Material::~Material()

@@ -48,27 +48,32 @@ namespace PWEngine::Render
         this->data.transform = Utils::transform(this->position, this->scale, this->rotation);
     }
 
-    void Mesh3D::update(uint32_t swapchain_loop_frame_index)
+    void Mesh3D::updateDescriptor()
     {
         /* DescriptorSet */
-        VkDescriptorBufferInfo model_info{};
-        model_info.buffer = this->m_uniform->uniform_buffers[swapchain_loop_frame_index];
-        model_info.offset = 0;
-        model_info.range = sizeof(Mesh3D::UniformData); /* size 64: 1 * mat4 */
+        for (size_t slot = 0; slot < MAX_FRAMES_IN_FLIGHT; slot++)
+        {
+            VkDescriptorBufferInfo model_info{};
+            model_info.buffer = this->m_uniform->uniform_buffers[slot];
+            model_info.offset = 0;
+            model_info.range = sizeof(Mesh3D::UniformData); /* size 64: 1 * mat4 */
 
-        std::vector<VkWriteDescriptorSet> descriptor_writes{};
-        descriptor_writes.resize(1);
-        descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(swapchain_loop_frame_index);
-        descriptor_writes[0].dstBinding = 0;
-        descriptor_writes[0].dstArrayElement = 0;
-        descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_writes[0].descriptorCount = 1;
-        descriptor_writes[0].pBufferInfo = &model_info;
+            std::vector<VkWriteDescriptorSet> descriptor_writes{};
+            descriptor_writes.resize(1);
+            descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(slot);
+            descriptor_writes[0].dstBinding = 0;
+            descriptor_writes[0].dstArrayElement = 0;
+            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_writes[0].descriptorCount = 1;
+            descriptor_writes[0].pBufferInfo = &model_info;
 
-        vkUpdateDescriptorSets(this->p_pipeline->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
-
-        memcpy(this->m_uniform->uniform_buffers_mapped[this->p_pipeline->p_context->image_index], &this->data, sizeof(Mesh3D::UniformData));  
+            vkUpdateDescriptorSets(this->p_pipeline->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
+        }
+    }
+    void Mesh3D::updateData(Command* command)
+    {
+        memcpy(this->m_uniform->uniform_buffers_mapped[command->swapchain_image_index], &this->data, sizeof(Mesh3D::UniformData));  
     }
     Mesh3D::~Mesh3D()
     {

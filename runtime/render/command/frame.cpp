@@ -4,6 +4,7 @@
 #include "../node/impl.hpp"
 #include "utils.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -15,12 +16,13 @@ namespace PWEngine::Render
         
     }
 
-    Command* RenderContext::commandBegin(size_t swapchain_loop_frame_index)
+    Command* RenderContext::commandBegin(size_t swapchain_loop_frame_index, uint32_t swapchain_image_index)
     {
         Command* obj = new Command();
         obj->p_context = this;
         obj->self->extent = this->m_swapchain->swapchain_extent;
         obj->swapchain_loop_frame_index = swapchain_loop_frame_index;
+        obj->swapchain_image_index = swapchain_image_index;
 
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -42,7 +44,7 @@ namespace PWEngine::Render
         delete command;
     }
 
-    void RenderContext::frameSubmit(size_t swapchain_loop_frame_index)
+    void RenderContext::frameSubmit(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index)
     {
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -71,7 +73,7 @@ namespace PWEngine::Render
         VkSwapchainKHR swapChains[] = {this->m_swapchain->swapchain};
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
-        presentInfo.pImageIndices = &this->image_index;
+        presentInfo.pImageIndices = swapchain_image_index;
 
         vkQueuePresentKHR(this->m_device->graphics_queue, &presentInfo);
     }
@@ -85,7 +87,7 @@ namespace PWEngine::Render
         color_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         color_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        color_barrier.image = this->p_context->m_swapchain->swapchain_images[this->p_context->image_index];
+        color_barrier.image = this->p_context->m_swapchain->swapchain_images[this->swapchain_image_index];
         color_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         color_barrier.subresourceRange.baseMipLevel = 0;
         color_barrier.subresourceRange.levelCount = 1;
@@ -119,7 +121,7 @@ namespace PWEngine::Render
         
         VkRenderingAttachmentInfo color_attachment_info{};
         color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        color_attachment_info.imageView = this->p_context->m_swapchain->swapchain_image_views[this->p_context->image_index];
+        color_attachment_info.imageView = this->p_context->m_swapchain->swapchain_image_views[swapchain_image_index];
         color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -156,7 +158,7 @@ namespace PWEngine::Render
         present_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         present_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         present_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        present_barrier.image = this->p_context->m_swapchain->swapchain_images[this->p_context->image_index];
+        present_barrier.image = this->p_context->m_swapchain->swapchain_images[swapchain_image_index];
         present_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         present_barrier.subresourceRange.baseMipLevel = 0;
         present_barrier.subresourceRange.levelCount = 1;
@@ -199,12 +201,12 @@ namespace PWEngine::Render
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }
 
-    void Command::draw(size_t current_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera)
+    void Command::draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera)
     {
         std::vector<VkDescriptorSet> descriptor_sets_list = {
-            mesh->m_descriptor_set->descriptor_sets.at(current_frame), 
-            material->m_descriptor_set->descriptor_sets.at(current_frame),
-            camera->m_descriptor_set->descriptor_sets.at(current_frame)
+            mesh->m_descriptor_set->descriptor_sets.at(this->swapchain_loop_frame_index), 
+            material->m_descriptor_set->descriptor_sets.at(this->swapchain_loop_frame_index),
+            camera->m_descriptor_set->descriptor_sets.at(this->swapchain_loop_frame_index)
         };
 
         vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, descriptor_sets_list.size(), descriptor_sets_list.data(), 0, nullptr);

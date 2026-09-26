@@ -1,5 +1,5 @@
 # You should modify this file when build in new platform
-compiler_path=/opt/homebrew/opt/llvm@19/bin/clang++
+compiler_path=/opt/homebrew/opt/llvm/bin/clang++
 glfw_header=/opt/homebrew/opt/GLFW/include
 vulkan_header=/opt/homebrew/opt/vulkan-headers/include
 # library

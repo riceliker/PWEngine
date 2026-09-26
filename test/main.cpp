@@ -29,10 +29,13 @@ int main()
     
     auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
     auto mesh = pipeline->createMesh3D(model.get());
+    mesh->updateDescriptor();
     auto material = pipeline->createMaterial();
     material->bindBasicTexture(texture);
+    material->updateDescriptor();
 
     auto camera = pipeline->createCamera();
+    camera->updateDescriptor();
     camera->calculateLookVector({0, 180});
     camera->position = {3, 0, 0};
 
@@ -57,12 +60,11 @@ int main()
         mesh->addRotation({0, 0, (float)delta});
         mesh->calculateNodeMatrix();
 
-        mesh->update(cmd->swapchain_loop_frame_index);
-        material->update(cmd->swapchain_loop_frame_index);
-        camera->update(cmd->swapchain_loop_frame_index);
+        mesh->updateData(cmd);
+        camera->updateData(cmd);
 
         cmd->renderingBegin({0, 0, 0, 1});
-        cmd->draw(cmd->swapchain_loop_frame_index, pipeline.get(), mesh.get(), material.get(), camera.get());
+        cmd->draw(pipeline.get(), mesh.get(), material.get(), camera.get());
         cmd->renderingEnd();
     });
 

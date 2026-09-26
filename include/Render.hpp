@@ -7,7 +7,7 @@
     Don't worry. It's very easy.
     The first thing is RenderInstance. All RenderContext will
     be create by it. RenderContext bind a Window, Device and
-    Swapchain. You just registry the RenderPass and RenderPipeline.
+    Swapchain. You just registry the RenderPipeline.
 
  */
 
@@ -139,12 +139,12 @@ namespace PWEngine::Render
     class RenderContext
     {
     private:
-        void frameSubmit(size_t swapchain_loop_frame_index);
+        void frameSubmit(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
         void pollEvents();
         bool getIsWindowClosed();
         void waitIdle();
-        void waitFence(size_t swapchain_loop_frame_index);
-        Command* commandBegin(size_t swapchain_loop_frame_index);
+        void waitFence(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
+        Command* commandBegin(size_t swapchain_loop_frame_index, uint32_t swapchain_image_index);
         void commandEnd(Command* command);
         std::shared_ptr<Input> createInput();
     public:
@@ -158,7 +158,7 @@ namespace PWEngine::Render
         Stream::LogSystem* log;
         RenderInstance* p_instance;
         /* loop variable */
-        uint32_t image_index = 0; /* the DS image index */
+        
         /* PImpl */
         struct Device;
         std::unique_ptr<Device> m_device;
@@ -184,16 +184,17 @@ namespace PWEngine::Render
     {
         float delta = 0;
         size_t swapchain_loop_frame_index = 0;
+        uint32_t swapchain_image_index = 0;
         auto input = this->createInput();
         while (!this->getIsWindowClosed()) 
         {
             auto start_time = std::chrono::high_resolution_clock::now();
-            this->waitFence(swapchain_loop_frame_index);
-            auto cmd = this->commandBegin(swapchain_loop_frame_index);
+            this->waitFence(swapchain_loop_frame_index, &swapchain_image_index);
+            auto cmd = this->commandBegin(swapchain_loop_frame_index, swapchain_image_index);
             this->pollEvents();
             func(cmd, input.get(), delta);
             this->commandEnd(cmd);
-            this->frameSubmit(swapchain_loop_frame_index);
+            this->frameSubmit(swapchain_loop_frame_index, &swapchain_image_index);
             swapchain_loop_frame_index = (swapchain_loop_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
             auto current_time = std::chrono::high_resolution_clock::now();
             delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
@@ -277,7 +278,8 @@ namespace PWEngine::Render
         std::unique_ptr<Uniform> m_uniform;
         /* public */
         void calculateNodeMatrix();
-        void update(uint32_t swapchain_loop_frame_index);
+        void updateDescriptor();
+        void updateData(Command* command);
         /* constructor */
         Mesh3D();
         ~Mesh3D();
@@ -302,7 +304,7 @@ namespace PWEngine::Render
         struct Uniform;
         std::unique_ptr<Uniform> m_uniform;
         void bindBasicTexture(std::shared_ptr<Texture2D> texture);
-        void update(size_t swapchain_loop_frame_index);
+        void updateDescriptor();
         Material();
         ~Material();
         friend class Pipeline3D;
@@ -331,7 +333,8 @@ namespace PWEngine::Render
         ~Camera();
         void calculateLookVector(Utils::Vec2<float> look_degree);
         void cameraMoveFromLook(Utils::Vec2<float> step);
-        void update(uint32_t swapchain_loop_frame_index);
+        void updateDescriptor();
+        void updateData(Command* command);
         friend class Pipeline3D;
     };
 
@@ -345,12 +348,13 @@ namespace PWEngine::Render
         Command(); 
         ~Command()=default;
         size_t swapchain_loop_frame_index;
+        uint32_t swapchain_image_index = 0; /* the DS image index */
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
         void renderingBegin(Utils::Vec4<float> color);
         void renderingEnd();
-        void draw(size_t current_frame, Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
+        void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
         friend class RenderContext;
     };
 
