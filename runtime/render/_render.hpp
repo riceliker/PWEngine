@@ -1,16 +1,27 @@
 #pragma once
+/* include library */
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #if(__APPLE__)
 #include <vulkan/vulkan_beta.h>
 #endif
+/* header */
 #include "render.hpp"
+/* std library */
 #include <cstddef>
-#include <vector>
 
-namespace PWEngine::Render
+
+namespace PWEngine::Render 
 {
+    struct RenderInstance::Impl
+    {
+        VkInstance instance;
+        VkDebugUtilsMessengerEXT debug_messenger;
+        VkPhysicalDevice adapters;
+        std::vector<RenderContext*> context_list;
+    };
+
     struct RenderContext::Device
     {
         VkPhysicalDevice adapter;
@@ -65,4 +76,66 @@ namespace PWEngine::Render
 
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
     };
+
+    struct Texture2D::Impl
+    {
+        uint32_t mip_level;
+        VkImage texture_image;
+        VkDeviceMemory texture_image_memory;
+        VkImageView texture_image_view;
+        VkSampler texture_sampler;
+    };
+
+    struct Mesh3D::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Mesh3D::Vertex3D
+    {
+        VkBuffer vertex_buffer;
+        VkDeviceMemory vertex_buffer_memory;
+        VkBuffer indices_buffer;
+        VkDeviceMemory indices_buffer_memory;
+    };
+   
+    struct Material::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Material::Uniform
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+    };
+
+    struct Camera::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
+    struct Camera::Uniform
+    {
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+       
+    };
+
+    struct Command::Impl
+    {
+        VkCommandBuffer* command_buffer;
+        VkExtent2D extent;
+    };
+
+    struct Uniform::Impl
+    {
+        RenderContext* p_context;
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+    };
+
 }

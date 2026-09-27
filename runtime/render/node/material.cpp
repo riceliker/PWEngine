@@ -1,7 +1,6 @@
 #include "render.hpp"
-#include "buffer.hpp"
-#include "impl.hpp"
-#include "../context/impl.hpp"
+#include "render/_render.hpp"
+#include "render/_utils.hpp"
 #include <cstddef>
 #include <memory>
 #include <vector>

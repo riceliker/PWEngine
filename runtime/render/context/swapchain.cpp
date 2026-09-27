@@ -1,7 +1,6 @@
 #include "render.hpp"
-#include "impl.hpp"
-#include "../node/buffer.hpp"
-#include "check.hpp"
+#include "./render/_render.hpp"
+#include "./render/_utils.hpp"
 #include "stream.hpp"
 #include <cstddef>
 

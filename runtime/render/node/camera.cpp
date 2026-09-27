@@ -1,9 +1,6 @@
 #include "render.hpp"
-#include "impl.hpp"
-#include "buffer.hpp"
-#include "../node/impl.hpp"
-#include "../context/impl.hpp"
-#include "buffer.hpp"
+#include "render/_render.hpp"
+#include "render/_utils.hpp"
 #include <cstddef>
 #include <memory>
 #include <vector>

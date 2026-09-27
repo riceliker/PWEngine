@@ -1,6 +1,5 @@
-#pragma once
 #include "render.hpp"
-#include "../context/impl.hpp"
+#include "render/_render.hpp"
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -20,7 +19,7 @@ namespace PWEngine::Render
         throw std::runtime_error("failed to find suitable memory type!");
     }
 
-    inline void createStagingBuffer(RenderContext* context, size_t size, VkBuffer& buffer, VkDeviceMemory& memory)
+    void createStagingBuffer(RenderContext* context, size_t size, VkBuffer& buffer, VkDeviceMemory& memory)
     {
         VkBufferCreateInfo buffer_info{};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -47,7 +46,7 @@ namespace PWEngine::Render
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
     }
 
-    inline void createRealBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory)
+    void createRealBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory)
     {
         VkBufferCreateInfo buffer_info{};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -74,7 +73,7 @@ namespace PWEngine::Render
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
     }
 
-    inline void createDirectBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory)
+    void createDirectBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory)
     {
         VkBufferCreateInfo buffer_info{};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -101,7 +100,7 @@ namespace PWEngine::Render
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
     }
 
-    inline void createImageBuffer(RenderContext* context, Utils::Vec2<uint32_t> size, uint32_t mip_level, VkImage& image, VkDeviceMemory& memory)
+    void createImageBuffer(RenderContext* context, Utils::Vec2<uint32_t> size, uint32_t mip_level, VkImage& image, VkDeviceMemory& memory)
     {
         VkImageCreateInfo image_info{};
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -138,7 +137,7 @@ namespace PWEngine::Render
         vkBindImageMemory(context->m_device->device, image, memory, 0);
     }
 
-    inline void createDepthBuffer(RenderContext* context, VkExtent2D swapchain_extent, VkImage& image, VkDeviceMemory& memory)
+    void createDepthBuffer(RenderContext* context, VkExtent2D swapchain_extent, VkImage& image, VkDeviceMemory& memory)
     {
         VkImageCreateInfo image_info{};
         image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -175,7 +174,7 @@ namespace PWEngine::Render
         vkBindImageMemory(context->m_device->device, image, memory, 0);
     }
     
-    inline std::vector<VkDescriptorSet> createDescriptorSet(Pipeline3D* pipeline, VkDescriptorSetLayout layout)
+    std::vector<VkDescriptorSet> createDescriptorSet(Pipeline3D* pipeline, VkDescriptorSetLayout layout)
     {
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
         VkDescriptorSetAllocateInfo alloc_info{};

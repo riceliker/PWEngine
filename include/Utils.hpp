@@ -248,9 +248,9 @@ namespace PWEngine::Utils
         mat.rc(1,0) *= s.x; mat.rc(1,1) *= s.y; mat.rc(1,2) *= s.z;
         mat.rc(2,0) *= s.x; mat.rc(2,1) *= s.y; mat.rc(2,2) *= s.z;
         /* postion */
-        mat.rc(3,0) = p.x;
-        mat.rc(3,1) = p.y;
-        mat.rc(3,2) = p.z;
+        mat.rc(0,3) = p.x;
+        mat.rc(1,3) = p.y;
+        mat.rc(2,3) = p.z;
         return mat;
     }
 

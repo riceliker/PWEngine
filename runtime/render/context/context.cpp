@@ -1,8 +1,6 @@
 #include "render.hpp"
-#include "impl.hpp"
-#include "../instance/impl.hpp"
-#include "check.hpp"
-#include "utils.hpp"
+#include "./render/_render.hpp"
+#include "./render/_utils.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>

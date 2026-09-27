@@ -1,7 +1,6 @@
-#include "buffer.hpp"
 #include "render.hpp"
-#include "impl.hpp"
-#include "../command/impl.hpp"
+#include "render/_render.hpp"
+#include "render/_utils.hpp"
 #include <memory>
 
 namespace PWEngine::Render 

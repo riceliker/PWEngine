@@ -1,46 +1,11 @@
-#pragma once
-#include <algorithm>
-#include <vulkan/vulkan.h>
-#if (__APPLE__)
-#include <vulkan/vulkan_beta.h>
-#endif
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
+#include "render/_utils.hpp"
 #include <optional>
 #include <vector>
 #include <set>
 
 namespace PWEngine::Render 
 {
-    const std::vector<const char*> device_extensions = {
-    #if (__APPLE__)
-        VK_KHR_PORTABILITY_SUBSET_EXTENSION_NAME,
-    #endif
-        /* swapchain */
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-        /* dynamic rendering */
-        VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME
-    };
-
-    struct QueueFamilyIndices
-    {
-        std::optional<uint32_t> graphicsFamily;
-
-        bool isComplete()
-        {
-            return graphicsFamily.has_value();
-        }
-    };
-
-    struct swapchain_supportDetails
-    {
-        VkSurfaceCapabilitiesKHR capabilities;
-        std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> presentModes;
-    };
-
-    static inline QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
+    QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
     {
         QueueFamilyIndices indices;
 
@@ -63,7 +28,7 @@ namespace PWEngine::Render
         return indices;
     }
 
-    inline bool checkDeviceExtensionSupport(VkPhysicalDevice device)
+    bool checkDeviceExtensionSupport(VkPhysicalDevice device)
     {
         uint32_t extensionCount;
         vkEnumerateDeviceExtensionProperties(
@@ -83,7 +48,7 @@ namespace PWEngine::Render
         return requiredExtensions.empty();
     }
 
-    inline VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
+    VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes) {
         for (const auto& availablePresentMode : availablePresentModes) {
             if (availablePresentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
                 return availablePresentMode;
@@ -93,7 +58,7 @@ namespace PWEngine::Render
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    inline VkExtent2D chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
+    VkExtent2D chooseSwapExtent(GLFWwindow* window, const VkSurfaceCapabilitiesKHR& capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         } else {
@@ -113,7 +78,7 @@ namespace PWEngine::Render
     }
 
 
-    inline swapchain_supportDetails querySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
+    swapchain_supportDetails querySwapchainSupport(VkPhysicalDevice device, VkSurfaceKHR surface)
     {
         swapchain_supportDetails details;
 
@@ -143,25 +108,4 @@ namespace PWEngine::Render
 
         return details;
     }
-
-    static inline bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface)
-    {
-        QueueFamilyIndices indices = findQueueFamilies(device);
-
-        bool extensions_supported = checkDeviceExtensionSupport(device);
-
-        bool swap_chain_adequate = false;
-        if (extensions_supported)
-        {
-            swapchain_supportDetails swap_chain_support = querySwapchainSupport(device, surface);
-            swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.presentModes.empty();
-        }
-
-        VkPhysicalDeviceFeatures supportedFeatures;
-        vkGetPhysicalDeviceFeatures(device, &supportedFeatures);
-        supportedFeatures.samplerAnisotropy = VK_TRUE;
-
-        return indices.isComplete() && extensions_supported && swap_chain_adequate && supportedFeatures.samplerAnisotropy;
-    }
-
 }

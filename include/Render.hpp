@@ -39,8 +39,7 @@ namespace PWEngine::Render
     /*    |            |             |                 |                 |    */
     /*    V            V             V                 V    */     /*    V    */
     class Command;/*<------------------------------------------------------------*/
- 
-    
+    class Uniform; class Transform3D;
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
     ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
@@ -136,6 +135,15 @@ namespace PWEngine::Render
         std::shared_ptr<RenderContext> createContext(ContextInfo info);
     };
 
+/*
+     ███████     ███████░   ███░    ██ ▓█████████ █████████ ▓██▒   ███ █████████
+    ███    ███  ███    ███  █████   ██     ██▒    ███         ███ ██▒     ███
+   ███         ███      ██▒ ██████  ██     ██▒    ████████▒    ████       ███
+   ███         ███      ██▒ ███ ▓██ ██     ██▒    ███          ████▒      ███
+    ██▓    ███  ███    ███  ███   ████     ██▒    ███        ▒██░ ███     ███
+     ███████     ███████▓   ███    ███     ██▒    █████████ ███    ███    ███
+*/
+
     class RenderContext
     {
     private:
@@ -157,8 +165,6 @@ namespace PWEngine::Render
         /* log system */
         Stream::LogSystem* log;
         RenderInstance* p_instance;
-        /* loop variable */
-        
         /* PImpl */
         struct Device;
         std::unique_ptr<Device> m_device;
@@ -175,6 +181,8 @@ namespace PWEngine::Render
         void recreateSwapchain();
         std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
         std::shared_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* surface);
+        std::shared_ptr<Transform3D> createTransform3D();
+        std::shared_ptr<Uniform> createUniform(size_t size);
         /* Loop */
         template<std::invocable<Command*, Input*, float> F> void frameLoop(F&& func);      
         friend class RenderInstance;
@@ -200,7 +208,15 @@ namespace PWEngine::Render
             delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
         }
         this->waitIdle();
-    }        
+    } 
+/*
+    ████████   ███  ████████   █████████  ███       ███  ███     ██  ░█████████
+    ██    ▓██  ███  ███    ██▒ ███        ███       ███  █████   ██  ░██
+    ██    ███  ███  ███    ██░ █████████  ███       ███  ██████  ██  ░████████
+    ████████   ███  ████████   ███        ███       ███  ███ ▓██ ██  ░██
+    ██         ███  ███        ███        ███       ███  ███   ████  ░██
+    ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
+*/       
 
     class Pipeline3D
     {
@@ -216,6 +232,25 @@ namespace PWEngine::Render
         std::unique_ptr<Material> createMaterial();
         std::unique_ptr<Camera> createCamera();
         friend class RenderContext;
+    };
+
+    class Uniform
+    {
+    private:
+        void* data;
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        void updateData(Command* command, void* data, size_t size);
+        Uniform(RenderContext* p_context);
+        ~Uniform();
+    };
+
+
+    struct Mesh3DNodeTransform
+    {
+        Utils::Mat4 transform = Utils::Mat4(1);
     };
 
     class Texture2D
@@ -234,14 +269,23 @@ namespace PWEngine::Render
         friend class RenderContext;
     };
 
-    class Node3D
-    {  
-    protected:
+/*
+   ▒███    ██    ███████    ████████    █████████
+   ▒████   ██   ███    ███  ███    ███  ███
+   ▒██▒██  ██  ███      ██░ ███     ██  ████████
+   ▒██  ██ ██  ███      ██░ ███     ██  ███
+   ▒██   ████   ██▓    ███  ███    ███  ███
+   ▒██    ███    ███████░   ████████░   █████████
+*/ 
+
+    class Transform3D
+    {
+    private:
         Utils::Vec3<float> position;
         Utils::Vec4<float> rotation;
         Utils::Vec3<float> scale;
-        virtual void calculateNodeMatrix() = 0;
     public:
+        std::shared_ptr<Uniform> m_uniform;
         Utils::Vec3<float> getPosition();
         void setPosition(Utils::Vec3<float> new_position);
         void addPosition(Utils::Vec3<float> delta_postion);
@@ -251,35 +295,29 @@ namespace PWEngine::Render
         Utils::Vec3<float> getScale();
         void setScale(Utils::Vec3<float> new_scale);
         void addScale(Utils::Vec3<float> delta_scale);
+        void calculateNodeMatrix(Command* command);
+        Transform3D();
     };
+    
 
-    class Mesh3D : public Node3D
+    class Mesh3D
     {
     private:
         void setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices);
         void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
-        void setUniform(Pipeline3D* super);
     public:
         /* parent */
         Pipeline3D* p_pipeline;
         struct DescriptorSet;
         std::unique_ptr<DescriptorSet> m_descriptor_set;
-        /* uniform */
-        struct UniformData
-        {
-            Utils::Mat4 transform = Utils::Mat4(1);
-        };
-        UniformData data;
+        std::shared_ptr<Transform3D> transform;
         size_t indices_size;
         /* impl */
         struct Vertex3D;
         std::unique_ptr<Vertex3D> m_vertex;
-        struct Uniform;
-        std::unique_ptr<Uniform> m_uniform;
         /* public */
-        void calculateNodeMatrix();
+        void bindTransform3D(std::shared_ptr<Transform3D> transform);
         void updateDescriptor();
-        void updateData(Command* command);
         /* constructor */
         Mesh3D();
         ~Mesh3D();
@@ -297,7 +335,6 @@ namespace PWEngine::Render
         std::optional<std::shared_ptr<Texture2D>> ao_texture;
         std::optional<std::shared_ptr<Texture2D>> emissive_texture;
     public:
-
         Pipeline3D* p_pipeline;
         struct DescriptorSet;
         std::unique_ptr<DescriptorSet> m_descriptor_set;
@@ -337,6 +374,14 @@ namespace PWEngine::Render
         void updateData(Command* command);
         friend class Pipeline3D;
     };
+/*
+     ███████     ███████    ████     ████  ████    ████     ████    ░███    ██  ▒████████
+    ███    ██▒  ███    ███  █████   █████  ████░   ████    ░████    ░████   ██  ▒██    ███
+   ███         ███      ██  ██▓██  ▓█████  ██ ██  ██░██    ██ ░██   ░██▒██  ██  ▒██     ███
+   ███         ███      ██  ██▓ ██ ██ ███  ██ ███▒██ ██   ███  ███  ░██  ██ ██  ▒██     ███
+   ░██▒    ██▒  ██▓    ███  ██▓ ████  ███  ██  ████  ██  █████████▓ ░██   ████  ▒██    ███
+     ███████     ███████    ██▓  ███  ███  ██   ██   ██ ░██     ░██ ░██    ███  ▒████████
+*/
 
     class Command
     {
@@ -357,6 +402,15 @@ namespace PWEngine::Render
         void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
         friend class RenderContext;
     };
+
+/*
+    ██░  ███    ▓██  █████████  ░██     ███ ██████████
+    ██░  ████   ▓██  ███    ███ ░██     ███     ██▓
+    ██░  ██ ██▓ ▓██  ███    ███ ░██     ███     ██▓
+    ██░  ██  ███▓██  ████████▓  ░██     ███     ██▓
+    ██░  ██   █████  ███         ██▓    ███     ██▓
+    ██░  ██     ███  ███          ████████      ██▓
+*/
 
     class Input
     {

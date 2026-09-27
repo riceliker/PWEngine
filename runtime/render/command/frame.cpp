@@ -1,7 +1,5 @@
 #include "render.hpp"
-#include "impl.hpp"
-#include "../context/impl.hpp"
-#include "../node/impl.hpp"
+#include "./render/_render.hpp"
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdint>

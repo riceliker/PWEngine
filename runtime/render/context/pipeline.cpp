@@ -1,10 +1,7 @@
 #include "render.hpp"
+#include "render/_render.hpp"
+#include "render/_utils.hpp"
 #include "file.hpp"
-#include "impl.hpp"
-#include "../context/impl.hpp"
-#include "../node/impl.hpp"
-#include "stream.hpp"
-#include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
