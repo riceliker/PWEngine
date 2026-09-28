@@ -30,7 +30,7 @@ int main()
     auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
     auto mesh = pipeline->createMesh3D(model.get());
     auto mesh_transform = context->createTransform3D();
-    auto mesh_transform2 = context->createTransform3D();
+    mesh_transform->resizeTransform(2);
     
     mesh->bindTransform3D(mesh_transform);
     
@@ -103,14 +103,12 @@ int main()
         loops++;
 
         camera->updateData(cmd);
-        mesh_transform->setPosition({0, 0, 0});
+        mesh_transform->setPosition(0, {0, 0, 0});
+        mesh_transform->setPosition(1, {0, 1.5, 0});
         mesh_transform->calculateNodeMatrix(cmd);
 
         cmd->renderingBegin({0, 0, 0, 1});
         cmd->draw(pipeline.get(), mesh.get(), material.get(), camera.get());
-        // mesh->setPosition({0, 0, 0});
-        // mesh->calculateNodeMatrix(cmd);
-        // cmd->draw(pipeline.get(), mesh.get(), material.get(), camera.get());
         cmd->renderingEnd();
 
     });

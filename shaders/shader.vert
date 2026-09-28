@@ -1,7 +1,7 @@
 #version 450
 
-layout(set = 0, binding = 0) uniform ModelUniform {
-    mat4 model;
+layout(set = 0, binding = 0, std430) buffer ModelUniform {
+    mat4 model[];
 } model;
 
 layout(set = 2, binding = 0) uniform CameraUniform {
@@ -17,7 +17,7 @@ layout(location = 0) out vec3 frag_color;
 layout(location = 1) out vec2 frag_uv;
 
 void main() {
-    gl_Position = camera.proj * camera.view * model.model * vec4(in_position, 1.0);
+    gl_Position = camera.proj * camera.view * model.model[gl_InstanceIndex] * vec4(in_position, 1.0);
     frag_color = in_color;
     frag_uv = in_uv;
 }

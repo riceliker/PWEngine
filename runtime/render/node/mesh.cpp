@@ -82,10 +82,10 @@ namespace PWEngine::Render
         /* DescriptorSet */
         for (size_t slot = 0; slot < MAX_FRAMES_IN_FLIGHT; slot++)
         {
-            VkDescriptorBufferInfo model_info{};
-            model_info.buffer = transform->m_uniform->self->uniform_buffers[slot];
-            model_info.offset = 0;
-            model_info.range = sizeof(Mesh3DNodeTransform);
+            VkDescriptorBufferInfo ssbo_info{};
+            ssbo_info.buffer = transform->m_uniform->self->uniform_buffers[slot];
+            ssbo_info.offset = 0;
+            ssbo_info.range = VK_WHOLE_SIZE;
 
             std::vector<VkWriteDescriptorSet> descriptor_writes{};
             descriptor_writes.resize(1);
@@ -93,9 +93,9 @@ namespace PWEngine::Render
             descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(slot);
             descriptor_writes[0].dstBinding = 0;
             descriptor_writes[0].dstArrayElement = 0;
-            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             descriptor_writes[0].descriptorCount = 1;
-            descriptor_writes[0].pBufferInfo = &model_info;
+            descriptor_writes[0].pBufferInfo = &ssbo_info;
 
             vkUpdateDescriptorSets(this->p_pipeline->p_context->m_device->device, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
         }

@@ -11,7 +11,7 @@ namespace PWEngine::Render
 
     }
 
-    std::shared_ptr<Uniform> RenderContext::createUniform(size_t size)
+    std::shared_ptr<Uniform> RenderContext::createUniform(size_t size, DescriptorType type)
     {
         std::shared_ptr<Uniform> obj = std::make_shared<Uniform>(this);
         obj->p_context = this;
@@ -19,9 +19,20 @@ namespace PWEngine::Render
         obj->self->uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
         obj->self->uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
 
+        VkBufferUsageFlags usage;
+        switch (type) 
+        {
+        case DescriptorType::Uniform:
+            usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+        break;
+        case DescriptorType::Storage:
+            usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        case DescriptorType::Sampler:
+        break;
+        }
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) 
         {
-            createDirectBuffer(this, size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, obj->self->uniform_buffers[i], obj->self->uniform_buffers_memory[i]);
+            createDirectBuffer(this, size, usage, obj->self->uniform_buffers[i], obj->self->uniform_buffers_memory[i]);
             vkMapMemory(this->m_device->device, obj->self->uniform_buffers_memory[i], 0, size, 0, &obj->self->uniform_buffers_mapped[i]);
         }
         return obj;

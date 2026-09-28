@@ -36,7 +36,7 @@ namespace PWEngine::Render
 
         /* Mesh3D set = 0 */
         infos.push_back({
-            {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
+            {0, 1, DescriptorType::Storage, ShaderType::Vertex}
         });
         /* Material set = 1*/
         infos.push_back({
@@ -73,6 +73,9 @@ namespace PWEngine::Render
                 case DescriptorType::Sampler:
                     binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     binding.pImmutableSamplers = nullptr;
+                break;
+                case DescriptorType::Storage:
+                    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
                 break;
                 }
                 

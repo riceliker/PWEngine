@@ -1,15 +1,18 @@
-/*
-                PWEngine Render Module      
+// This file is part of PWEngine.
+// PWEngine is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// PWEngine is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with PWEngine.  If not, see <https://www.gnu.org/licenses/>.
+// Copyright (C) 2026 riceliker & all contributors
 
-    This module will use Vulkan API to help you build the 
-    basic render system.
-    The Render Module is a explicit API, not status machine.
-    Don't worry. It's very easy.
-    The first thing is RenderInstance. All RenderContext will
-    be create by it. RenderContext bind a Window, Device and
-    Swapchain. You just registry the RenderPipeline.
-
- */
 
 #pragma once
 #include "stream.hpp"
@@ -18,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -58,7 +62,7 @@ namespace PWEngine::Render
 
     enum class DescriptorType
     {
-        Uniform, Sampler
+        Uniform, Sampler, Storage
     };
 
     enum class ShaderType
@@ -182,7 +186,7 @@ namespace PWEngine::Render
         std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
         std::shared_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* surface);
         std::shared_ptr<Transform3D> createTransform3D();
-        std::shared_ptr<Uniform> createUniform(size_t size);
+        std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
         /* Loop */
         template<std::invocable<Command*, Input*, float> F> void frameLoop(F&& func);      
         friend class RenderInstance;
@@ -247,7 +251,6 @@ namespace PWEngine::Render
         ~Uniform();
     };
 
-
     struct Mesh3DNodeTransform
     {
         Utils::Mat4 transform = Utils::Mat4(1);
@@ -281,24 +284,26 @@ namespace PWEngine::Render
     class Transform3D
     {
     private:
-        Utils::Vec3<float> position;
-        Utils::Vec4<float> rotation;
-        Utils::Vec3<float> scale;
+        std::vector<Utils::Vec3<float>> positions;
+        std::vector<Utils::Vec4<float>> rotations;
+        std::vector<Utils::Vec3<float>> scales;
     public:
+        size_t length;
         std::shared_ptr<Uniform> m_uniform;
-        Utils::Vec3<float> getPosition();
-        void setPosition(Utils::Vec3<float> new_position);
-        void addPosition(Utils::Vec3<float> delta_postion);
-        Utils::Vec3<float> getRotation();
-        void setRotation(Utils::Vec3<float> new_rotation);
-        void addRotation(Utils::Vec3<float> delta_rotation);
-        Utils::Vec3<float> getScale();
-        void setScale(Utils::Vec3<float> new_scale);
-        void addScale(Utils::Vec3<float> delta_scale);
+        void resizeTransform(size_t size);
+        void addTransform();
+        Utils::Vec3<float> getPosition(size_t index);
+        void setPosition(size_t index, Utils::Vec3<float> new_position);
+        void addPosition(size_t index, Utils::Vec3<float> delta_postion);
+        Utils::Vec3<float> getRotation(size_t index);
+        void setRotation(size_t index, Utils::Vec3<float> new_rotation);
+        void addRotation(size_t index, Utils::Vec3<float> delta_rotation);
+        Utils::Vec3<float> getScale(size_t index);
+        void setScale(size_t index, Utils::Vec3<float> new_scale);
+        void addScale(size_t index, Utils::Vec3<float> delta_scale);
         void calculateNodeMatrix(Command* command);
         Transform3D();
     };
-    
 
     class Mesh3D
     {
@@ -317,7 +322,6 @@ namespace PWEngine::Render
         std::unique_ptr<Vertex3D> m_vertex;
         /* public */
         void bindTransform3D(std::shared_ptr<Transform3D> transform);
-        void updateDescriptor();
         /* constructor */
         Mesh3D();
         ~Mesh3D();
@@ -345,6 +349,24 @@ namespace PWEngine::Render
         Material();
         ~Material();
         friend class Pipeline3D;
+    };
+
+    class Node3D
+    {
+    private:
+        std::optional<std::shared_ptr<Mesh3D>> m_mesh;
+        std::optional<std::shared_ptr<Material>> m_material;
+        std::optional<std::shared_ptr<Transform3D>> m_transform;
+    public:
+        Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set; 
+        Node3D(Pipeline3D* pipeline);
+        ~Node3D();
+        void bindMesh3D(std::shared_ptr<Mesh3D> mesh3D);
+        void bindMaterial(std::shared_ptr<Material> material);
+        void bindTransform3D(std::shared_ptr<Transform3D> transform3D);
+        void updateDescriptor();
     };
 
     class Camera

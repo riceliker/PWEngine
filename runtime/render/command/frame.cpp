@@ -213,6 +213,6 @@ namespace PWEngine::Render
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(*this->self->command_buffer, 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(*this->self->command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT32);
-        vkCmdDrawIndexed(*this->self->command_buffer, mesh->indices_size, 1, 0, 0, 0);
+        vkCmdDrawIndexed(*this->self->command_buffer, mesh->indices_size, mesh->transform->length, 0, 0, 0);
     }
 }

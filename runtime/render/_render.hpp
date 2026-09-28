@@ -1,3 +1,18 @@
+// This file is part of PWEngine.
+// PWEngine is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// PWEngine is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with PWEngine.  If not, see <https://www.gnu.org/licenses/>.
+// Copyright (C) 2026 riceliker & all contributors
+
 #pragma once
 /* include library */
 #define GLFW_INCLUDE_VULKAN
@@ -14,6 +29,14 @@
 
 namespace PWEngine::Render 
 {
+ /*
+    ██  ░███    ███   ███████  ██████████  ████     ███    ░██    ███████    █████████
+    ██  ░████   ███  ██    ███    ▓██      ████▓    ████░  ░██  ▓██▒    ██▓  ██
+    ██  ░██ ██  ███  █████▓       ▓██     ██  ██    ██░███ ░██  ███          ████████
+    ██  ░██  ██▓███     ░█████    ▓██    ███  ▓██   ██░ ███░██  ██▓          ██
+    ██  ░██   █████ ███     ██    ▓██   ██████████  ██░  ▒████  ███     ██▓  ██
+    ██  ░██    ▓███  ▓███████     ▓██  ░██      ███ ██░    ███    ███████    █████████
+*/
     struct RenderInstance::Impl
     {
         VkInstance instance;
@@ -21,6 +44,14 @@ namespace PWEngine::Render
         VkPhysicalDevice adapters;
         std::vector<RenderContext*> context_list;
     };
+/*
+     ███████     ███████░   ███░    ██ ▓█████████ █████████ ▓██▒   ███ █████████
+    ███    ███  ███    ███  █████   ██     ██▒    ███         ███ ██▒     ███
+   ███         ███      ██▒ ██████  ██     ██▒    ████████▒    ████       ███
+   ███         ███      ██▒ ███ ▓██ ██     ██▒    ███          ████▒      ███
+    ██▓    ███  ███    ███  ███   ████     ██▒    ███        ▒██░ ███     ███
+     ███████     ███████▓   ███    ███     ██▒    █████████ ███    ███    ███
+*/
 
     struct RenderContext::Device
     {
@@ -68,7 +99,14 @@ namespace PWEngine::Render
 
         VkDescriptorPool descriptor_pool;
     };
-
+/*
+    ████████   ███  ████████   █████████  ███       ███  ███     ██  ░█████████
+    ██    ▓██  ███  ███    ██▒ ███        ███       ███  █████   ██  ░██
+    ██    ███  ███  ███    ██░ █████████  ███       ███  ██████  ██  ░████████
+    ████████   ███  ████████   ███        ███       ███  ███ ▓██ ██  ░██
+    ██         ███  ███        ███        ███       ███  ███   ████  ░██
+    ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
+*/ 
     struct Pipeline3D::Impl
     {
         VkPipelineLayout pipeline_layout;
@@ -109,6 +147,11 @@ namespace PWEngine::Render
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;
         std::vector<void*> uniform_buffers_mapped;
+    };
+
+    struct Node3D::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
     };
 
     struct Camera::DescriptorSet
