@@ -11,7 +11,7 @@ namespace PWEngine::Render
     {
     }
 
-    std::unique_ptr<Mesh3D> Pipeline3D::createMesh3D(Utils::Model3D* model)
+    std::unique_ptr<Mesh3D> Pipeline3D::createMesh3D(Model3D* model)
     {
         auto obj = std::make_unique<Mesh3D>();
         obj->p_pipeline = this;
@@ -22,7 +22,7 @@ namespace PWEngine::Render
         return obj;
     }
 
-    void Mesh3D::setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices)
+    void Mesh3D::setVertices(RenderContext* super, std::vector<PWEngine::Vertex3D>& vertices)
     {
         size_t size = sizeof(vertices[0]) * vertices.size();
 

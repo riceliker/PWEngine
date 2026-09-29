@@ -42,7 +42,7 @@ namespace PWEngine::Render
         infos.push_back({
             {0, 1, DescriptorType::Sampler, ShaderType::Fragment}
         });
-        /* Camera set = 2 */
+        /* Camera3D set = 2 */
         infos.push_back({
             {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
         });
@@ -97,9 +97,8 @@ namespace PWEngine::Render
             layout_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
             layout_info.pBindings = layout_bindings.data();
 
-            if (vkCreateDescriptorSetLayout(this->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create descriptor set layout!");
-            }
+            if (vkCreateDescriptorSetLayout(this->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
+                Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create descriptor set layout!");
             descriptor_set_layouts.push_back(descriptor_set_layout);            
         }
         
@@ -110,12 +109,12 @@ namespace PWEngine::Render
 
         VkPipelineLayout pipeline_layout;
         if (vkCreatePipelineLayout(this->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         
         /* ----- shader ----- */
-        auto vertex_shader_code = PWEngine::File::shaderReader(this->log, path.vertex_shader).value();
-        auto fragment_shader_code = PWEngine::File::shaderReader(this->log, path.fragment_shader).value();
+        auto vertex_shader_code = PWEngine::File::shaderReader(this->p_instance->log, path.vertex_shader).value();
+        auto fragment_shader_code = PWEngine::File::shaderReader(this->p_instance->log, path.fragment_shader).value();
 
         VkShaderModule vertShaderModule = createShaderModule(vertex_shader_code, this->m_device->device).value();
         VkShaderModule fragShaderModule = createShaderModule(fragment_shader_code, this->m_device->device).value();
@@ -135,8 +134,8 @@ namespace PWEngine::Render
         std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vertex_shader_stage_info, fragment_shader_stage_info};
         
         /* ----- Input ----- */
-        auto bind = getBindingDescription<Utils::Vertex3D>();
-        auto attribute = getAttributeDescriptions<Utils::Vertex3D>();
+        auto bind = getBindingDescription<Vertex3D>();
+        auto attribute = getAttributeDescriptions<Vertex3D>();
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -238,10 +237,8 @@ namespace PWEngine::Render
         pipeline_info.pDepthStencilState = &depth_stencil;
 
         VkPipeline graphics_pipeline;
-        if (vkCreateGraphicsPipelines(this->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create graphics pipeline!");
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
-        }
+        if (vkCreateGraphicsPipelines(this->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
 
         for (auto shader_module : shader_stages)
         {

@@ -2,21 +2,9 @@
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
-#include <vector>
 
-namespace PWEngine::Utils 
+namespace PWEngine
 {
-    enum class ColorFormat
-    {
-        RGBA8, RGBA16
-    };
-
-    struct PixelRGBA8
-    {
-        uint8_t r; uint8_t g; uint8_t b; uint8_t a; 
-    };
-
     constexpr float deg2rad(float deg) noexcept
     {
         constexpr float pi = 3.14159265358979323846;
@@ -240,13 +228,13 @@ namespace PWEngine::Utils
         float xx = 2.0f * r.x * r.x; float xy = 2.0f * r.x * r.y; float wx = 2.0f * r.w * r.x;
         float yy = 2.0f * r.y * r.y; float xz = 2.0f * r.x * r.z; float wy = 2.0f * r.w * r.y;
         float zz = 2.0f * r.z * r.z; float yz = 2.0f * r.y * r.z; float wz = 2.0f * r.w * r.z;
-        mat.rc(0,0) = 1.0f - yy - zz; mat.rc(1,0) = xy + wz; mat.rc(2,0) = xz - wy;
-        mat.rc(0,1) = xy - wz; mat.rc(1,1) = 1.0f - xx - zz; mat.rc(2,1) = yz + wx;
-        mat.rc(0,2) = xz + wy; mat.rc(1,2) = yz - wx; mat.rc(2,2) = 1.0f - xx - yy;  
+        mat.rc(0,0) = 1.0f - yy - zz; mat.rc(0,1) = xy + wz; mat.rc(0,2) = xz - wy;
+        mat.rc(1,0) = xy - wz; mat.rc(1,1) = 1.0f - xx - zz; mat.rc(1,2) = yz + wx;
+        mat.rc(2,0) = xz + wy; mat.rc(2,1) = yz - wx; mat.rc(2,2) = 1.0f - xx - yy;  
         /* scale */
-        mat.rc(0,0) *= s.x; mat.rc(0,1) *= s.y; mat.rc(0,2) *= s.z;
-        mat.rc(1,0) *= s.x; mat.rc(1,1) *= s.y; mat.rc(1,2) *= s.z;
-        mat.rc(2,0) *= s.x; mat.rc(2,1) *= s.y; mat.rc(2,2) *= s.z;
+        mat.rc(0,0) *= s.x; mat.rc(1,0) *= s.y; mat.rc(2,0) *= s.z;
+        mat.rc(0,1) *= s.x; mat.rc(1,1) *= s.y; mat.rc(2,1) *= s.z;
+        mat.rc(0,2) *= s.x; mat.rc(1,2) *= s.y; mat.rc(2,2) *= s.z;
         /* postion */
         mat.rc(0,3) = p.x;
         mat.rc(1,3) = p.y;
@@ -297,25 +285,6 @@ namespace PWEngine::Utils
         return m;
     }
 
-    struct Vertex3D
-    {    
-        Utils::Vec3<float> position;
-        Utils::Vec3<float> color;
-        Utils::Vec2<float> uv;
-    };
-
-    struct Model3D
-    {
-        
-        std::vector<Vertex3D> vertices;
-        std::vector<uint32_t> indices;
-    };
-
-    struct ImageRGBA8
-    {
-        Utils::Vec2<uint32_t> size;
-        std::vector<uint8_t> data;
-        uint8_t depth;
-    };
+    
 
 }

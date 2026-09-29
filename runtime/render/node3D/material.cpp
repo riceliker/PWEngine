@@ -54,6 +54,6 @@ namespace PWEngine::Render
 
     Material::~Material()
     {
-
+        
     }
 }

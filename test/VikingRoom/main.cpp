@@ -1,6 +1,5 @@
 #include "render.hpp"
 #include "stream.hpp"
-#include "utils.hpp"
 #include "file.hpp"
 #include <cstddef>
 #include <cstdint>
@@ -13,21 +12,20 @@ int main()
     auto image = PWEngine::File::tgaReader(&log, "./assets/viking_room.tga");
     auto model = PWEngine::File::objReader(&log, "./assets/viking_room.obj");
 
-
     auto instance = PWEngine::Render::RenderInstance(&log);
     instance.setApplicationName("Test");
-    instance.setApplicationVersion(PWEngine::Utils::Vec3<uint32_t>(1, 0, 0));
+    instance.setApplicationVersion(PWEngine::Vec3<uint32_t>(1, 0, 0));
     instance.build();
 
     PWEngine::Render::ContextInfo context_info{};
-    context_info.is_window_resizable = false;
+    context_info.is_window_resizable = true;
     context_info.window_title = "Test";
-    context_info.window_default_resolution = PWEngine::Utils::Vec2<uint32_t>(1280, 720);
+    context_info.window_default_resolution = PWEngine::Vec2<uint32_t>(1280, 720);
 
     auto context = instance.createContext(context_info);
     auto texture = context->createTexture2D(image.get());
     
-    auto pipeline = context->createPipeline3D({}, {"./shaders/vert.spv", "./shaders/frag.spv"});
+    auto pipeline = context->createPipeline3D({}, {"./shaders/pipeline3D/vert.spv", "./shaders/pipeline3D/frag.spv"});
     auto mesh = pipeline->createMesh3D(model.get());
     auto mesh_transform = context->createTransform3D();
     mesh_transform->resizeTransform(2);
@@ -45,8 +43,8 @@ int main()
     float time = 0;
     float speed = 0.02;
     bool is_in_screen = false;
-    PWEngine::Utils::Vec2<float> last_mouse = {0, 0};
-    PWEngine::Utils::Vec2<float> look_degree = {0, 0};
+    PWEngine::Vec2<float> last_mouse = {0, 0};
+    PWEngine::Vec2<float> look_degree = {0, 0};
     context->frameLoop([&](PWEngine::Render::Command* cmd, PWEngine::Render::Input* input, float delta){
 
         if (input->checkIsHoverScreen() && input->checkIsMouseInput(PWEngine::Render::MouseKey::BtnLeft))
@@ -104,7 +102,9 @@ int main()
 
         camera->updateData(cmd);
         mesh_transform->setPosition(0, {0, 0, 0});
+        mesh_transform->setRotation(0, {0, 0, 0.5});
         mesh_transform->setPosition(1, {0, 1.5, 0});
+        mesh_transform->setScale(1, {1, 1, 2});
         mesh_transform->calculateNodeMatrix(cmd);
 
         cmd->renderingBegin({0, 0, 0, 1});

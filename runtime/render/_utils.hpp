@@ -11,7 +11,6 @@
 #include "render/_render.hpp"
 /* std library */
 #include <cstdint>
-#include <functional>
 
 namespace PWEngine::Render 
 {
@@ -110,7 +109,7 @@ namespace PWEngine::Render
     void createStagingBuffer(RenderContext* context, size_t size, VkBuffer& buffer, VkDeviceMemory& memory);
     void createRealBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory);
     void createDirectBuffer(RenderContext* context, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory);
-    void createImageBuffer(RenderContext* context, Utils::Vec2<uint32_t> size, uint32_t mip_level, VkImage& image, VkDeviceMemory& memory);
+    void createImageBuffer(RenderContext* context, Vec2<uint32_t> size, uint32_t mip_level, VkImage& image, VkDeviceMemory& memory);
     void createDepthBuffer(RenderContext* context, VkExtent2D swapchain_extent, VkImage& image, VkDeviceMemory& memory);
     std::vector<VkDescriptorSet> createDescriptorSet(Pipeline3D* pipeline, VkDescriptorSetLayout layout);
 /*
@@ -121,9 +120,8 @@ namespace PWEngine::Render
    ░██▒    ██▒  ██▓    ███  ██▓ ████  ███  ██  ████  ██  █████████▓ ░██   ████  ▒██    ███
      ███████     ███████    ██▓  ███  ███  ██   ██   ██ ░██     ░██ ░██    ███  ▒████████
 */
-    void singleTimerCommand(RenderContext* context, std::function<void(VkCommandBuffer& cmd)> func);
     void copyBufferCommand(RenderContext* context, VkBuffer staging, VkBuffer real, size_t size);
-    void copyBufferToImage(RenderContext* context, VkBuffer buffer, VkImage image, Utils::Vec2<uint32_t> size);
+    void copyBufferToImage(RenderContext* context, VkBuffer buffer, VkImage image, Vec2<uint32_t> size);
     void transitionImageLayout(RenderContext* context, uint32_t min_level, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void generateMipmap(RenderContext* context, uint32_t mip_level, Utils::Vec2<uint32_t> size, VkImage image);
+    void generateMipmap(RenderContext* context, uint32_t mip_level, Vec2<uint32_t> size, VkImage image);
 }

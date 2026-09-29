@@ -1,15 +1,13 @@
 #include "render.hpp"
 #include "./render/_render.hpp"
 #include "./render/_utils.hpp"
-#include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <functional>
 #include <memory>
 
 namespace PWEngine::Render 
 {
-    void singleTimerCommand(RenderContext* context, std::function<void(VkCommandBuffer& cmd)> func)
+    template<std::invocable<VkCommandBuffer> F> static inline void singleTimerCommand(RenderContext* context, F&& func)
     {
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -49,7 +47,7 @@ namespace PWEngine::Render
         });
     }
 
-    void copyBufferToImage(RenderContext* context, VkBuffer buffer, VkImage image, Utils::Vec2<uint32_t> size) 
+    void copyBufferToImage(RenderContext* context, VkBuffer buffer, VkImage image, Vec2<uint32_t> size) 
     {
         singleTimerCommand(context, [&](VkCommandBuffer cmd){
             VkBufferImageCopy region{};
@@ -109,7 +107,7 @@ namespace PWEngine::Render
         });
     }
 
-    void generateMipmap(RenderContext* context, uint32_t mip_level, Utils::Vec2<uint32_t> size, VkImage image)
+    void generateMipmap(RenderContext* context, uint32_t mip_level, Vec2<uint32_t> size, VkImage image)
     {
         
         singleTimerCommand(context, [&](VkCommandBuffer cmd){

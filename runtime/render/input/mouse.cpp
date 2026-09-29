@@ -19,7 +19,7 @@ namespace PWEngine::Render
         int glfw_key = key2GLFW(key);
         return glfwGetMouseButton(this->p_context->m_window->window, glfw_key);
     }
-    Utils::Vec2<float> Input::checkMousePosition()
+    Vec2<float> Input::checkMousePosition()
     {
         double x, y;
         glfwGetCursorPos(this->p_context->m_window->window, &x, &y);

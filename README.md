@@ -37,13 +37,13 @@ int main()
 
     auto instance = PWEngine::Render::RenderInstance(&log);
     instance.setApplicationName("Test");
-    instance.setApplicationVersion(PWEngine::Utils::Vec3<uint32_t>(1, 0, 0));
+    instance.setApplicationVersion(PWEngine::Vec3<uint32_t>(1, 0, 0));
     instance.build();
 
     PWEngine::Render::ContextInfo context_info{};
     context_info.is_window_resizable = false;
     context_info.window_title = "Test";
-    context_info.window_default_resolution = PWEngine::Utils::Vec2<uint32_t>(1280, 720);
+    context_info.window_default_resolution = PWEngine::Vec2<uint32_t>(1280, 720);
 
     auto context = instance.createContext(context_info);
     auto texture = context->createTexture2D(image.get());
@@ -60,8 +60,8 @@ int main()
     float time = 0;
     float speed = 0.02;
     bool is_in_screen = false;
-    PWEngine::Utils::Vec2<float> last_mouse = {0, 0};
-    PWEngine::Utils::Vec2<float> look_degree = {0, 0};
+    PWEngine::Vec2<float> last_mouse = {0, 0};
+    PWEngine::Vec2<float> look_degree = {0, 0};
     context->frameLoop([&](PWEngine::Render::Command* cmd, PWEngine::Render::Input* input, float delta){
 
         if (input->checkIsHoverScreen() && input->checkIsMouseInput(PWEngine::Render::MouseKey::BtnLeft))

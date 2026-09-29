@@ -20,7 +20,7 @@ namespace PWEngine::Render
 
         VkSurfaceFormatKHR surface_format = available_format;
         //VkPresentModeKHR present_mode = chooseSwapPresentMode(swapchain_support.presentModes);
-        VkPresentModeKHR present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+        VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
         VkExtent2D extent = chooseSwapExtent(super->m_window->window, swapchain_support.capabilities);
 
@@ -53,7 +53,7 @@ namespace PWEngine::Render
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(super->m_device->device, &create_info, nullptr, &swapchain) != VK_SUCCESS)
-            Stream::log(super->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
+            Stream::log(super->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create swap chain!");
 
         vkGetSwapchainImagesKHR(super->m_device->device, swapchain, &image_count, nullptr);
         swapchain_images.resize(image_count);
@@ -82,9 +82,8 @@ namespace PWEngine::Render
         viewInfo.subresourceRange.levelCount = 1;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(super->m_device->device, &viewInfo, nullptr, &depth_image_view) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create depth image view!");
-        }
+        if (vkCreateImageView(super->m_device->device, &viewInfo, nullptr, &depth_image_view) != VK_SUCCESS)
+            Stream::log(super->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create depth image view!");
 
         this->depth_image = depth_image;
         this->depth_image_memory = depth_image_memory;
@@ -96,7 +95,8 @@ namespace PWEngine::Render
         std::vector<VkImageView> swapchain_image_views;
         swapchain_image_views.resize(swapchain_images.size());
 
-        for (size_t i = 0; i < swapchain_images.size(); i++) {
+        for (size_t i = 0; i < swapchain_images.size(); i++) 
+        {
             VkImageViewCreateInfo create_info{};
             create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
             create_info.image = swapchain_images[i];
@@ -112,9 +112,8 @@ namespace PWEngine::Render
             create_info.subresourceRange.baseArrayLayer = 0;
             create_info.subresourceRange.layerCount = 1;
 
-            if (vkCreateImageView(super->m_device->device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
-                Stream::log(super->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");
-            }     
+            if (vkCreateImageView(super->m_device->device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) 
+                Stream::log(super->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create image views!");  
         }
         this->swapchain_image_views = std::move(swapchain_image_views);
     }
@@ -139,7 +138,8 @@ namespace PWEngine::Render
         }
         vkDeviceWaitIdle(this->m_device->device);
 
-        for (auto imageView : this->m_swapchain->swapchain_image_views) {
+        for (auto imageView : this->m_swapchain->swapchain_image_views) 
+        {
             vkDestroyImageView(this->m_device->device, imageView, nullptr);
         }
 

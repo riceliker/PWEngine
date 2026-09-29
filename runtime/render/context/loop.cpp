@@ -1,5 +1,6 @@
 #include "render.hpp"
 #include "./render/_render.hpp"
+#include "stream.hpp"
 #include <cstddef>
 #include <cstdint>
 
@@ -12,15 +13,12 @@ namespace PWEngine::Render
         VkResult result = vkAcquireNextImageKHR(this->m_device->device, this->m_swapchain->swapchain, UINT64_MAX, this->self->image_available_semaphores[swapchain_loop_frame_index], VK_NULL_HANDLE, swapchain_image_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) 
-        {
             this->recreateSwapchain();
-        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw std::runtime_error("failed to acquire swap chain image!");
-        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)  
+            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to acquire swap chain image!");
 
         vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[swapchain_loop_frame_index]);
         vkResetCommandBuffer(this->self->command_buffers[swapchain_loop_frame_index], /*VkCommandBufferResetFlagBits*/ 0);
-
     }
 
     bool RenderContext::getIsWindowClosed()

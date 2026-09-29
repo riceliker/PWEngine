@@ -12,11 +12,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with PWEngine.  If not, see <https://www.gnu.org/licenses/>.
 // Copyright (C) 2026 riceliker & all contributors
-
-
 #pragma once
 #include "stream.hpp"
-#include "utils.hpp"
+#include "math.hpp"
+#include "api.hpp"
+
 #include <concepts>
 #include <cstddef>
 #include <cstdint>
@@ -25,25 +25,28 @@
 #include <string>
 #include <vector>
 
+/* The number of frame in swapchain. The 3 is best now. */
 #define MAX_FRAMES_IN_FLIGHT 3
 
 namespace PWEngine::Render
 {
 /*    Structure Of PWEngine Render Module   */
- class RenderInstance;
-    /*    |    */
-    /*    |    */ 
-    /*    |--> */class RenderContext;/* ------------------------------------> */         
-    /*    |            |                               |                 |    */
-    /*    |            V                               V                 V    */
-    /*    |    */class Pipeline3D;/*->*/        class Texture2D;   class Input;
-    /*    |            |             |                 |                 |    */
-    /*    |            V             V                 V                 |    */
-    /*    |    */class Mesh3D;   class Camera;  class Material;    /*    |    */
-    /*    |            |             |                 |                 |    */
-    /*    V            V             V                 V    */     /*    V    */
-    class Command;/*<------------------------------------------------------------*/
-    class Uniform; class Transform3D;
+class RenderInstance;
+/*    |                                                                                                 */ 
+/*    |--> */class RenderContext;/* ------------------------------------------------------------------->*/         
+/*    |            |                                                                                    */
+/*    |            V                                                                                    */
+/*    |    */class Pipeline3D;/*------------------------------------------------------->*/class Input;
+/*    |            |                |                    |                 |                  |         */
+/*    |            V                V                    V                 V                  |         */
+/*    |    */class Mesh3D;   class Uniform;      class Texture2D;    class Camera3D;/*        |         */
+/*    |            |                |                    |                 |                  |         */
+/*    |            |                V                    V                 |                  |         */
+/*    |            |<-----*/class Transform3D;    class Material;/*        |                  |         */
+/*    |            |                                     |                 |                  |         */
+/*    V            V                                     V                 V                  |         */
+class Command;/*<---------------------------------------------------------------------------------------*/
+
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
     ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
@@ -55,27 +58,29 @@ namespace PWEngine::Render
 
     struct ContextInfo
     {
-        Utils::Vec2<uint32_t> window_default_resolution;
+        Vec2<uint32_t> window_default_resolution;
         std::string window_title;
         bool is_window_resizable;
     };
-
+    /*
+        The data type of DescriptorSetLayout.
+        - Uniform: The uniform buffer
+        - Sampler: The image buffer
+        - Storage: The multi-uniform buffer
+    */
     enum class DescriptorType
     {
         Uniform, Sampler, Storage
     };
-
     enum class ShaderType
     {
         Vertex, Fragment
     };
-
     struct ShaderPath
     {
         std::string vertex_shader;
         std::string fragment_shader;
     };
-
     struct ShaderLayoutInfo
     {
         uint32_t binding_index;
@@ -83,7 +88,6 @@ namespace PWEngine::Render
         DescriptorType descriptor_type;
         ShaderType shader_type;
     };
-
     enum class Key : uint16_t
     {
         Unknown = 0,    
@@ -99,7 +103,6 @@ namespace PWEngine::Render
         LShift, RShift, LCtrl,  RCtrl, LAlt, RAlt, LSuper, RSuper,
         Menu, Escape
     };
-
     enum MouseKey : uint8_t
     {
         Unknown = 0,
@@ -113,29 +116,30 @@ namespace PWEngine::Render
     ██  ░██   █████ ███     ██    ▓██   ██████████  ██░  ▒████  ███     ██▓  ██
     ██  ░██    ▓███  ▓███████     ▓██  ░██      ███ ██░    ███    ███████    █████████
 */
-    
-
+    /*
+        The RenderInstance is the start of PWEngine::Render.
+        And the information about application will be registry here.
+    */
     class RenderInstance
     {
     private:
         bool is_debug;
         std::string application_name;
-        Utils::Vec3<uint32_t> application_version;
+        Vec3<uint32_t> application_version;
         std::vector<RenderContext> contexts;
     public:
-        /* Log */
         Stream::LogSystem* log;
-        /* PImpl */
+
         struct Impl;
         std::unique_ptr<Impl> self;
-        /* Constructor */
+
         RenderInstance(Stream::LogSystem* log);
         void openValidationLayer();
         void setApplicationName(std::string name);
-        void setApplicationVersion(Utils::Vec3<uint32_t> version);
+        void setApplicationVersion(Vec3<uint32_t> version);
         void build();
         ~RenderInstance();
-        /* User Function*/
+
         std::shared_ptr<RenderContext> createContext(ContextInfo info);
     };
 
@@ -151,23 +155,19 @@ namespace PWEngine::Render
     class RenderContext
     {
     private:
+        /* call vkQueueSumbit to submit the command buffer. */
         void frameSubmit(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
+        /* get GLFW event.*/
         void pollEvents();
+        /* check window is closed by GLFW. */
         bool getIsWindowClosed();
         void waitIdle();
+        /* wait fence to wait GPU finished this task and send CPU data. */
         void waitFence(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
         Command* commandBegin(size_t swapchain_loop_frame_index, uint32_t swapchain_image_index);
         void commandEnd(Command* command);
         std::shared_ptr<Input> createInput();
     public:
-        /* input */
-        bool checkIsInput(int key);
-        void checkMouse(bool& flag);
-        Utils::Vec2<int> getMouse();
-        void hideMouseCursor();
-        void showMouseCursor();
-        /* log system */
-        Stream::LogSystem* log;
         RenderInstance* p_instance;
         /* PImpl */
         struct Device;
@@ -184,9 +184,11 @@ namespace PWEngine::Render
         /* create */
         void recreateSwapchain();
         std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
-        std::shared_ptr<Texture2D> createTexture2D(Utils::ImageRGBA8* surface);
+        std::shared_ptr<Texture2D> createTexture2D(ImageRGBA8* surface);
         std::shared_ptr<Transform3D> createTransform3D();
         std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
+        void hideMouseCursor();
+        void showMouseCursor();
         /* Loop */
         template<std::invocable<Command*, Input*, float> F> void frameLoop(F&& func);      
         friend class RenderInstance;
@@ -232,9 +234,9 @@ namespace PWEngine::Render
         /* Constructor */
         Pipeline3D();
         ~Pipeline3D();
-        std::unique_ptr<Mesh3D> createMesh3D(Utils::Model3D* model);
+        std::unique_ptr<Mesh3D> createMesh3D(Model3D* model);
         std::unique_ptr<Material> createMaterial();
-        std::unique_ptr<Camera> createCamera();
+        std::unique_ptr<Camera3D> createCamera();
         friend class RenderContext;
     };
 
@@ -253,13 +255,13 @@ namespace PWEngine::Render
 
     struct Mesh3DNodeTransform
     {
-        Utils::Mat4 transform = Utils::Mat4(1);
+        Mat4 transform = Mat4(1);
     };
 
     class Texture2D
     {
     private:
-        void setTexture2D(Utils::ImageRGBA8* surface);
+        void setTexture2D(ImageRGBA8* surface);
         void setTextureView();
         void setTextureSampler();
     public:
@@ -284,23 +286,23 @@ namespace PWEngine::Render
     class Transform3D
     {
     private:
-        std::vector<Utils::Vec3<float>> positions;
-        std::vector<Utils::Vec4<float>> rotations;
-        std::vector<Utils::Vec3<float>> scales;
+        std::vector<Vec3<float>> positions;
+        std::vector<Vec4<float>> rotations;
+        std::vector<Vec3<float>> scales;
     public:
         size_t length;
         std::shared_ptr<Uniform> m_uniform;
         void resizeTransform(size_t size);
         void addTransform();
-        Utils::Vec3<float> getPosition(size_t index);
-        void setPosition(size_t index, Utils::Vec3<float> new_position);
-        void addPosition(size_t index, Utils::Vec3<float> delta_postion);
-        Utils::Vec3<float> getRotation(size_t index);
-        void setRotation(size_t index, Utils::Vec3<float> new_rotation);
-        void addRotation(size_t index, Utils::Vec3<float> delta_rotation);
-        Utils::Vec3<float> getScale(size_t index);
-        void setScale(size_t index, Utils::Vec3<float> new_scale);
-        void addScale(size_t index, Utils::Vec3<float> delta_scale);
+        Vec3<float> getPosition(size_t index);
+        void setPosition(size_t index, Vec3<float> new_position);
+        void addPosition(size_t index, Vec3<float> delta_postion);
+        Vec3<float> getRotation(size_t index);
+        void setRotation(size_t index, Vec3<float> new_rotation);
+        void addRotation(size_t index, Vec3<float> delta_rotation);
+        Vec3<float> getScale(size_t index);
+        void setScale(size_t index, Vec3<float> new_scale);
+        void addScale(size_t index, Vec3<float> delta_scale);
         void calculateNodeMatrix(Command* command);
         Transform3D();
     };
@@ -308,7 +310,7 @@ namespace PWEngine::Render
     class Mesh3D
     {
     private:
-        void setVertices(RenderContext* super, std::vector<Utils::Vertex3D>& vertices);
+        void setVertices(RenderContext* super, std::vector<Vertex3D>& vertices);
         void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
     public:
         /* parent */
@@ -369,29 +371,29 @@ namespace PWEngine::Render
         void updateDescriptor();
     };
 
-    class Camera
+    class Camera3D
     {
     public:
         struct CameraData
         {
-            Utils::Mat4 view{0};
-            Utils::Mat4 project{0};
+            Mat4 view{0};
+            Mat4 project{0};
         };
         RenderContext* p_context;
         Pipeline3D* p_pipeline;
-        Utils::Vec3<float> position;
-        Utils::Vec3<float> look_vector;
+        Vec3<float> position;
+        Vec3<float> look_vector;
         float view_degree = 45;
-        Utils::Vec2<float> view_depth = {0.01, 100};
+        Vec2<float> view_depth = {0.01, 100};
         CameraData data;
         struct DescriptorSet;
         std::unique_ptr<DescriptorSet> m_descriptor_set;
         struct Uniform;
         std::unique_ptr<Uniform> m_uniform;
-        Camera();
-        ~Camera();
-        void calculateLookVector(Utils::Vec2<float> look_degree);
-        void cameraMoveFromLook(Utils::Vec2<float> step);
+        Camera3D();
+        ~Camera3D();
+        void calculateLookVector(Vec2<float> look_degree);
+        void cameraMoveFromLook(Vec2<float> step);
         void updateDescriptor();
         void updateData(Command* command);
         friend class Pipeline3D;
@@ -419,9 +421,9 @@ namespace PWEngine::Render
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void renderingBegin(Utils::Vec4<float> color);
+        void renderingBegin(Vec4<float> color);
         void renderingEnd();
-        void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera* camera);
+        void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera3D* camera);
         friend class RenderContext;
     };
 
@@ -443,7 +445,7 @@ namespace PWEngine::Render
         ~Input(){};
         bool checkIsKeyInput(Key key);
         bool checkIsMouseInput(MouseKey key);
-        Utils::Vec2<float> checkMousePosition();
+        Vec2<float> checkMousePosition();
         bool checkIsHoverScreen();
         friend class RenderContext;
     };  

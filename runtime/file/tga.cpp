@@ -1,10 +1,12 @@
 #include "file.hpp"
+#include "math.hpp"
 #include "stream.hpp"
-#include "utils.hpp"
+
+#include "_utils.hpp"
+
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -26,7 +28,7 @@ namespace PWEngine::File
         uint8_t image_descriptor;
     };
         
-    std::unique_ptr<Utils::ImageRGBA8> tgaReader(Stream::LogSystem* log, std::string load_path)
+    std::unique_ptr<ImageRGBA8> tgaReader(Stream::LogSystem* log, std::string load_path)
     {
         auto file_maybe = readBinaryFile(log, load_path);
         size_t offset = 0;
@@ -36,7 +38,7 @@ namespace PWEngine::File
         {
             auto file = file_maybe.value();
             FileInfo info;
-            std::vector<Utils::PixelRGBA8> pixels;
+            std::vector<PixelRGBA8> pixels;
             info.ID_length = file[0];
             info.color_map_type = file[1];
             info.image_type = file[2];
@@ -67,7 +69,7 @@ namespace PWEngine::File
                     uint8_t g = file[offset + 1];
                     uint8_t r = file[offset + 2];
                     uint8_t a = 255;
-                    pixels.emplace_back(Utils::PixelRGBA8{r, g, b, a});
+                    pixels.emplace_back(PixelRGBA8{r, g, b, a});
                     offset += 3;
                 }
             }
@@ -79,7 +81,7 @@ namespace PWEngine::File
                     uint8_t g = file[offset + 1];
                     uint8_t r = file[offset + 2];
                     uint8_t a = file[offset + 3];
-                    pixels.emplace_back(Utils::PixelRGBA8{r, g, b, a});
+                    pixels.emplace_back(PixelRGBA8{r, g, b, a});
                     offset += 4;
                 }
             }
@@ -87,12 +89,12 @@ namespace PWEngine::File
             {
                 Stream::log(log, Stream::LogType::Warn, Stream::LogFrom::FileIO ,"The pixel format is not support.");
             }
-            std::unique_ptr<Utils::ImageRGBA8> obj = std::make_unique<Utils::ImageRGBA8>();
+            std::unique_ptr<ImageRGBA8> obj = std::make_unique<ImageRGBA8>();
             std::vector<uint8_t> data;
-            data.resize(pixels.size() * sizeof(Utils::PixelRGBA8));
+            data.resize(pixels.size() * sizeof(PixelRGBA8));
             memcpy(data.data(), pixels.data(), data.size());
             obj->data = std::move(data);
-            obj->size = Utils::Vec2<uint32_t>(info.width, info.height);
+            obj->size = Vec2<uint32_t>(info.width, info.height);
             obj->depth = info.pixel_depth;
             return obj;
         } 

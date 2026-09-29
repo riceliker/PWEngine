@@ -66,7 +66,7 @@ namespace PWEngine::Render
         GLFWwindow* window;
         VkSurfaceKHR surface;
         
-        Window(RenderContext* super, bool is_resizable, Utils::Vec2<uint32_t> window_default_resolution, std::string window_title);
+        Window(RenderContext* super, bool is_resizable, Vec2<uint32_t> window_default_resolution, std::string window_title);
     };
 
     struct RenderContext::Swapchain
@@ -154,12 +154,12 @@ namespace PWEngine::Render
         std::vector<VkDescriptorSet> descriptor_sets;
     };
 
-    struct Camera::DescriptorSet
+    struct Camera3D::DescriptorSet
     {
         std::vector<VkDescriptorSet> descriptor_sets;
     };
 
-    struct Camera::Uniform
+    struct Camera3D::Uniform
     {
         std::vector<VkBuffer> uniform_buffers;
         std::vector<VkDeviceMemory> uniform_buffers_memory;

@@ -41,8 +41,9 @@ namespace PWEngine::Render
         for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
             if (vkCreateSemaphore(context->m_device->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(context->m_device->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
-                vkCreateFence(context->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) {
-                throw std::runtime_error("failed to create synchronization objects for a frame!");
+                vkCreateFence(context->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) 
+            {
+                Stream::log(context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
             }
         }
 
@@ -65,7 +66,7 @@ namespace PWEngine::Render
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
         if (vkCreateCommandPool(context->m_device->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
-            Stream::log(context->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
+            Stream::log(context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create command pool!");
 
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -74,7 +75,7 @@ namespace PWEngine::Render
         alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
         if (vkAllocateCommandBuffers(context->m_device->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
-            Stream::log(context->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
+            Stream::log(context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to allocate command buffers!");
 
         context->self->command_pool = command_pool;
         context->self->command_buffers = std::move(command_buffers);
@@ -84,23 +85,22 @@ namespace PWEngine::Render
     {
         VkDescriptorPool descriptorPool;
 
-        std::array<VkDescriptorPoolSize, 3> poolSizes{};
-        poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-        poolSizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        poolSizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        std::array<VkDescriptorPoolSize, 3> pool_sizes{};
+        pool_sizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        pool_sizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        pool_sizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+        pool_sizes[2].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        pool_sizes[2].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
 
         VkDescriptorPoolCreateInfo poolInfo{};
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-        poolInfo.pPoolSizes = poolSizes.data();
+        poolInfo.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+        poolInfo.pPoolSizes = pool_sizes.data();
         poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
 
-        if (vkCreateDescriptorPool(context->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create descriptor pool!");
-        }
+        if (vkCreateDescriptorPool(context->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) 
+            Stream::log(context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create descriptor pool!");
 
         context->self->descriptor_pool = descriptorPool;
     }
@@ -110,7 +110,6 @@ namespace PWEngine::Render
     {
         auto obj = std::make_shared<RenderContext>();
         obj->p_instance = this;
-        obj->log = this->log;
         obj->m_device = std::make_unique<RenderContext::Device>(RenderContext::Device(obj.get()));
         createCommandPool(obj.get());
         createDescriptorPool(obj.get());
@@ -164,7 +163,7 @@ namespace PWEngine::Render
         device_create_info.pNext = &dynamic_rendering_feature;
 
         if (vkCreateDevice(adapter, &device_create_info, nullptr, &device) != VK_SUCCESS)
-            Stream::log(super->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
+            Stream::log(super->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create logical device!");
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
 
@@ -173,7 +172,7 @@ namespace PWEngine::Render
         this->graphics_queue = graphics_queue;
     }
 
-    RenderContext::Window::Window(RenderContext* super, bool is_window_resizable, Utils::Vec2<uint32_t> window_default_resolution, std::string window_title)
+    RenderContext::Window::Window(RenderContext* super, bool is_window_resizable, Vec2<uint32_t> window_default_resolution, std::string window_title)
     {
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, is_window_resizable ? GLFW_TRUE : GLFW_FALSE);
@@ -187,7 +186,6 @@ namespace PWEngine::Render
         this->surface = surface;
     }
     
-
     RenderContext::~RenderContext()
     {
         /* createSwapchain */
@@ -217,22 +215,5 @@ namespace PWEngine::Render
         glfwDestroyWindow(this->m_window->window);
         /* createDevice */
         vkDestroyDevice(this->m_device->device, nullptr);
-    }
-
-    bool RenderContext::checkIsInput(int key)
-    {
-        return glfwGetKey(this->m_window->window, key);
-    }
-
-    void RenderContext::checkMouse(bool& flag)
-    {
-        
-    }
-
-    Utils::Vec2<int> RenderContext::getMouse()
-    {
-        double x, y;
-        glfwGetCursorPos(this->m_window->window, &x, &y);
-        return {(int)x, (int)y};
     }
 }

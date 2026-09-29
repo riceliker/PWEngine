@@ -1,0 +1,107 @@
+Date : 2026-09-29 12:16:28
+Directory : /Users/riceliker/Documents/PWFSP/PWEngine
+Total : 56 files,  3757 codes, 453 comments, 638 blanks, all 4848 lines
+
+Languages
++--------------+------------+------------+------------+------------+------------+
+| language     | files      | code       | comment    | blank      | total      |
++--------------+------------+------------+------------+------------+------------+
+| C++          |         45 |      3,515 |        450 |        575 |      4,540 |
+| Markdown     |          3 |        150 |          0 |         40 |        190 |
+| glsl         |          4 |         48 |          0 |         17 |         65 |
+| PWMake       |          2 |         37 |          3 |          6 |         46 |
+| JSON         |          1 |          5 |          0 |          0 |          5 |
+| Shell Script |          1 |          2 |          0 |          0 |          2 |
++--------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                             | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                |         56 |      3,757 |        453 |        638 |      4,848 |
+| . (Files)                                                                        |          6 |        189 |          3 |         46 |        238 |
+| assets                                                                           |          1 |          5 |          0 |          0 |          5 |
+| engine_pld                                                                       |          5 |        240 |         12 |         42 |        294 |
+| include                                                                          |          7 |        691 |        118 |         87 |        896 |
+| runtime                                                                          |         31 |      2,492 |        319 |        422 |      3,233 |
+| runtime/boot                                                                     |          1 |          0 |          0 |          1 |          1 |
+| runtime/file                                                                     |          4 |        281 |          1 |         27 |        309 |
+| runtime/render                                                                   |         24 |      2,101 |        115 |        386 |      2,602 |
+| runtime/render (Files)                                                           |          2 |        194 |         78 |         39 |        311 |
+| runtime/render/context                                                           |          6 |        590 |          7 |        137 |        734 |
+| runtime/render/input                                                             |          2 |        111 |          0 |         10 |        121 |
+| runtime/render/instance                                                          |          2 |        150 |          5 |         24 |        179 |
+| runtime/render/loop                                                              |          4 |        350 |          8 |         55 |        413 |
+| runtime/render/node3D                                                            |          7 |        488 |          4 |         83 |        575 |
+| runtime/render/pipeline                                                          |          1 |        218 |         13 |         38 |        269 |
+| runtime/stream                                                                   |          2 |        110 |        203 |          8 |        321 |
+| shaders                                                                          |          4 |         48 |          0 |         17 |         65 |
+| shaders/pipeline2D                                                               |          2 |         22 |          0 |          8 |         30 |
+| shaders/pipeline3D                                                               |          2 |         26 |          0 |          9 |         35 |
+| test                                                                             |          2 |         92 |          1 |         24 |        117 |
+| test/ImGui                                                                       |          1 |          0 |          0 |          1 |          1 |
+| test/VikingRoom                                                                  |          1 |         92 |          1 |         23 |        116 |
++----------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| filename                                                                         | language     | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| /Users/riceliker/Documents/PWFSP/PWEngine/AGENT.md                               | Markdown     |         36 |          0 |         10 |         46 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/CONTRIBUTE.md                          | Markdown     |         11 |          0 |          2 |         13 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/README.md                              | Markdown     |        103 |          0 |         28 |        131 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/assets/engine_config.json              | JSON         |          5 |          0 |          0 |          5 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/build.pwm                              | PWMake       |         31 |          0 |          5 |         36 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/build.sh                               | Shell Script |          2 |          0 |          0 |          2 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/config.pwm                             | PWMake       |          6 |          3 |          1 |         10 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/engine_pld/engine.hpp                  | C++          |         53 |          0 |         10 |         63 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/engine_pld/event.cpp                   | C++          |          5 |          0 |          3 |          8 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/engine_pld/export.hpp                  | C++          |         66 |          6 |         11 |         83 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/engine_pld/init.cpp                    | C++          |         40 |          6 |         10 |         56 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/engine_pld/log.cpp                     | C++          |         76 |          0 |          8 |         84 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/api.hpp                        | C++          |         33 |          0 |          6 |         39 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/asset.hpp                      | C++          |          4 |          5 |          5 |         14 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/engine.hpp                     | C++          |          0 |          0 |          1 |          1 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/file.hpp                       | C++          |         13 |          0 |          2 |         15 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/math.hpp                       | C++          |        245 |          5 |         40 |        290 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/render.hpp                     | C++          |        323 |        104 |         27 |        454 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/include/stream.hpp                     | C++          |         73 |          4 |          6 |         83 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/boot/boot.hpp                  | C++          |          0 |          0 |          1 |          1 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/file/_utils.hpp                | C++          |         71 |          0 |         11 |         82 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/file/obj.cpp                   | C++          |         91 |          0 |          4 |         95 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/file/shader.cpp                | C++          |         22 |          0 |          7 |         29 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/file/tga.cpp                   | C++          |         97 |          1 |          5 |        103 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/_render.hpp             | C++          |        117 |         41 |         26 |        184 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/_utils.hpp              | C++          |         77 |         37 |         13 |        127 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/buffer.cpp      | C++          |        158 |          0 |         37 |        195 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/check.cpp       | C++          |         88 |          0 |         23 |        111 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/context.cpp     | C++          |        172 |          6 |         41 |        219 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/loop.cpp        | C++          |         32 |          0 |          8 |         40 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/swapchain.cpp   | C++          |        127 |          1 |         26 |        154 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/context/window.cpp      | C++          |         13 |          0 |          2 |         15 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/input/keyborad.cpp      | C++          |         80 |          0 |          9 |         89 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/input/mouse.cpp         | C++          |         31 |          0 |          1 |         32 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/instance/instance.cpp   | C++          |        130 |          5 |         23 |        158 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/instance/validlayer.cpp | C++          |         20 |          0 |          1 |         21 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/loop/command.cpp        | C++          |         57 |          3 |         10 |         70 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/loop/frame.cpp          | C++          |         37 |          3 |          7 |         47 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/loop/rendering.cpp      | C++          |        111 |          2 |         11 |        124 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/loop/singletimer.cpp    | C++          |        145 |          0 |         27 |        172 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/camera.cpp       | C++          |         76 |          0 |         17 |         93 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/material.cpp     | C++          |         50 |          0 |          9 |         59 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/mesh.cpp         | C++          |         88 |          4 |         20 |        112 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/node.cpp         | C++          |         45 |          0 |         10 |         55 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/texture.cpp      | C++          |         93 |          0 |         16 |        109 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/transform.cpp    | C++          |         87 |          0 |          5 |         92 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/node3D/uniform.cpp      | C++          |         49 |          0 |          6 |         55 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/render/pipeline/pipeline.cpp   | C++          |        218 |         13 |         38 |        269 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/stream/config.cpp              | C++          |          0 |        203 |          3 |        206 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/runtime/stream/log.cpp                 | C++          |        110 |          0 |          5 |        115 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/shaders/pipeline2D/shader.frag         | glsl         |          8 |          0 |          4 |         12 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/shaders/pipeline2D/shader.vert         | glsl         |         14 |          0 |          4 |         18 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/shaders/pipeline3D/shader.frag         | glsl         |          8 |          0 |          4 |         12 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/shaders/pipeline3D/shader.vert         | glsl         |         18 |          0 |          5 |         23 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/test/ImGui/main.cpp                    | C++          |          0 |          0 |          1 |          1 |
+| /Users/riceliker/Documents/PWFSP/PWEngine/test/VikingRoom/main.cpp               | C++          |         92 |          1 |         23 |        116 |
+| Total                                                                            |              |      3,757 |        453 |        638 |      4,848 |
++----------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+

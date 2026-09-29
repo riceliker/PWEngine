@@ -10,7 +10,7 @@ namespace PWEngine::Render
 
     }
 
-    std::shared_ptr<Texture2D> RenderContext::createTexture2D(Utils::ImageRGBA8* surface)
+    std::shared_ptr<Texture2D> RenderContext::createTexture2D(ImageRGBA8* surface)
     {
         auto obj = std::make_shared<Texture2D>();
         obj->p_context = this;
@@ -20,7 +20,7 @@ namespace PWEngine::Render
         return obj;
     }
 
-    void Texture2D::setTexture2D(Utils::ImageRGBA8* image)
+    void Texture2D::setTexture2D(ImageRGBA8* image)
     {
         size_t size = image->size.x * image->size.y * image->depth / 8;
         this->self->mip_level = std::log(std::max(image->size.x, image->size.y));
@@ -63,9 +63,9 @@ namespace PWEngine::Render
         viewInfo.subresourceRange.levelCount = this->self->mip_level;
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
-        if (vkCreateImageView(this->p_context->m_device->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture image view!");
-        }
+        if (vkCreateImageView(this->p_context->m_device->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS)
+            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create texture image view!");
+
         this->self->texture_image_view = texture_image_view;
     }
 
@@ -92,9 +92,8 @@ namespace PWEngine::Render
         samplerInfo.mipLodBias = 0.0f;
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
-        if (vkCreateSampler(this->p_context->m_device->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create texture sampler!");
-        }
+        if (vkCreateSampler(this->p_context->m_device->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS)
+            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create texture sampler!");
 
         this->self->texture_sampler = texture_sampler;
     }

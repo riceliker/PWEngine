@@ -17,7 +17,7 @@ $same($is_macos, "macos", __platform__)
 ;
 
 @files("test")
-	add_file("test/main.cpp")
+	add_file("test/VikingRoom/main.cpp")
 ;
 
 @project("PWEngine", "shared")

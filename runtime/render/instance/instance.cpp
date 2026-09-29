@@ -25,7 +25,7 @@ namespace PWEngine::Render
         this->self = std::make_unique<Impl>();
         this->is_debug = false;
         this->application_name = "unknown";
-        this->application_version = Utils::Vec3<uint32_t>(0, 0, 0);
+        this->application_version = Vec3<uint32_t>(0, 0, 0);
         this->log = log;
     }
 
@@ -63,7 +63,7 @@ namespace PWEngine::Render
         this->application_name = name;
     }
 
-    void RenderInstance::setApplicationVersion(Utils::Vec3<uint32_t> version)
+    void RenderInstance::setApplicationVersion(Vec3<uint32_t> version)
     {
         this->application_version = version;
     }
