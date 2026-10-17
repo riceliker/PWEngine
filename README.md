@@ -2,6 +2,17 @@
 The game engine for game Physic World.
 Welcome to use PWEngine. It is Lite, Easy, Editable.
 
+## Different
+What the different of other game engine:
+1. PWEngine is both Engine and Library.
+2. PWEngine is modularization.
+3. PWEngine is self-select. Choose just you want.
+
+## Dependence
+1. POSIX (Windows use MSYS2)
+2. gcc/clang compiler
+3. vulkan API (macOS use MoltenVK)
+
 ## Platform
 No DRM Prison:
 1. PWEngine is **never** support for mobile device.  
@@ -20,7 +31,7 @@ You can allocate you code freely in that cases:
 1. Include only **public** header file and link the dynamic library.  
 2. Include only **public** header file and link the static library with object file list. 
 
-You should make you program as LGPL3.0/GPL3.0 too.
-1. Include the **private** header file. The all file `impl.hpp` is private header file.  
+You should make you program as GPL3.0 too.
+1. Include the **private** header file. The all file `_xxx.hpp` is private header file.  
 2. Modify the engine source code. Write the engine plug-in.  
 
