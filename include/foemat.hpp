@@ -25,9 +25,15 @@ namespace PWEngine
 
     struct Model3D
     {
-        
         std::vector<Vertex3D> vertices;
         std::vector<uint32_t> indices;
+    };
+
+    struct Vertex2D
+    {
+        Vec2<float> position;
+        Vec4<float> color;
+        Vec2<float> uv;
     };
 
     struct ImageRGBA8

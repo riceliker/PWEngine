@@ -1,20 +1,8 @@
 #include "render.hpp"
 #include "render/_render.hpp"
-#include "render/_utils.hpp"
-#include "file.hpp"
-#include <cstddef>
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <vector>
 
 namespace PWEngine::Render 
 {
-    Pipeline3D::Pipeline3D() : self(std::make_unique<Impl>())
-    {
-
-    }
-
     static inline std::optional<VkShaderModule> createShaderModule(const std::vector<char>& code, VkDevice device) {
         VkShaderModuleCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -29,8 +17,9 @@ namespace PWEngine::Render
         return shaderModule;
     }
 
-    std::unique_ptr<Pipeline3D> RenderContext::createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos_ext, ShaderPath path)
-    {   
+    Pipeline2D::Pipeline2D(RenderContext* super) : self(std::make_unique<Impl>())
+    {
+        this->p_context = super;
         /* ----- descriptor ----- */
         std::vector<std::vector<ShaderLayoutInfo>> infos;
 
@@ -38,19 +27,10 @@ namespace PWEngine::Render
         infos.push_back({
             {0, 1, DescriptorType::Storage, ShaderType::Vertex}
         });
-        /* Material set = 1*/
-        infos.push_back({
-            {0, 1, DescriptorType::Sampler, ShaderType::Fragment}
-        });
-        /* Camera3D set = 2 */
+        /* Camera3D set = 1 */
         infos.push_back({
             {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
         });
-
-        for (const auto info_ext : infos_ext)
-        {
-            infos.push_back(info_ext);
-        }
 
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
         std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
@@ -97,8 +77,8 @@ namespace PWEngine::Render
             layout_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
             layout_info.pBindings = layout_bindings.data();
 
-            if (vkCreateDescriptorSetLayout(this->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-                Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create descriptor set layout!");
+            if (vkCreateDescriptorSetLayout(this->p_context->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
+                Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create descriptor set layout!");
             descriptor_set_layouts.push_back(descriptor_set_layout);            
         }
         
@@ -108,16 +88,16 @@ namespace PWEngine::Render
         pipeline_layout_info.pSetLayouts = descriptor_set_layouts.data();
 
         VkPipelineLayout pipeline_layout;
-        if (vkCreatePipelineLayout(this->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
+        if (vkCreatePipelineLayout(this->p_context->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         
         /* ----- shader ----- */
-        auto vertex_shader_code = PWEngine::File::shaderReader(this->p_instance->log, path.vertex_shader).value();
-        auto fragment_shader_code = PWEngine::File::shaderReader(this->p_instance->log, path.fragment_shader).value();
+        auto vertex_shader_code = PWEngine::File::shaderReader(this->p_context->p_instance->log, path.vertex_shader).value();
+        auto fragment_shader_code = PWEngine::File::shaderReader(this->p_context->p_instance->log, path.fragment_shader).value();
 
-        VkShaderModule vertShaderModule = createShaderModule(vertex_shader_code, this->m_device->device).value();
-        VkShaderModule fragShaderModule = createShaderModule(fragment_shader_code, this->m_device->device).value();
+        VkShaderModule vertShaderModule = createShaderModule(vertex_shader_code, this->p_context->m_device->device).value();
+        VkShaderModule fragShaderModule = createShaderModule(fragment_shader_code, this->p_context->m_device->device).value();
 
         VkPipelineShaderStageCreateInfo vertex_shader_stage_info{};
         vertex_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -214,7 +194,7 @@ namespace PWEngine::Render
         VkPipelineRenderingCreateInfo rendering_create_info{};
         rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
         rendering_create_info.colorAttachmentCount = 1;
-        rendering_create_info.pColorAttachmentFormats = &this->m_swapchain->swapchain_image_format;
+        rendering_create_info.pColorAttachmentFormats = &this->p_context->m_swapchain->swapchain_image_format;
         rendering_create_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
         rendering_create_info.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
         
@@ -237,30 +217,26 @@ namespace PWEngine::Render
         pipeline_info.pDepthStencilState = &depth_stencil;
 
         VkPipeline graphics_pipeline;
-        if (vkCreateGraphicsPipelines(this->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
+        if (vkCreateGraphicsPipelines(this->p_context->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
+            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
 
         for (auto shader_module : shader_stages)
         {
-            vkDestroyShaderModule(this->m_device->device, shader_module.module, nullptr);
+            vkDestroyShaderModule(this->p_context->m_device->device, shader_module.module, nullptr);
         }
 
-        std::unique_ptr<Pipeline3D> obj = std::make_unique<Pipeline3D>();
-        obj->p_context = this;
-        obj->self->graphics_pipeline = graphics_pipeline;
-        obj->self->pipeline_layout = pipeline_layout;
-        obj->self->descriptor_set_layouts = std::move(descriptor_set_layouts);
-        return obj;
+        self->graphics_pipeline = graphics_pipeline;
+        self->pipeline_layout = pipeline_layout;
+        self->descriptor_set_layouts = std::move(descriptor_set_layouts);
     }
 
-    Pipeline3D::~Pipeline3D()
-    {
-        vkDestroyPipeline(this->p_context->m_device->device, this->self->graphics_pipeline, nullptr);
-        vkDestroyPipelineLayout(this->p_context->m_device->device, this->self->pipeline_layout, nullptr);
-        for (const auto& layout : this->self->descriptor_set_layouts)
-        {
-            vkDestroyDescriptorSetLayout(this->p_context->m_device->device, layout, nullptr);
-        }
-    } 
-
+    // Pipeline2D::~Pipeline2D()
+    // {
+    //     vkDestroyPipeline(this->p_context->m_device->device, this->self->graphics_pipeline, nullptr);
+    //     vkDestroyPipelineLayout(this->p_context->m_device->device, this->self->pipeline_layout, nullptr);
+    //     for (const auto& layout : this->self->descriptor_set_layouts)
+    //     {
+    //         vkDestroyDescriptorSetLayout(this->p_context->m_device->device, layout, nullptr);
+    //     }
+    // } 
 }

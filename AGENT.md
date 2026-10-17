@@ -18,10 +18,10 @@ That's mean when you decided to switch other agent. Sorry, The context, workflow
 When program developing, the phenomenon will become more and more serious.
 Your program is control by AI company. Not you. I'm so afford this thing.
 
-So in this project. Use AI is allow. But AI can not manager the developing of program.
-The first thing is prohibiting this program from using vibe coding. The vibe coding mean coding with natural language and then make developer abandon the control of program. They know nothing about this program.
-Secondly, Any core of project will must design by human. When we lost the control of the architecture of program. We will lost the reconstitution ability.
-Thirdly, Use local LLM, Not AI server. Do not depend on the AI serve. Use local LLM as mush as possible.
+So in this project. **Use AI is allow**. But AI can not manager the developing of program.
+The first thing is **prohibiting this program from using vibe coding**. The vibe coding mean coding with natural language and then make developer abandon the control of program. They know nothing about this program.
+Secondly, Any core of project will must **design by human**. When we lost the control of the architecture of program. We will lost the reconstitution ability.
+Thirdly, **Use local LLM, Not AI server**. Do not depend on the AI serve. Use local LLM as much as possible.
 
 ## Use AI controllable
 1. You should read all code and understand what.

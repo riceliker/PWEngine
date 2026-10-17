@@ -15,7 +15,7 @@
 #pragma once
 #include "stream.hpp"
 #include "math.hpp"
-#include "api.hpp"
+#include "format.hpp"
 
 #include <concepts>
 #include <cstddef>
@@ -46,7 +46,7 @@ class RenderInstance;
 /*    |            |                                     |                 |                  |         */
 /*    V            V                                     V                 V                  |         */
 class Command;/*<---------------------------------------------------------------------------------------*/
-
+class Node2D; class Camera2D; class Pipeline2D;
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
     ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
@@ -214,32 +214,8 @@ class Command;/*<---------------------------------------------------------------
             delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
         }
         this->waitIdle();
-    } 
-/*
-    ████████   ███  ████████   █████████  ███       ███  ███     ██  ░█████████
-    ██    ▓██  ███  ███    ██▒ ███        ███       ███  █████   ██  ░██
-    ██    ███  ███  ███    ██░ █████████  ███       ███  ██████  ██  ░████████
-    ████████   ███  ████████   ███        ███       ███  ███ ▓██ ██  ░██
-    ██         ███  ███        ███        ███       ███  ███   ████  ░██
-    ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
-*/       
-
-    class Pipeline3D
-    {
-    private:
-    public:
-        RenderContext* p_context;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        /* Constructor */
-        Pipeline3D();
-        ~Pipeline3D();
-        std::unique_ptr<Mesh3D> createMesh3D(Model3D* model);
-        std::unique_ptr<Material> createMaterial();
-        std::unique_ptr<Camera3D> createCamera();
-        friend class RenderContext;
-    };
-
+    }        
+    
     class Uniform
     {
     private:
@@ -275,13 +251,69 @@ class Command;/*<---------------------------------------------------------------
     };
 
 /*
-   ▒███    ██    ███████    ████████    █████████
-   ▒████   ██   ███    ███  ███    ███  ███
-   ▒██▒██  ██  ███      ██░ ███     ██  ████████
-   ▒██  ██ ██  ███      ██░ ███     ██  ███
-   ▒██   ████   ██▓    ███  ███    ███  ███
-   ▒██    ███    ███████░   ████████░   █████████
+    ███    ██▓   ▓███████   ▒████████    ████████▒  ██████  ▓████████
+    ████   ██▓  ███    ███  ▒██    ███   ██        ██▒  ███ ▓██    ███
+    ██░██  ██▓ ███      ███ ▒██     ███  ████████       ███ ▓██     ███
+    ██  ██░██▓ ███      ███ ▒██     ███  ██           ███   ▓██     ███
+    ██   ████▓  ███    ███  ▒██    ███   ██        ▓██▒     ▓██    ███
+    ██    ███▓   ████████   ▒████████    █████████░████████ ▓████████
+*/
+
+    class Pipeline2D
+    {
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        Pipeline2D();
+        ~Pipeline2D();
+        std::unique_ptr<Node2D> createNode2D();
+        std::unique_ptr<Camera2D> createCamera();
+        friend class RenderContext;
+    };
+
+    class Node2D
+    {
+    private:
+        std::vector<Vertex2D> vertices;
+        std::optional<Texture2D> texture;
+    public:
+        Pipeline2D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set; 
+        Node2D();
+        ~Node2D();
+    };
+
+    class Camera2D
+    {
+
+    };
+
+/*
+    ███    ██▓   ▓███████   ▒████████    ████████▒  █████▒  ▓████████
+    ████   ██▓  ███    ███  ▒██    ███   ██        ██   ███ ▓██    ███
+    ██░██  ██▓ ███      ███ ▒██     ███  ████████     ▒███  ▓██     ███
+    ██  ██░██▓ ███      ███ ▒██     ███  ██             ███ ▓██     ███
+    ██   ████▓  ███    ███  ▒██    ███   ██       ░██   ▒██ ▓██    ███
+    ██    ███▓   ████████   ▒████████    █████████ ▒██████  ▓████████
 */ 
+
+    class Pipeline3D
+    {
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        Pipeline3D(RenderContext* super, std::vector<std::vector<ShaderLayoutInfo>> infos_ext, ShaderPath path);
+        ~Pipeline3D();
+        std::unique_ptr<Mesh3D> createMesh3D(Model3D* model);
+        std::unique_ptr<Material> createMaterial();
+        std::unique_ptr<Camera3D> createCamera();
+        friend class RenderContext;
+    };
 
     class Transform3D
     {

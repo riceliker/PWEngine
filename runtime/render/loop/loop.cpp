@@ -1,5 +1,5 @@
 #include "render.hpp"
-#include "./render/_render.hpp"
+#include "render/_render.hpp"
 #include "stream.hpp"
 #include <cstddef>
 #include <cstdint>
