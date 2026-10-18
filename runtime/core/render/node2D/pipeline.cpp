@@ -1,21 +1,82 @@
 #include "core/render.hpp"
 #include "core/render/_render.hpp"
+#include "core/render/_utils.hpp"
+#include "shaderc/shaderc.hpp"
+#include <cstdint>
+#include <string>
+#include <vector>
 
 namespace PWEngine::Render 
 {
-    static inline std::optional<VkShaderModule> createShaderModule(const std::vector<char>& code, VkDevice device) {
-        VkShaderModuleCreateInfo createInfo{};
-        createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        createInfo.codeSize = code.size();
-        createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
+    static inline std::optional<std::vector<uint32_t>> compilerShader(const std::string& source, const shaderc_shader_kind kind, const std::string& name)
+    {
+        shaderc::Compiler compiler;
+        shaderc::CompileOptions options;
+
+        options.SetOptimizationLevel(shaderc_optimization_level_performance);
+        options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_4);
+        options.SetSourceLanguage(shaderc_source_language_glsl);
+
+        const shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(source, kind, name.c_str(), options);
+
+        if (result.GetCompilationStatus() != shaderc_compilation_status_success) 
+        {
+            printf("%s", result.GetErrorMessage().c_str());
+            return std::nullopt;
+        }
+
+        std::vector<uint32_t> spv = {result.begin(), result.end()};
+
+        return spv;
+    }
+
+    static inline std::optional<VkShaderModule> createShaderModule(const std::vector<uint32_t>& code, VkDevice device) {
+        VkShaderModuleCreateInfo create_info{};
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.codeSize = code.size();
+        create_info.pCode = code.data();
 
         VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        if (vkCreateShaderModule(device, &create_info, nullptr, &shaderModule) != VK_SUCCESS) {
             return std::nullopt;
         }
 
         return shaderModule;
     }
+
+    const std::string vertex_shader = R"(
+        #version 450
+        layout(set = 0, binding = 0) uniform Camera2D {
+            mat4 view;
+        } camera;
+
+        layout(location = 0) in vec2 in_position;
+        layout(location = 1) in vec4 in_color;
+        layout(location = 2) in vec2 in_uv;
+
+        layout(location = 0) out vec4 frag_color;
+        layout(location = 1) out vec2 frag_uv;
+
+        void main() {
+            gl_Position = camera.view * vec4(in_position, 0.0, 1.0);
+            frag_color = in_color;
+            frag_uv = in_uv;
+        }
+    )";
+
+    const std::string fragment_shader = R"(
+        #version 450
+        layout(set = 1, binding = 0) uniform sampler2D texture_sampler;
+
+        layout(location = 0) in vec4 frag_color;
+        layout(location = 1) in vec2 frag_uv;
+
+        layout(location = 0) out vec4 out_color;
+
+        void main() {
+            out_color = frag_color * texture(texture_sampler, frag_uv);
+        }
+    )";
 
     Pipeline2D::Pipeline2D(RenderContext* super) : self(std::make_unique<Impl>())
     {
@@ -23,11 +84,11 @@ namespace PWEngine::Render
         /* ----- descriptor ----- */
         std::vector<std::vector<ShaderLayoutInfo>> infos;
 
-        /* Mesh3D set = 0 */
+        /* Mesh2D set = 0 */
         infos.push_back({
             {0, 1, DescriptorType::Storage, ShaderType::Vertex}
         });
-        /* Camera3D set = 1 */
+        /* Camera2D set = 1 */
         infos.push_back({
             {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
         });
@@ -93,8 +154,8 @@ namespace PWEngine::Render
         }
         
         /* ----- shader ----- */
-        auto vertex_shader_code = PWEngine::File::shaderReader(this->p_context->p_instance->log, path.vertex_shader).value();
-        auto fragment_shader_code = PWEngine::File::shaderReader(this->p_context->p_instance->log, path.fragment_shader).value();
+        auto vertex_shader_code = compilerShader(vertex_shader, shaderc_glsl_vertex_shader, "main").value();
+        auto fragment_shader_code = compilerShader(fragment_shader, shaderc_glsl_fragment_shader, "main").value();
 
         VkShaderModule vertShaderModule = createShaderModule(vertex_shader_code, this->p_context->m_device->device).value();
         VkShaderModule fragShaderModule = createShaderModule(fragment_shader_code, this->p_context->m_device->device).value();
@@ -114,8 +175,8 @@ namespace PWEngine::Render
         std::vector<VkPipelineShaderStageCreateInfo> shader_stages = {vertex_shader_stage_info, fragment_shader_stage_info};
         
         /* ----- Input ----- */
-        auto bind = getBindingDescription<Vertex3D>();
-        auto attribute = getAttributeDescriptions<Vertex3D>();
+        auto bind = getBindingDescription<Vertex2D>();
+        auto attribute = getAttributeDescriptions<Vertex2D>();
         VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
         vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInputInfo.vertexBindingDescriptionCount = 1;
@@ -176,19 +237,6 @@ namespace PWEngine::Render
         colorBlending.blendConstants[2] = 0.0f;
         colorBlending.blendConstants[3] = 0.0f;
 
-        /* ----- depth ----- */
-        VkPipelineDepthStencilStateCreateInfo depth_stencil{};
-        depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depth_stencil.depthTestEnable = VK_TRUE;
-        depth_stencil.depthWriteEnable = VK_TRUE;
-        depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
-        depth_stencil.depthBoundsTestEnable = VK_FALSE;
-        depth_stencil.minDepthBounds = 0.0f; // Optional
-        depth_stencil.maxDepthBounds = 1.0f; // Optional
-        depth_stencil.stencilTestEnable = VK_FALSE;
-        depth_stencil.front = {}; // Optional
-        depth_stencil.back = {}; // Optional
-
         /* ----- create ----- */
 
         VkPipelineRenderingCreateInfo rendering_create_info{};
@@ -214,7 +262,7 @@ namespace PWEngine::Render
         pipeline_info.renderPass = VK_NULL_HANDLE;
         pipeline_info.subpass = 0;
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-        pipeline_info.pDepthStencilState = &depth_stencil;
+        pipeline_info.pDepthStencilState = VK_NULL_HANDLE;
 
         VkPipeline graphics_pipeline;
         if (vkCreateGraphicsPipelines(this->p_context->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
@@ -230,13 +278,13 @@ namespace PWEngine::Render
         self->descriptor_set_layouts = std::move(descriptor_set_layouts);
     }
 
-    // Pipeline2D::~Pipeline2D()
-    // {
-    //     vkDestroyPipeline(this->p_context->m_device->device, this->self->graphics_pipeline, nullptr);
-    //     vkDestroyPipelineLayout(this->p_context->m_device->device, this->self->pipeline_layout, nullptr);
-    //     for (const auto& layout : this->self->descriptor_set_layouts)
-    //     {
-    //         vkDestroyDescriptorSetLayout(this->p_context->m_device->device, layout, nullptr);
-    //     }
-    // } 
+    Pipeline2D::~Pipeline2D()
+    {
+        vkDestroyPipeline(this->p_context->m_device->device, this->self->graphics_pipeline, nullptr);
+        vkDestroyPipelineLayout(this->p_context->m_device->device, this->self->pipeline_layout, nullptr);
+        for (const auto& layout : this->self->descriptor_set_layouts)
+        {
+            vkDestroyDescriptorSetLayout(this->p_context->m_device->device, layout, nullptr);
+        }
+    } 
 }

@@ -7,7 +7,7 @@ The other text should be ignored.
 ## Forward
 
 I am not against AI. But we should reject the AI serve from AI company.
-When we project is dependent on AI company serve and we can not write any code without AI Company, our program will because AI Company's Program.
+When we project is dependent on AI company serve and we can not write any code without AI Company. Our program will became an AI Company's Program.
 We will lost the control of program. We just donate our program for AI company!
                                                         - riceliker
 

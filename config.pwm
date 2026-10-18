@@ -6,6 +6,6 @@ shaderc_header=/opt/homebrew/opt/shaderc/include
 # library
 glfw_library=/opt/homebrew/opt/GLFW/lib/libGLFW.dylib
 vulkan_library=/opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib
-shaderc_library=/opt/homebrew/opt/shaderc/lib/libshaderc.a
+shaderc_library=/opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib
 # if macos
 molten_vk_library=/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib

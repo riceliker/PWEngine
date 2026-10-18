@@ -1,6 +1,7 @@
 # PWEngine
 The game engine for game Physic World.
 Welcome to use PWEngine. It is Lite, Easy, Editable.
+PWEngine support 2D(Main) and 3D Game Developing.
 
 ## Different
 What the different of other game engine:
@@ -8,10 +9,11 @@ What the different of other game engine:
 2. PWEngine is modularization.
 3. PWEngine is self-select. Choose just you want.
 
-## Dependence
-1. POSIX (Windows use MSYS2)
-2. gcc/clang compiler
-3. vulkan API (macOS use MoltenVK)
+## File Support
+1. Image
+tga(native) png(stb) jpg(stb) 
+2. Audio
+ogg(stb) wav(midi-audio) midi(midi-audio)
 
 ## Platform
 No DRM Prison:
@@ -26,7 +28,12 @@ Such as Xbox, PlayStation and Switch.
 | Arch | amd64,arm64 | arm64 | amd64,arm64 |
 
 ## License
-PWEngine use LGPL3.0 + GPL3.0.  
+Simply Mean:
+Use header file in include folder to create game. -> Allow Close Source;
+Modify engine or create plug-in. -> Should Open Source.
+
+PWEngine use LGPL3.0 + GPL3.0 license.  
+
 You can allocate you code freely in that cases:  
 1. Include only **public** header file and link the dynamic library.  
 2. Include only **public** header file and link the static library with object file list. 

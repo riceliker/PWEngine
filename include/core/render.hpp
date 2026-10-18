@@ -266,7 +266,7 @@ class Node2D; class Camera2D; class Pipeline2D;
         struct Impl;
         std::unique_ptr<Impl> self;
         /* Constructor */
-        Pipeline2D();
+        Pipeline2D(RenderContext* super);
         ~Pipeline2D();
         std::unique_ptr<Node2D> createNode2D();
         std::unique_ptr<Camera2D> createCamera();
