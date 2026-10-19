@@ -19,7 +19,7 @@ namespace PWEngine::Render
         return VK_FALSE;
     }
 
-    RenderInstance::RenderInstance(Stream::LogSystem* log)
+    RenderInstance::RenderInstance(LogSystem* log)
     {
         glfwInit();
         this->self = std::make_unique<Impl>();
@@ -52,7 +52,7 @@ namespace PWEngine::Render
             }
             if (!layer_found)
             {
-                Stream::log(this->log, Stream::LogType::Warn, Stream::LogFrom::VulkanRender, "validation layers requested, but not available!");
+                log(this->log, LogType::Warn, LogFrom::VulkanRender, "validation layers requested, but not available!");
                 this->is_debug = false;
             }
         }
@@ -126,7 +126,7 @@ namespace PWEngine::Render
         }
         /* make instance */
         if (vkCreateInstance(&instance_create_info, nullptr, &instance) != VK_SUCCESS)
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create instance!");
+            log(this->log, LogType::Error, LogFrom::VulkanRender, "failed to create instance!");
 
         this->self->instance = instance;
         /* get best adapter */
@@ -134,7 +134,7 @@ namespace PWEngine::Render
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, nullptr);
 
         if (adapter_count == 0)
-            Stream::log(this->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to find GPUs with Vulkan support!");
+            log(this->log, LogType::Error, LogFrom::VulkanRender, "failed to find GPUs with Vulkan support!");
 
         std::vector<VkPhysicalDevice> adapters(adapter_count);
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, adapters.data());

@@ -28,7 +28,7 @@ namespace PWEngine::File
         uint8_t image_descriptor;
     };
         
-    std::unique_ptr<ImageRGBA8> tgaReader(Stream::LogSystem* log, std::string load_path)
+    std::unique_ptr<ImageRGBA8> tgaReader(LogSystem* log, std::string load_path)
     {
         auto file_maybe = readBinaryFile(log, load_path);
         size_t offset = 0;
@@ -87,7 +87,7 @@ namespace PWEngine::File
             }
             else 
             {
-                Stream::log(log, Stream::LogType::Warn, Stream::LogFrom::FileIO ,"The pixel format is not support.");
+                log(log, LogType::Warn, LogFrom::FileIO ,"The pixel format is not support.");
             }
             std::unique_ptr<ImageRGBA8> obj = std::make_unique<ImageRGBA8>();
             std::vector<uint8_t> data;

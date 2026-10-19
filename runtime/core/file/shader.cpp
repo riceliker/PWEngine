@@ -5,13 +5,13 @@
 
 namespace PWEngine::File 
 {
-    std::optional<std::vector<char>> shaderReader(Stream::LogSystem* log, std::string file_path)
+    std::optional<std::vector<char>> shaderReader(LogSystem* log, std::string file_path)
     {
         std::ifstream file(file_path, std::ios::ate | std::ios::binary);
 
         if (!file.is_open()) 
         {
-            Stream::log(log, Stream::LogType::Warn, Stream::LogFrom::FileIO, "failed to open file!");
+            log(log, LogType::Warn, LogFrom::FileIO, "failed to open file!");
             return std::nullopt;
         }
 

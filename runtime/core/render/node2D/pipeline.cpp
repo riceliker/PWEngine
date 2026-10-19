@@ -139,7 +139,7 @@ namespace PWEngine::Render
             layout_info.pBindings = layout_bindings.data();
 
             if (vkCreateDescriptorSetLayout(this->p_context->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-                Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create descriptor set layout!");
+                log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
             descriptor_set_layouts.push_back(descriptor_set_layout);            
         }
         
@@ -150,7 +150,7 @@ namespace PWEngine::Render
 
         VkPipelineLayout pipeline_layout;
         if (vkCreatePipelineLayout(this->p_context->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create pipeline layout!");
+            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         
         /* ----- shader ----- */
@@ -266,7 +266,7 @@ namespace PWEngine::Render
 
         VkPipeline graphics_pipeline;
         if (vkCreateGraphicsPipelines(this->p_context->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
-            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create graphics pipeline!");
+            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create graphics pipeline!");
 
         for (auto shader_module : shader_stages)
         {

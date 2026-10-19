@@ -29,7 +29,7 @@ namespace PWEngine::Render
         obj->self->command_buffer = &this->self->command_buffers[swapchain_loop_frame_index];
 
         if (vkBeginCommandBuffer(*obj->self->command_buffer, &beginInfo) != VK_SUCCESS) {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to begin recording command buffer!");
+            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to begin recording command buffer!");
         }
         
         return obj;
@@ -38,7 +38,7 @@ namespace PWEngine::Render
     void RenderContext::commandEnd(Command* command)
     {
         if (vkEndCommandBuffer(*command->self->command_buffer) != VK_SUCCESS) {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to record command buffer!");
+            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to record command buffer!");
         }
         delete command;
     }

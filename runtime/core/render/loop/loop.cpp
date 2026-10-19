@@ -15,7 +15,7 @@ namespace PWEngine::Render
         if (result == VK_ERROR_OUT_OF_DATE_KHR) 
             this->recreateSwapchain();
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)  
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to acquire swap chain image!");
+            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to acquire swap chain image!");
 
         vkResetFences(this->m_device->device, 1, &this->self->in_flight_fences[swapchain_loop_frame_index]);
         vkResetCommandBuffer(this->self->command_buffers[swapchain_loop_frame_index], /*VkCommandBufferResetFlagBits*/ 0);

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 riceliker and all contributors
 #pragma once
 
 #include <condition_variable>
@@ -10,7 +12,7 @@
 #include <unordered_map>
 
 
-namespace PWEngine::Stream
+namespace PWEngine
 {
     /* Log System
     If you want to use log system. You should create LogSystem.
@@ -57,7 +59,6 @@ namespace PWEngine::Stream
             ptr->send(type, from, message);
     }
     
-
     namespace Config
     {
         class ConfigFile

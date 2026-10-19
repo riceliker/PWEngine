@@ -64,7 +64,7 @@ namespace PWEngine::Render
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
         if (vkCreateImageView(this->p_context->m_device->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS)
-            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create texture image view!");
+            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create texture image view!");
 
         this->self->texture_image_view = texture_image_view;
     }
@@ -93,7 +93,7 @@ namespace PWEngine::Render
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
         if (vkCreateSampler(this->p_context->m_device->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS)
-            Stream::log(this->p_context->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to create texture sampler!");
+            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create texture sampler!");
 
         this->self->texture_sampler = texture_sampler;
     }

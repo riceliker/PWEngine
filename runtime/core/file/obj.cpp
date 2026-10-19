@@ -28,12 +28,12 @@ namespace PWEngine::File
         return out;
     }
 
-    std::unique_ptr<Model3D> objReader(Stream::LogSystem* log, std::string load_path)
+    std::unique_ptr<Model3D> objReader(LogSystem* log, std::string load_path)
     {
         std::fstream file(load_path);
         if (!file.is_open())
         {
-            Stream::log(log, Stream::LogType::Warn, Stream::LogFrom::FileIO, "Can no open the "+ load_path +" file");
+            log(log, LogType::Warn, LogFrom::FileIO, "Can no open the "+ load_path +" file");
         }
         std::string text_line;
         std::vector<Vertex3D> vertices;

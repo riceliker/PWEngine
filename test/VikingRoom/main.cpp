@@ -98,7 +98,7 @@ int main()
         cmd->setPipeline(pipeline.get());
 
         total += delta;
-        //PWEngine::Stream::log(instance.log, PWEngine::Stream::LogType::Debug, PWEngine::Stream::LogFrom::Debug, std::to_string(1/delta));
+        //PWEngine::log(instance.log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(1/delta));
         loops++;
 
         camera->updateData(cmd);

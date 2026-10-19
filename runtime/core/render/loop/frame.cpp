@@ -29,7 +29,7 @@ namespace PWEngine::Render
         submit_info.pSignalSemaphores = signal_semaphores;
 
         if (vkQueueSubmit(this->m_device->graphics_queue, 1, &submit_info, this->self->in_flight_fences[swapchain_loop_frame_index]) != VK_SUCCESS) {
-            Stream::log(this->p_instance->log, Stream::LogType::Error, Stream::LogFrom::VulkanRender, "failed to submit draw command buffer!");
+            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to submit draw command buffer!");
         }
 
         VkPresentInfoKHR present_info{};
