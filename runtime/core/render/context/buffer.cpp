@@ -15,7 +15,7 @@ namespace PWEngine::Render
                 return i;
             }
         }
-        log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
+        sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
         return 0;
     }
 
@@ -29,7 +29,7 @@ namespace PWEngine::Render
 
         if (vkCreateBuffer(context->m_device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
         {
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
         }
 
         VkMemoryRequirements mem_requirements;
@@ -41,7 +41,7 @@ namespace PWEngine::Render
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
 
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
     }
@@ -55,7 +55,7 @@ namespace PWEngine::Render
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateBuffer(context->m_device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
 
         VkMemoryRequirements mem_requirements;
         vkGetBufferMemoryRequirements(context->m_device->device, buffer, &mem_requirements);
@@ -66,7 +66,7 @@ namespace PWEngine::Render
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
 
 
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
@@ -81,7 +81,7 @@ namespace PWEngine::Render
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         if (vkCreateBuffer(context->m_device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
         
 
         VkMemoryRequirements mem_requirements;
@@ -93,7 +93,7 @@ namespace PWEngine::Render
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
         
         vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
     }
@@ -117,7 +117,7 @@ namespace PWEngine::Render
         image_info.flags = 0; // Optional
 
         if (vkCreateImage(context->m_device->device, &image_info, nullptr, &image) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
         
         VkMemoryRequirements mem_requirements;
         vkGetImageMemoryRequirements(context->m_device->device, image, &mem_requirements);
@@ -128,7 +128,7 @@ namespace PWEngine::Render
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
 
         vkBindImageMemory(context->m_device->device, image, memory, 0);
     }
@@ -152,7 +152,7 @@ namespace PWEngine::Render
         image_info.flags = 0; // Optional
 
         if (vkCreateImage(context->m_device->device, &image_info, nullptr, &image) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
 
         VkMemoryRequirements mem_requirements;
         vkGetImageMemoryRequirements(context->m_device->device, image, &mem_requirements);
@@ -163,7 +163,7 @@ namespace PWEngine::Render
         alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT); //3
 
         if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
 
         vkBindImageMemory(context->m_device->device, image, memory, 0);
     }
@@ -181,7 +181,7 @@ namespace PWEngine::Render
 
         descriptor_set.resize(MAX_FRAMES_IN_FLIGHT);
         if (vkAllocateDescriptorSets(pipeline->p_context->m_device->device, &alloc_info, descriptor_set.data()) != VK_SUCCESS) 
-            log(pipeline->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate descriptor sets!");
+            sendLog(pipeline->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate descriptor sets!");
 
         return descriptor_set;
     }

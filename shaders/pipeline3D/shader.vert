@@ -1,6 +1,6 @@
 #version 450
 
-layout(set = 0, binding = 0, std430) buffer ModelUniform {
+layout(set = 0, binding = 0, std430) readonly buffer ModelUniform {
     mat4 model[];
 } model;
 

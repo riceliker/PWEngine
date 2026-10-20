@@ -150,6 +150,11 @@ namespace PWEngine::Render
         std::vector<VkDescriptorSet> descriptor_sets;
     };
 
+    struct Layer2D::DescriptorSet
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+
     struct Camera3D::DescriptorSet
     {
         std::vector<VkDescriptorSet> descriptor_sets;

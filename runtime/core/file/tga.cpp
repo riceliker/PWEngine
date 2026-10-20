@@ -87,7 +87,7 @@ namespace PWEngine::File
             }
             else 
             {
-                log(log, LogType::Warn, LogFrom::FileIO ,"The pixel format is not support.");
+                sendLog(log, LogType::Warn, LogFrom::FileIO ,"The pixel format is not support.");
             }
             std::unique_ptr<ImageRGBA8> obj = std::make_unique<ImageRGBA8>();
             std::vector<uint8_t> data;

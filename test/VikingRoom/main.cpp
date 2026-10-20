@@ -8,7 +8,7 @@
 
 int main()
 {
-    auto log = PWEngine::Stream::LogSystem(true);
+    auto log = PWEngine::LogSystem(true);
 
     auto image = PWEngine::File::tgaReader(&log, "./assets/viking_room.tga");
     auto model = PWEngine::File::objReader(&log, "./assets/viking_room.obj");
@@ -95,10 +95,10 @@ int main()
 
         cmd->setViewPort();
         cmd->setScissor();
-        cmd->setPipeline(pipeline.get());
+        cmd->setPipeline3D(pipeline.get());
 
         total += delta;
-        //PWEngine::log(instance.log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(1/delta));
+        //PWEngine::sendLog(instance.log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(1/delta));
         loops++;
 
         camera->updateData(cmd);
@@ -108,8 +108,15 @@ int main()
         mesh_transform->setScale(1, {1, 1, 2});
         mesh_transform->calculateNodeMatrix(cmd);
 
-        cmd->renderingBegin({0, 0, 0, 1});
+        cmd->renderingBegin({0.52, 0.62, 0.65, 1}, true);
         cmd->draw(pipeline.get(), mesh.get(), material.get(), camera.get());
+        cmd->renderingEnd();
+
+        cmd->renderingBarrier();
+        cmd->setViewPort();
+        cmd->setScissor();
+
+        cmd->renderingBegin({1, 1, 1, 1}, false);
         cmd->renderingEnd();
 
     });

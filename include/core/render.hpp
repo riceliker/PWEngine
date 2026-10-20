@@ -34,7 +34,7 @@ class RenderInstance;
 /*    |            |                                     |                 |                  |         */
 /*    V            V                                     V                 V                  |         */
 class Command;/*<---------------------------------------------------------------------------------------*/
-class Node2D; class Camera2D; class Pipeline2D;
+class Layer2D; class Camera2D; class Pipeline2D;
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
     ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
@@ -175,6 +175,7 @@ class Node2D; class Camera2D; class Pipeline2D;
         std::shared_ptr<Texture2D> createTexture2D(ImageRGBA8* surface);
         std::shared_ptr<Transform3D> createTransform3D();
         std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
+        std::unique_ptr<Pipeline2D> createPipeline2D();
         void hideMouseCursor();
         void showMouseCursor();
         /* Loop */
@@ -256,22 +257,24 @@ class Node2D; class Camera2D; class Pipeline2D;
         /* Constructor */
         Pipeline2D(RenderContext* super);
         ~Pipeline2D();
-        std::unique_ptr<Node2D> createNode2D();
+        std::unique_ptr<Layer2D> createNode2D();
         std::unique_ptr<Camera2D> createCamera();
         friend class RenderContext;
     };
 
-    class Node2D
+    class Layer2D
     {
     private:
         std::vector<Vertex2D> vertices;
-        std::optional<Texture2D> texture;
+        std::optional<std::shared_ptr<Texture2D>> texture;
     public:
         Pipeline2D* p_pipeline;
         struct DescriptorSet;
         std::unique_ptr<DescriptorSet> m_descriptor_set; 
-        Node2D();
-        ~Node2D();
+        void addRect(Vec4<Vertex2D> vertex);
+        void setTexture2D(std::shared_ptr<Texture2D> texture);
+        Layer2D(Pipeline2D* pipeline);
+        ~Layer2D();
     };
 
     class Camera2D
@@ -440,9 +443,11 @@ class Node2D; class Camera2D; class Pipeline2D;
         uint32_t swapchain_image_index = 0; /* the DS image index */
         void setViewPort();
         void setScissor();
-        void setPipeline(Pipeline3D* pipeline);
-        void renderingBegin(Vec4<float> color);
+        void setPipeline3D(Pipeline3D* pipeline);
+        void setPipeline2D(Pipeline2D* pipeline);
+        void renderingBegin(Vec4<float> color, bool is_clear_background);
         void renderingEnd();
+        void renderingBarrier();
         void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera3D* camera);
         friend class RenderContext;
     };

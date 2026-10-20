@@ -29,7 +29,7 @@ namespace PWEngine::Render
         obj->self->command_buffer = &this->self->command_buffers[swapchain_loop_frame_index];
 
         if (vkBeginCommandBuffer(*obj->self->command_buffer, &beginInfo) != VK_SUCCESS) {
-            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to begin recording command buffer!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to begin recording command buffer!");
         }
         
         return obj;
@@ -38,7 +38,7 @@ namespace PWEngine::Render
     void RenderContext::commandEnd(Command* command)
     {
         if (vkEndCommandBuffer(*command->self->command_buffer) != VK_SUCCESS) {
-            log(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to record command buffer!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to record command buffer!");
         }
         delete command;
     }
@@ -63,7 +63,12 @@ namespace PWEngine::Render
         vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void Command::setPipeline(Pipeline3D* pipeline)
+    void Command::setPipeline3D(Pipeline3D* pipeline)
+    {
+        vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
+    }
+
+    void Command::setPipeline2D(Pipeline2D* pipeline)
     {
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }

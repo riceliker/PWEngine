@@ -1,2 +1,2 @@
-glslc ./shaders/shader.vert -o ./shaders/vert.spv
-glslc ./shaders/shader.frag -o ./shaders/frag.spv
+glslc ./shaders/pipeline3D/shader.vert -o ./shaders/pipeline3D/vert.spv
+glslc ./shaders/pipeline3D/shader.frag -o ./shaders/pipeline3D/frag.spv

@@ -1,30 +1,31 @@
-#define MINIAUDIO_IMPLEMENTATION
-#include "miniaudio/miniaudio.h"
-
-#include <stdio.h>
+#include "core/render.hpp"
+#include "core/stream.hpp"
 
 int main(int argc, char** argv)
 {
-    ma_result result;
-    ma_engine engine;
+    auto log = PWEngine::LogSystem(true);
 
-    if (argc < 2) {
-        printf("No input file.");
-        return -1;
-    }
+    auto instance = PWEngine::Render::RenderInstance(&log);
+    instance.setApplicationName("Test");
+    instance.setApplicationVersion(PWEngine::Vec3<uint32_t>(1, 0, 0));
+    instance.build();
 
-    result = ma_engine_init(NULL, &engine);
-    if (result != MA_SUCCESS) {
-        printf("Failed to initialize audio engine.");
-        return -1;
-    }
+    PWEngine::Render::ContextInfo context_info{};
+    context_info.is_window_resizable = true;
+    context_info.window_title = "Test";
+    context_info.window_default_resolution = PWEngine::Vec2<uint32_t>(1280, 720);
 
-    ma_engine_play_sound(&engine, argv[1], NULL);
+    auto context = instance.createContext(context_info);
 
-    printf("Press Enter to quit...");
-    getchar();
+    auto pipeline = context->createPipeline2D();
 
-    ma_engine_uninit(&engine);
+    context->frameLoop([&](PWEngine::Render::Command* cmd, PWEngine::Render::Input* input, float delta){
+        cmd->setViewPort();
+        cmd->setScissor();
+        cmd->setPipeline2D(pipeline.get());
 
-    return 0;
+        cmd->renderingBegin({0, 0, 0, 1});
+        
+        cmd->renderingEnd();
+    });
 }

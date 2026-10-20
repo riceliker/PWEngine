@@ -10,11 +10,11 @@ namespace PWEngine::File
 {
     inline std::optional<std::vector<uint8_t>> readBinaryFile(LogSystem* log, std::string path)
     {
-        log(log, LogType::Info, LogFrom::FileIO, "Open file:" + path);
+        sendLog(log, LogType::Info, LogFrom::FileIO, "Open file:" + path);
         std::ifstream file(path, std::ios::binary | std::ios::ate);
         if (!file.is_open())
         {
-            log(log, LogType::Info, LogFrom::FileIO, "Can not open the file.");
+            sendLog(log, LogType::Info, LogFrom::FileIO, "Can not open the file.");
             return std::nullopt;
         }
 
@@ -25,7 +25,7 @@ namespace PWEngine::File
 
         if (!file.read(reinterpret_cast<char*>(buffer.data()), file_bytes))
         {
-            log(log, LogType::Info, LogFrom::FileIO, "Can not read the file.");
+            sendLog(log, LogType::Info, LogFrom::FileIO, "Can not read the file.");
             return std::nullopt;
         }
         return buffer;

@@ -29,7 +29,7 @@
 //         return std::strcmp(a.data(), b.data()) == 0;
 //     }
 //     ConfigFile::ConfigFile(std::string config_file_path, Log::LogSystem* log)
-//         : log(log)
+//         : sendLog(log)
 //     {
 //         /* path check */
 //         this->file_path = config_file_path;

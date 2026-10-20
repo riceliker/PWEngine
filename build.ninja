@@ -56,6 +56,6 @@ default $bin
 # ===== Make Object =====
 obj = ./build/obj
 bin = ./build/test
-build $obj/test/test/ImGui/main.o: compile test/ImGui/main.cpp
-build $bin: binary $obj/test/test/ImGui/main.o ./build/libPWEngine.dylib 
+build $obj/test/test/VikingRoom/main.o: compile test/VikingRoom/main.cpp
+build $bin: binary $obj/test/test/VikingRoom/main.o ./build/libPWEngine.dylib 
 default $bin

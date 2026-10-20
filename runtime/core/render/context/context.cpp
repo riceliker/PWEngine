@@ -43,7 +43,7 @@ namespace PWEngine::Render
                 vkCreateSemaphore(context->m_device->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(context->m_device->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) 
             {
-                log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
+                sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
             }
         }
 
@@ -66,7 +66,7 @@ namespace PWEngine::Render
         poolInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
 
         if (vkCreateCommandPool(context->m_device->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create command pool!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create command pool!");
 
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -75,7 +75,7 @@ namespace PWEngine::Render
         alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
         if (vkAllocateCommandBuffers(context->m_device->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate command buffers!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate command buffers!");
 
         context->self->command_pool = command_pool;
         context->self->command_buffers = std::move(command_buffers);
@@ -100,7 +100,7 @@ namespace PWEngine::Render
         poolInfo.maxSets = MAX_FRAMES_IN_FLIGHT * 8;
 
         if (vkCreateDescriptorPool(context->m_device->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) 
-            log(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor pool!");
+            sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor pool!");
 
         context->self->descriptor_pool = descriptorPool;
     }
@@ -163,7 +163,7 @@ namespace PWEngine::Render
         device_create_info.pNext = &dynamic_rendering_feature;
 
         if (vkCreateDevice(adapter, &device_create_info, nullptr, &device) != VK_SUCCESS)
-            log(super->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create logical device!");
+            sendLog(super->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create logical device!");
 
         vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
 
@@ -180,7 +180,7 @@ namespace PWEngine::Render
         
         VkSurfaceKHR surface;
         if (glfwCreateWindowSurface(super->p_instance->self->instance, window, nullptr, &surface) != VK_SUCCESS)
-            log(super->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create window surface!");
+            sendLog(super->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create window surface!");
 
         this->window = window;
         this->surface = surface;

@@ -12385,8 +12385,8 @@ static MA_INLINE double ma_expd(double x)
 
 static MA_INLINE double ma_logd(double x)
 {
-    /* TODO: Implement custom log(x). */
-    return log(x);
+    /* TODO: Implement custom sendLog(x). */
+    return sendLog(x);
 }
 
 static MA_INLINE double ma_powd(double x, double y)
@@ -41914,7 +41914,7 @@ static void ma_audio_worklet_processor_created__webaudio(EMSCRIPTEN_WEBAUDIO_T a
                     getUserMediaResult = 0;   /* 0 = MA_SUCCESS */
                 })
                 .catch(function(error) {
-                    console.log("navigator.mediaDevices.getUserMedia Failed: " + error);
+                    console.sendLog("navigator.mediaDevices.getUserMedia Failed: " + error);
                     getUserMediaResult = -1;  /* -1 = MA_ERROR */
                 });
 
@@ -42216,7 +42216,7 @@ static ma_result ma_device_init__webaudio(ma_device* pDevice, const ma_device_co
                         device.scriptNode.connect(device.webaudio.destination);
                     })
                     .catch(function(error) {
-                        console.log("Failed to get user media: " + error);
+                        console.sendLog("Failed to get user media: " + error);
                     });
             }
 

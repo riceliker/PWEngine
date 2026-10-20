@@ -11,7 +11,7 @@ namespace PWEngine::File
 
         if (!file.is_open()) 
         {
-            log(log, LogType::Warn, LogFrom::FileIO, "failed to open file!");
+            sendLog(log, LogType::Warn, LogFrom::FileIO, "failed to open file!");
             return std::nullopt;
         }
 

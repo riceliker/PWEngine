@@ -33,7 +33,7 @@ namespace PWEngine::File
         std::fstream file(load_path);
         if (!file.is_open())
         {
-            log(log, LogType::Warn, LogFrom::FileIO, "Can no open the "+ load_path +" file");
+            sendLog(log, LogType::Warn, LogFrom::FileIO, "Can no open the "+ load_path +" file");
         }
         std::string text_line;
         std::vector<Vertex3D> vertices;

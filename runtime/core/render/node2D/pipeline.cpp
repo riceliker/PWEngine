@@ -8,6 +8,12 @@
 
 namespace PWEngine::Render 
 {
+    std::unique_ptr<Pipeline2D> RenderContext::createPipeline2D()
+    {
+        std::unique_ptr<Pipeline2D> obj = std::make_unique<Pipeline2D>(this);        
+        return obj;
+    }
+
     static inline std::optional<std::vector<uint32_t>> compilerShader(const std::string& source, const shaderc_shader_kind kind, const std::string& name)
     {
         shaderc::Compiler compiler;
@@ -33,7 +39,7 @@ namespace PWEngine::Render
     static inline std::optional<VkShaderModule> createShaderModule(const std::vector<uint32_t>& code, VkDevice device) {
         VkShaderModuleCreateInfo create_info{};
         create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-        create_info.codeSize = code.size();
+        create_info.codeSize = 4 * code.size();
         create_info.pCode = code.data();
 
         VkShaderModule shaderModule;
@@ -46,9 +52,6 @@ namespace PWEngine::Render
 
     const std::string vertex_shader = R"(
         #version 450
-        layout(set = 0, binding = 0) uniform Camera2D {
-            mat4 view;
-        } camera;
 
         layout(location = 0) in vec2 in_position;
         layout(location = 1) in vec4 in_color;
@@ -58,7 +61,7 @@ namespace PWEngine::Render
         layout(location = 1) out vec2 frag_uv;
 
         void main() {
-            gl_Position = camera.view * vec4(in_position, 0.0, 1.0);
+            gl_Position = vec4(in_position, 0.0, 1.0);
             frag_color = in_color;
             frag_uv = in_uv;
         }
@@ -66,7 +69,7 @@ namespace PWEngine::Render
 
     const std::string fragment_shader = R"(
         #version 450
-        layout(set = 1, binding = 0) uniform sampler2D texture_sampler;
+        layout(set = 0, binding = 1) uniform sampler2D texture_sampler;
 
         layout(location = 0) in vec4 frag_color;
         layout(location = 1) in vec2 frag_uv;
@@ -86,12 +89,13 @@ namespace PWEngine::Render
 
         /* Mesh2D set = 0 */
         infos.push_back({
-            {0, 1, DescriptorType::Storage, ShaderType::Vertex}
+            {0, 1, DescriptorType::Storage, ShaderType::Vertex},
+            {1, 1, DescriptorType::Sampler, ShaderType::Fragment}
         });
-        /* Camera2D set = 1 */
-        infos.push_back({
-            {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
-        });
+        // /* Camera2D set = 1 */
+        // infos.push_back({
+        //     {0, 1, DescriptorType::Uniform, ShaderType::Vertex}
+        // });
 
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
         std::vector<std::vector<VkDescriptorSet>> descriptor_sets;
@@ -139,7 +143,7 @@ namespace PWEngine::Render
             layout_info.pBindings = layout_bindings.data();
 
             if (vkCreateDescriptorSetLayout(this->p_context->m_device->device, &layout_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-                log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
+                sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
             descriptor_set_layouts.push_back(descriptor_set_layout);            
         }
         
@@ -150,7 +154,7 @@ namespace PWEngine::Render
 
         VkPipelineLayout pipeline_layout;
         if (vkCreatePipelineLayout(this->p_context->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
+            sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         
         /* ----- shader ----- */
@@ -243,8 +247,6 @@ namespace PWEngine::Render
         rendering_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
         rendering_create_info.colorAttachmentCount = 1;
         rendering_create_info.pColorAttachmentFormats = &this->p_context->m_swapchain->swapchain_image_format;
-        rendering_create_info.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-        rendering_create_info.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
         
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -266,7 +268,7 @@ namespace PWEngine::Render
 
         VkPipeline graphics_pipeline;
         if (vkCreateGraphicsPipelines(this->p_context->m_device->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
-            log(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create graphics pipeline!");
+            sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create graphics pipeline!");
 
         for (auto shader_module : shader_stages)
         {

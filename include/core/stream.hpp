@@ -48,7 +48,7 @@ namespace PWEngine
         void send(LogType type, LogFrom from, std::string message);
         friend void LogLoop(LogSystem* ptr);
     };
-    inline void log(LogSystem* ptr, LogType type, LogFrom from, std::string message)
+    inline void sendLog(LogSystem* ptr, LogType type, LogFrom from, std::string message)
     {
         if (ptr == nullptr)
         {
