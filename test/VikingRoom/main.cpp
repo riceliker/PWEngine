@@ -95,7 +95,7 @@ int main()
 
         cmd->setViewPort();
         cmd->setScissor();
-        cmd->setPipeline3D(pipeline.get());
+        cmd->setPipeline(pipeline.get());
 
         total += delta;
         //PWEngine::sendLog(instance.log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(1/delta));

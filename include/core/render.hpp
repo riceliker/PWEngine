@@ -34,7 +34,8 @@ class RenderInstance;
 /*    |            |                                     |                 |                  |         */
 /*    V            V                                     V                 V                  |         */
 class Command;/*<---------------------------------------------------------------------------------------*/
-class Layer2D; class Camera2D; class Pipeline2D;
+class Layer2D; class Camera2D; class Pipeline2D; 
+class PipelineHUD; class DescriptorSet;
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
     ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
@@ -176,6 +177,7 @@ class Layer2D; class Camera2D; class Pipeline2D;
         std::shared_ptr<Transform3D> createTransform3D();
         std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
         std::unique_ptr<Pipeline2D> createPipeline2D();
+        std::unique_ptr<PipelineHUD> createPipelineHUD();
         void hideMouseCursor();
         void showMouseCursor();
         /* Loop */
@@ -237,6 +239,47 @@ class Layer2D; class Camera2D; class Pipeline2D;
         ~Texture2D();
         void setBasicTexture();        
         friend class RenderContext;
+    };
+
+    struct NodeHUD
+    {
+        Vec4<float> position_rect;
+        Vec4<float> uv_rect;
+        Mat4 vp;
+    };  
+
+    class IPipeline
+    {
+    protected:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        IPipeline(RenderContext* super);
+        virtual ~IPipeline();
+    };
+
+    class PipelineHUD
+    {
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        PipelineHUD(RenderContext* super);
+        ~PipelineHUD();
+        std::unique_ptr<DescriptorSet> createDS();
+        friend class RenderContext;
+    };
+
+    class DescriptorSet
+    {
+    public:
+        struct Impl;
+        std::unique_ptr<Impl> self; 
+        DescriptorSet(PipelineHUD* pipeline);
+        ~DescriptorSet();
+        void update(PipelineHUD* pipeline, Texture2D* texture);
     };
 
 /*
@@ -443,11 +486,13 @@ class Layer2D; class Camera2D; class Pipeline2D;
         uint32_t swapchain_image_index = 0; /* the DS image index */
         void setViewPort();
         void setScissor();
-        void setPipeline3D(Pipeline3D* pipeline);
-        void setPipeline2D(Pipeline2D* pipeline);
+        void setPipeline(Pipeline3D* pipeline);
+        void setPipeline(Pipeline2D* pipeline);
+        void setPipeline(PipelineHUD* pipeline);
         void renderingBegin(Vec4<float> color, bool is_clear_background);
         void renderingEnd();
         void renderingBarrier();
+        void draw(PipelineHUD* pipeline, NodeHUD hud_node, Texture2D* texture, DescriptorSet* set);
         void draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera3D* camera);
         friend class RenderContext;
     };

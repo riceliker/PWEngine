@@ -87,6 +87,11 @@ namespace PWEngine::Render
 
         VkDescriptorPool descriptor_pool;
     };
+
+    struct DescriptorSet::Impl
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
 /*
     ████████   ███  ████████   █████████  ███       ███  ███     ██  ░█████████
     ██    ▓██  ███  ███    ██▒ ███        ███       ███  █████   ██  ░██
@@ -109,6 +114,14 @@ namespace PWEngine::Render
         VkPipeline graphics_pipeline;
 
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+    };
+
+    struct PipelineHUD::Impl
+    {
+        VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
+
+        VkDescriptorSetLayout descriptor_set_layout;
     };
 
     struct Texture2D::Impl

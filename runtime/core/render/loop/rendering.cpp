@@ -122,6 +122,17 @@ namespace PWEngine::Render
         vkCmdDrawIndexed(*this->self->command_buffer, mesh->indices_size, mesh->transform->length, 0, 0, 0);
     }
 
+
+    void Command::draw(PipelineHUD* pipeline, NodeHUD hud_node, Texture2D* texture, DescriptorSet* set)
+    {
+        /* bind DS */
+        vkCmdBindDescriptorSets(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->pipeline_layout, 0, 1, set->self->descriptor_sets.data(), 0, nullptr);
+
+        vkCmdPushConstants(*this->self->command_buffer, pipeline->self->pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(hud_node), &hud_node);
+        vkCmdDraw(*this->self->command_buffer, 4, 1, 0, 0);
+
+    }
+
     void Command::renderingBarrier()
     {
         VkImageMemoryBarrier image_barrier;

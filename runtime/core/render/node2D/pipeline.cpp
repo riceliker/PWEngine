@@ -181,12 +181,12 @@ namespace PWEngine::Render
         /* ----- Input ----- */
         auto bind = getBindingDescription<Vertex2D>();
         auto attribute = getAttributeDescriptions<Vertex2D>();
-        VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
-        vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-        vertexInputInfo.vertexBindingDescriptionCount = 1;
-        vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute.size());
-        vertexInputInfo.pVertexBindingDescriptions = &bind;
-        vertexInputInfo.pVertexAttributeDescriptions = attribute.data();
+        VkPipelineVertexInputStateCreateInfo vertex_input_info{};
+        vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertex_input_info.vertexBindingDescriptionCount = 1;
+        vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute.size());
+        vertex_input_info.pVertexBindingDescriptions = &bind;
+        vertex_input_info.pVertexAttributeDescriptions = attribute.data();
 
         VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
         inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -253,7 +253,7 @@ namespace PWEngine::Render
         pipeline_info.pNext = &rendering_create_info;
         pipeline_info.stageCount = 2;
         pipeline_info.pStages = shader_stages.data();
-        pipeline_info.pVertexInputState = &vertexInputInfo;
+        pipeline_info.pVertexInputState = &vertex_input_info;
         pipeline_info.pInputAssemblyState = &inputAssembly;
         pipeline_info.pViewportState = &viewport_state;
         pipeline_info.pRasterizationState = &rasterizer;
