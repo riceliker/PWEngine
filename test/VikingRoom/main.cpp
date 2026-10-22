@@ -10,7 +10,8 @@ int main()
 {
     auto log = PWEngine::LogSystem(true);
 
-    auto image = PWEngine::File::tgaReader(&log, "./assets/viking_room.tga");
+    auto model_image = PWEngine::File::tgaReader(&log, "./assets/viking_room.tga");
+    auto icon_image = PWEngine::File::tgaReader(&log, "./assets/crosshair.tga");
     auto model = PWEngine::File::objReader(&log, "./assets/viking_room.obj");
 
     auto instance = PWEngine::Render::RenderInstance(&log);
@@ -24,20 +25,26 @@ int main()
     context_info.window_default_resolution = PWEngine::Vec2<uint32_t>(1280, 720);
 
     auto context = instance.createContext(context_info);
-    auto texture = context->createTexture2D(image.get());
+    auto model_texture = context->createTexture2D(model_image.get());
+    auto icon_texture = context->createTexture2D(icon_image.get());
     
-    auto pipeline = context->createPipeline3D({}, {"./shaders/pipeline3D/vert.spv", "./shaders/pipeline3D/frag.spv"});
-    auto mesh = pipeline->createMesh3D(model.get());
+    auto pipeline3D = context->createPipeline3D({}, {"./shaders/pipeline3D/vert.spv", "./shaders/pipeline3D/frag.spv"});
+    auto mesh = pipeline3D->createMesh3D(model.get());
     auto mesh_transform = context->createTransform3D();
     mesh_transform->resizeTransform(2);
     
     mesh->bindTransform3D(mesh_transform);
     
-    auto material = pipeline->createMaterial();
-    material->bindBasicTexture(texture);
+    auto material = pipeline3D->createMaterial();
+    material->bindBasicTexture(model_texture);
     material->updateDescriptor();
-    auto camera = pipeline->createCamera();
+    auto camera = pipeline3D->createCamera();
     camera->updateDescriptor();
+
+    auto pipeline_hud = context->createPipelineHUD();
+    auto set = pipeline_hud->createDS();
+    
+    set->update(pipeline_hud.get(), icon_texture.get());
     
     size_t loops = 0;
     double total = 0;
@@ -52,6 +59,7 @@ int main()
         {
             context->hideMouseCursor();
             is_in_screen = true;
+            last_mouse = input->checkMousePosition();
         }
         if (input->checkIsKeyInput(PWEngine::Render::Key::Escape))
         {
@@ -61,10 +69,13 @@ int main()
         
         auto current_mouse = last_mouse;
         
+        PWEngine::Vec2<float> dm{0,0};
         if (is_in_screen)
+        {
             current_mouse = input->checkMousePosition();
-            
-        auto dm = current_mouse - last_mouse;
+            dm = current_mouse - last_mouse;
+            last_mouse = current_mouse;
+        }
 
         look_degree = {
             std::clamp(look_degree.x - (float)(dm.y*0.1), -89.0f , 89.0f),
@@ -95,7 +106,7 @@ int main()
 
         cmd->setViewPort();
         cmd->setScissor();
-        cmd->setPipeline(pipeline.get());
+        cmd->setPipeline(pipeline3D.get());
 
         total += delta;
         //PWEngine::sendLog(instance.log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(1/delta));
@@ -109,14 +120,17 @@ int main()
         mesh_transform->calculateNodeMatrix(cmd);
 
         cmd->renderingBegin({0.52, 0.62, 0.65, 1}, true);
-        cmd->draw(pipeline.get(), mesh.get(), material.get(), camera.get());
+        cmd->draw(pipeline3D.get(), mesh.get(), material.get(), camera.get());
         cmd->renderingEnd();
 
         cmd->renderingBarrier();
         cmd->setViewPort();
         cmd->setScissor();
 
-        cmd->renderingBegin({1, 1, 1, 1}, false);
+        cmd->setPipeline(pipeline_hud.get());
+
+        cmd->renderingBegin({0, 0, 0, 0}, false);
+        cmd->draw(pipeline_hud.get(), {{-0.1, -0.1, 0.1, 0.1}, {0, 0, 1, 1}, PWEngine::Mat4(1)}, icon_texture.get(), set.get());
         cmd->renderingEnd();
 
     });

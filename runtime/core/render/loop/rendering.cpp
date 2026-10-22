@@ -1,5 +1,6 @@
 #include "core/render.hpp"
 #include "core/render/_render.hpp"
+#include "core/render/pipeline/_pipeline.hpp"
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -136,7 +137,7 @@ namespace PWEngine::Render
     void Command::renderingBarrier()
     {
         VkImageMemoryBarrier image_barrier;
-        image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
+        image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 
         image_barrier.srcAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
         image_barrier.dstAccessMask = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;

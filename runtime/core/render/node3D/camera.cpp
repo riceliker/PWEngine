@@ -1,6 +1,7 @@
 #include "core/render.hpp"
 #include "core/render/_render.hpp"
 #include "core/render/_utils.hpp"
+#include "core/render/pipeline/_pipeline.hpp"
 #include <cstddef>
 #include <memory>
 #include <vector>

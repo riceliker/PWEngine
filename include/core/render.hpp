@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <variant>
 #include <vector>
 
 /* The number of frame in swapchain. The 3 is best now. */
@@ -63,7 +64,7 @@ class PipelineHUD; class DescriptorSet;
     };
     enum class ShaderType
     {
-        Vertex, Fragment
+        Vertex, Fragment, Compute
     };
     struct ShaderPath
     {
@@ -248,9 +249,52 @@ class PipelineHUD; class DescriptorSet;
         Mat4 vp;
     };  
 
+    struct VertexBinding
+    {
+        uint32_t binding;
+        uint32_t size;
+    };
+    struct VertexInput
+    {
+        uint32_t binding;
+        uint32_t location;
+        uint32_t offset;
+        enum class Type { u8, i32, f32 } type;
+        enum class Length { vec2, vec3, vec4 } len;
+    };
+    struct DepthStencilInfo
+    {
+
+    };
+    struct RenderingInfo
+    {
+
+    };
+    struct RenderPassInfo
+    {
+
+    };
+    struct PipelineInfo
+    {
+        std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
+        std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
+        std::vector<VertexBinding> vertex_bindings;
+        std::vector<VertexInput> vertex_formats;
+        std::vector<std::vector<ShaderLayoutInfo>> buffer_layout;
+        enum class VertexTopology {Triangle_List} topology;
+        enum class CullMode {Frontend, Backend, None} cull_mode;
+        std::optional<DepthStencilInfo> depth_stencil;
+        std::variant<RenderingInfo, RenderPassInfo> render_mode;
+    };
+
+    std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> compilerShader(const std::string& source, ShaderType type, const std::string& name);
+    std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> openShader(std::string file_path);
+
     class IPipeline
     {
     protected:
+        void builder(PipelineInfo info);
+    public:
         RenderContext* p_context;
         struct Impl;
         std::unique_ptr<Impl> self;
@@ -334,15 +378,11 @@ class PipelineHUD; class DescriptorSet;
     ██    ███▓   ████████   ▒████████    █████████ ▒██████  ▓████████
 */ 
 
-    class Pipeline3D
+    class Pipeline3D : public IPipeline
     {
     public:
-        RenderContext* p_context;
-        struct Impl;
-        std::unique_ptr<Impl> self;
         /* Constructor */
-        Pipeline3D(RenderContext* super, std::vector<std::vector<ShaderLayoutInfo>> infos_ext, ShaderPath path);
-        ~Pipeline3D();
+        Pipeline3D(RenderContext* super, ShaderPath path);
         std::unique_ptr<Mesh3D> createMesh3D(Model3D* model);
         std::unique_ptr<Material> createMaterial();
         std::unique_ptr<Camera3D> createCamera();

@@ -42,12 +42,12 @@ namespace PWEngine::Render
         create_info.codeSize = 4 * code.size();
         create_info.pCode = code.data();
 
-        VkShaderModule shaderModule;
-        if (vkCreateShaderModule(device, &create_info, nullptr, &shaderModule) != VK_SUCCESS) {
+        VkShaderModule shader_module;
+        if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
             return std::nullopt;
         }
 
-        return shaderModule;
+        return shader_module;
     }
 
     const std::string vertex_shader = R"(

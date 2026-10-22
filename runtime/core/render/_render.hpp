@@ -100,13 +100,6 @@ namespace PWEngine::Render
     ██         ███  ███        ███        ███       ███  ███   ████  ░██
     ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
 */ 
-    struct Pipeline3D::Impl
-    {
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
-
-        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-    };
 
     struct Pipeline2D::Impl
     {

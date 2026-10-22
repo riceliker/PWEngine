@@ -1,5 +1,6 @@
 #include "core/render.hpp"
 #include "core/render/_render.hpp"
+#include "core/render/pipeline/_pipeline.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
