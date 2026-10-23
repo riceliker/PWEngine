@@ -75,15 +75,32 @@ namespace PWEngine::File
             }
             else if (info.pixel_depth == 32)
             {
-                for (size_t i = 0; i < width * height; ++i)
+                if ((info.image_descriptor & (1u << 5)) != 0)
                 {
-                    uint8_t b = file[offset];
-                    uint8_t g = file[offset + 1];
-                    uint8_t r = file[offset + 2];
-                    uint8_t a = file[offset + 3];
-                    pixels.emplace_back(PixelRGBA8{r, g, b, a});
-                    offset += 4;
+                    for (size_t i = 0; i < width * height; ++i)
+                    {
+                        uint8_t b = file[offset];
+                        uint8_t g = file[offset + 1];
+                        uint8_t r = file[offset + 2];
+                        uint8_t a = file[offset + 3];
+                        pixels.emplace_back(PixelRGBA8{r, g, b, a});
+                        offset += 4;
+                    }
                 }
+                else 
+                {
+                    offset += width * height - 4;
+                    for (size_t i = 0; i < width * height; ++i)
+                    {
+                        uint8_t b = file[offset];
+                        uint8_t g = file[offset + 1];
+                        uint8_t r = file[offset + 2];
+                        uint8_t a = file[offset + 3];
+                        pixels.emplace_back(PixelRGBA8{r, g, b, a});
+                        offset -= 4;
+                    }
+                }
+                
             }
             else 
             {
@@ -93,9 +110,15 @@ namespace PWEngine::File
             std::vector<uint8_t> data;
             data.resize(pixels.size() * sizeof(PixelRGBA8));
             memcpy(data.data(), pixels.data(), data.size());
+
+            if ((info.image_descriptor & (1u << 5)) != 0)
+            {
+
+            }
             obj->data = std::move(data);
             obj->size = Vec2<uint32_t>(info.width, info.height);
             obj->depth = info.pixel_depth;
+            
             return obj;
         } 
         return nullptr;

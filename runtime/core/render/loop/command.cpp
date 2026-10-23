@@ -69,11 +69,6 @@ namespace PWEngine::Render
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }
 
-    void Command::setPipeline(Pipeline2D* pipeline)
-    {
-        vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
-    }
-
     void Command::setPipeline(PipelineHUD *pipeline)
     {
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);

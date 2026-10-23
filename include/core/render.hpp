@@ -35,7 +35,6 @@ class RenderInstance;
 /*    |            |                                     |                 |                  |         */
 /*    V            V                                     V                 V                  |         */
 class Command;/*<---------------------------------------------------------------------------------------*/
-class Layer2D; class Camera2D; class Pipeline2D; 
 class PipelineHUD; class DescriptorSet;
 /*
      ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
@@ -177,7 +176,6 @@ class PipelineHUD; class DescriptorSet;
         std::shared_ptr<Texture2D> createTexture2D(ImageRGBA8* surface);
         std::shared_ptr<Transform3D> createTransform3D();
         std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
-        std::unique_ptr<Pipeline2D> createPipeline2D();
         std::unique_ptr<PipelineHUD> createPipelineHUD();
         void hideMouseCursor();
         void showMouseCursor();
@@ -248,7 +246,11 @@ class PipelineHUD; class DescriptorSet;
         Vec4<float> uv_rect;
         Mat4 vp;
     };  
-
+    struct PushConstant
+    {
+        uint32_t offset;
+        uint32_t size;
+    };
     struct VertexBinding
     {
         uint32_t binding;
@@ -261,6 +263,29 @@ class PipelineHUD; class DescriptorSet;
         uint32_t offset;
         enum class Type { u8, i32, f32 } type;
         enum class Length { vec2, vec3, vec4 } len;
+    };
+    enum class BlendOp 
+    {
+        add, src_minus_dst, dst_minus_src, min, max 
+    };
+    enum class BlendObject
+    {
+        zero, one,
+        src_color, one_minus_src_color, dst_color, one_minus_dst_color,
+        src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha,
+        constant_color, one_minus_constant_color, constant_alpha, one_minus_constant_alpha,
+    };
+    struct ColorBlend
+    {
+        BlendOp color_op;
+        BlendObject color_src;
+        BlendObject color_dst;
+
+        BlendOp alpha_op;
+        BlendObject alpha_src;
+        BlendObject alpha_dst;
+
+        Vec4<bool> write_mask;
     };
     struct DepthStencilInfo
     {
@@ -280,9 +305,12 @@ class PipelineHUD; class DescriptorSet;
         std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
         std::vector<VertexBinding> vertex_bindings;
         std::vector<VertexInput> vertex_formats;
-        std::vector<std::vector<ShaderLayoutInfo>> buffer_layout;
-        enum class VertexTopology {Triangle_List} topology;
-        enum class CullMode {Frontend, Backend, None} cull_mode;
+        std::optional<std::vector<std::vector<ShaderLayoutInfo>>> descriptor_set;
+        std::optional<std::vector<PushConstant>> push_constant_layout;
+        enum class VertexTopology {Triangle_List, Triangle_Strip} topology;
+        enum class CullMode {Front, Back, None} cull_mode;
+        std::optional<std::vector<ColorBlend>> color_blend;
+        Vec4<float> color_blend_constant;
         std::optional<DepthStencilInfo> depth_stencil;
         std::variant<RenderingInfo, RenderPassInfo> render_mode;
     };
@@ -303,15 +331,11 @@ class PipelineHUD; class DescriptorSet;
         virtual ~IPipeline();
     };
 
-    class PipelineHUD
+    class PipelineHUD : public IPipeline
     {
     public:
-        RenderContext* p_context;
-        struct Impl;
-        std::unique_ptr<Impl> self;
         /* Constructor */
         PipelineHUD(RenderContext* super);
-        ~PipelineHUD();
         std::unique_ptr<DescriptorSet> createDS();
         friend class RenderContext;
     };
@@ -325,50 +349,6 @@ class PipelineHUD; class DescriptorSet;
         ~DescriptorSet();
         void update(PipelineHUD* pipeline, Texture2D* texture);
     };
-
-/*
-    ███    ██▓   ▓███████   ▒████████    ████████▒  ██████  ▓████████
-    ████   ██▓  ███    ███  ▒██    ███   ██        ██▒  ███ ▓██    ███
-    ██░██  ██▓ ███      ███ ▒██     ███  ████████       ███ ▓██     ███
-    ██  ██░██▓ ███      ███ ▒██     ███  ██           ███   ▓██     ███
-    ██   ████▓  ███    ███  ▒██    ███   ██        ▓██▒     ▓██    ███
-    ██    ███▓   ████████   ▒████████    █████████░████████ ▓████████
-*/
-
-    class Pipeline2D
-    {
-    public:
-        RenderContext* p_context;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        /* Constructor */
-        Pipeline2D(RenderContext* super);
-        ~Pipeline2D();
-        std::unique_ptr<Layer2D> createNode2D();
-        std::unique_ptr<Camera2D> createCamera();
-        friend class RenderContext;
-    };
-
-    class Layer2D
-    {
-    private:
-        std::vector<Vertex2D> vertices;
-        std::optional<std::shared_ptr<Texture2D>> texture;
-    public:
-        Pipeline2D* p_pipeline;
-        struct DescriptorSet;
-        std::unique_ptr<DescriptorSet> m_descriptor_set; 
-        void addRect(Vec4<Vertex2D> vertex);
-        void setTexture2D(std::shared_ptr<Texture2D> texture);
-        Layer2D(Pipeline2D* pipeline);
-        ~Layer2D();
-    };
-
-    class Camera2D
-    {
-
-    };
-
 /*
     ███    ██▓   ▓███████   ▒████████    ████████▒  █████▒  ▓████████
     ████   ██▓  ███    ███  ▒██    ███   ██        ██   ███ ▓██    ███
@@ -527,7 +507,6 @@ class PipelineHUD; class DescriptorSet;
         void setViewPort();
         void setScissor();
         void setPipeline(Pipeline3D* pipeline);
-        void setPipeline(Pipeline2D* pipeline);
         void setPipeline(PipelineHUD* pipeline);
         void renderingBegin(Vec4<float> color, bool is_clear_background);
         void renderingEnd();

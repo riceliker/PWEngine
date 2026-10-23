@@ -130,7 +130,7 @@ int main()
         cmd->setPipeline(pipeline_hud.get());
 
         cmd->renderingBegin({0, 0, 0, 0}, false);
-        cmd->draw(pipeline_hud.get(), {{-0.1, -0.1, 0.1, 0.1}, {0, 0, 1, 1}, PWEngine::Mat4(1)}, icon_texture.get(), set.get());
+        cmd->draw(pipeline_hud.get(), {{-0.05, -0.05, 0.1, 0.1}, {0, 0, 1, 1}, PWEngine::Mat4(1)}, icon_texture.get(), set.get());
         cmd->renderingEnd();
 
     });

@@ -1,5 +1,6 @@
 #include "core/render.hpp"
 #include "core/render/_render.hpp"
+#include "core/render/pipeline/_pipeline.hpp"
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -17,7 +18,7 @@ namespace PWEngine::Render
     DescriptorSet::DescriptorSet(PipelineHUD* pipeline) : self(std::make_unique<Impl>())
     {
         /* create DS */
-        auto layout = pipeline->self->descriptor_set_layout;
+        auto layout = pipeline->self->descriptor_set_layouts[0];
         std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, layout);
 
         VkDescriptorSetAllocateInfo alloc_info{};

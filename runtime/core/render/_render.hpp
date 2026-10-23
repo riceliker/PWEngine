@@ -101,22 +101,6 @@ namespace PWEngine::Render
     ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
 */ 
 
-    struct Pipeline2D::Impl
-    {
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
-
-        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-    };
-
-    struct PipelineHUD::Impl
-    {
-        VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
-
-        VkDescriptorSetLayout descriptor_set_layout;
-    };
-
     struct Texture2D::Impl
     {
         uint32_t mip_level;
@@ -152,11 +136,6 @@ namespace PWEngine::Render
     };
 
     struct Node3D::DescriptorSet
-    {
-        std::vector<VkDescriptorSet> descriptor_sets;
-    };
-
-    struct Layer2D::DescriptorSet
     {
         std::vector<VkDescriptorSet> descriptor_sets;
     };

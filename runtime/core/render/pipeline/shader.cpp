@@ -43,13 +43,15 @@ namespace PWEngine::Render
         {
         case ShaderType::Vertex:
             kind = shaderc_glsl_vertex_shader;
+        break;
         case ShaderType::Fragment:
             kind = shaderc_glsl_fragment_shader;
+        break;
         case ShaderType::Compute:
             kind = shaderc_glsl_compute_shader;
+        break;
         }
-        
-
+    
         const shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(source, kind, name.c_str(), options);
 
         if (result.GetCompilationStatus() != shaderc_compilation_status_success) 

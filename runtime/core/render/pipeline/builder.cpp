@@ -12,6 +12,56 @@ namespace PWEngine::Render
     {
         this->p_context = super;
     }
+    static inline VkBlendFactor ToVulkanEnumBlendFactor(BlendObject obj)
+    {   
+        switch (obj) 
+        {
+        case BlendObject::zero:
+            return VK_BLEND_FACTOR_ZERO;
+        case BlendObject::one:
+            return VK_BLEND_FACTOR_ONE;
+        case BlendObject::src_color:
+            return VK_BLEND_FACTOR_SRC_COLOR;
+        case BlendObject::one_minus_src_color:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_COLOR;
+        case BlendObject::dst_color:
+            return VK_BLEND_FACTOR_DST_COLOR;
+        case BlendObject::one_minus_dst_color:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
+        case BlendObject::src_alpha:
+            return VK_BLEND_FACTOR_SRC_ALPHA;
+        case BlendObject::one_minus_src_alpha:
+            return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        case BlendObject::dst_alpha:
+            return VK_BLEND_FACTOR_DST_ALPHA;
+        case BlendObject::one_minus_dst_alpha:
+            return VK_BLEND_FACTOR_ONE_MINUS_DST_ALPHA;
+        case BlendObject::constant_color:
+            return VK_BLEND_FACTOR_CONSTANT_COLOR;
+        case BlendObject::one_minus_constant_color:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_COLOR;
+        case BlendObject::constant_alpha:
+            return VK_BLEND_FACTOR_CONSTANT_ALPHA;
+        case BlendObject::one_minus_constant_alpha:
+            return VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA;
+        }
+    }
+    static inline VkBlendOp ToVulkanEnumBlendOp(BlendOp op)
+    {
+        switch (op) 
+        {
+        case BlendOp::add:
+            return VK_BLEND_OP_ADD;
+        case BlendOp::src_minus_dst:
+            return VK_BLEND_OP_SUBTRACT;
+        case BlendOp::dst_minus_src:
+            return VK_BLEND_OP_REVERSE_SUBTRACT;
+        case BlendOp::min:
+            return VK_BLEND_OP_MIN;
+        case BlendOp::max:
+            return VK_BLEND_OP_MAX;
+        }
+    }
     void IPipeline::builder(PipelineInfo info)
     {
         VkGraphicsPipelineCreateInfo pipeline_info{};
@@ -111,71 +161,91 @@ namespace PWEngine::Render
         VkPipelineVertexInputStateCreateInfo vertex_input_info{};
         vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertex_input_info.vertexBindingDescriptionCount = static_cast<uint32_t>(binding.size());
-        vertex_input_info.pVertexBindingDescriptions = binding.data();
+        vertex_input_info.pVertexBindingDescriptions = (binding.size()!=0)? binding.data(): nullptr;
         vertex_input_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute.size());
-        vertex_input_info.pVertexAttributeDescriptions = attribute.data();
+        vertex_input_info.pVertexAttributeDescriptions = (attribute.size()!=0)? attribute.data(): nullptr;
 
         pipeline_info.pVertexInputState = &vertex_input_info;
 
         /* --- Buffer Layout --- */
-        for (const auto layout : info.buffer_layout)
+        std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+        if (info.descriptor_set.has_value())
         {
-            VkDescriptorSetLayout descriptor_set_layout;
-            
-            std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-            for (const auto info : layout)
+            for (const auto layout : info.descriptor_set.value())
             {
-                VkDescriptorSetLayoutBinding binding;
-                binding.binding = info.binding_index;
-                binding.descriptorCount = info.binding_array_count;
-                switch (info.descriptor_type) 
-                {
-                case DescriptorType::Uniform:
-                    binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                break;
-                case DescriptorType::Sampler:
-                    binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                    binding.pImmutableSamplers = nullptr;
-                break;
-                case DescriptorType::Storage:
-                    binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                break;
-                }
+                VkDescriptorSetLayout descriptor_set_layout;
                 
-                switch (info.shader_type) 
+                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+                for (const auto info : layout)
                 {
-                case ShaderType::Vertex:
-                    binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                break;
-                case ShaderType::Fragment:
-                    binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                break;
-                default:
-                break;
+                    VkDescriptorSetLayoutBinding binding;
+                    binding.binding = info.binding_index;
+                    binding.descriptorCount = info.binding_array_count;
+                    switch (info.descriptor_type) 
+                    {
+                    case DescriptorType::Uniform:
+                        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                    break;
+                    case DescriptorType::Sampler:
+                        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                        binding.pImmutableSamplers = nullptr;
+                    break;
+                    case DescriptorType::Storage:
+                        binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                    break;
+                    }
+                    
+                    switch (info.shader_type) 
+                    {
+                    case ShaderType::Vertex:
+                        binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                    break;
+                    case ShaderType::Fragment:
+                        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    break;
+                    default:
+                    break;
+                    }
+
+                    layout_bindings.push_back(binding);
                 }
 
-                layout_bindings.push_back(binding);
+                VkDescriptorSetLayoutCreateInfo descriptor_set{};
+                descriptor_set.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+                descriptor_set.bindingCount = static_cast<uint32_t>(layout_bindings.size());
+                descriptor_set.pBindings = layout_bindings.data();
+
+                if (vkCreateDescriptorSetLayout(this->p_context->m_device->device, &descriptor_set, nullptr, &descriptor_set_layout) != VK_SUCCESS)
+                    sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
+                descriptor_set_layouts.push_back(descriptor_set_layout);            
             }
+        }
 
-            VkDescriptorSetLayoutCreateInfo buffer_layout{};
-            buffer_layout.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-            buffer_layout.bindingCount = static_cast<uint32_t>(layout_bindings.size());
-            buffer_layout.pBindings = layout_bindings.data();
-
-            if (vkCreateDescriptorSetLayout(this->p_context->m_device->device, &buffer_layout, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-                sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
-            this->self->descriptor_set_layouts.push_back(descriptor_set_layout);            
+        std::vector<VkPushConstantRange> push_constant_ranges;
+        if (info.push_constant_layout.has_value())
+        {
+            for (const auto& range : info.push_constant_layout.value())
+            {
+                VkPushConstantRange push_range{};
+                push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+                push_range.offset = range.offset;
+                push_range.size = range.size;
+                push_constant_ranges.push_back(push_range);
+            }
         }
         VkPipelineLayoutCreateInfo pipeline_layout_info{};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-        pipeline_layout_info.setLayoutCount = static_cast<uint32_t>(this->self->descriptor_set_layouts.size());
-        pipeline_layout_info.pSetLayouts = this->self->descriptor_set_layouts.data();
+        pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
+        pipeline_layout_info.pSetLayouts = (descriptor_set_layouts.size() != 0)?descriptor_set_layouts.data(): nullptr;
+        pipeline_layout_info.pushConstantRangeCount = push_constant_ranges.size();
+        pipeline_layout_info.pPushConstantRanges = (push_constant_ranges.size() != 0)? push_constant_ranges.data(): nullptr;
 
         VkPipelineLayout pipeline_layout;
         if (vkCreatePipelineLayout(this->p_context->m_device->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
             sendLog(this->p_context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         this->self->pipeline_layout = pipeline_layout;
+        this->self->descriptor_set_layouts = descriptor_set_layouts;
         pipeline_info.layout = pipeline_layout;
 
         /* --- Input Assembly --- */
@@ -188,6 +258,8 @@ namespace PWEngine::Render
         case PipelineInfo::VertexTopology::Triangle_List:
             input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         break;
+        case PipelineInfo::VertexTopology::Triangle_Strip:
+            input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         }
         pipeline_info.pInputAssemblyState = &input_assembly;
 
@@ -225,10 +297,10 @@ namespace PWEngine::Render
         case PipelineInfo::CullMode::None:
             rasterizer.cullMode = VK_CULL_MODE_NONE;
         break;
-        case PipelineInfo::CullMode::Frontend:
+        case PipelineInfo::CullMode::Front:
             rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
         break;
-        case PipelineInfo::CullMode::Backend:
+        case PipelineInfo::CullMode::Back:
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         break;
         }
@@ -244,20 +316,49 @@ namespace PWEngine::Render
         pipeline_info.pMultisampleState = &multisampling;
 
         /* --- Color Blending --- */
-        VkPipelineColorBlendAttachmentState color_blend_attachment{};
-        color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-        color_blend_attachment.blendEnable = VK_FALSE;
+        std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
+        if (info.color_blend.has_value())
+        {
+            for (const auto& level : info.color_blend.value())
+            {
+                VkPipelineColorBlendAttachmentState color_blend_attachment{};
+                color_blend_attachment.blendEnable = VK_TRUE;
 
+                color_blend_attachment.colorWriteMask = 
+                    ((level.write_mask.x)? VK_COLOR_COMPONENT_R_BIT: 0) |
+                    ((level.write_mask.y)? VK_COLOR_COMPONENT_G_BIT: 0) |
+                    ((level.write_mask.z)? VK_COLOR_COMPONENT_B_BIT: 0) |
+                    ((level.write_mask.w)? VK_COLOR_COMPONENT_A_BIT: 0) ;
+                
+                color_blend_attachment.colorBlendOp = ToVulkanEnumBlendOp(level.color_op);
+                color_blend_attachment.srcColorBlendFactor = ToVulkanEnumBlendFactor(level.color_src);
+                color_blend_attachment.dstColorBlendFactor = ToVulkanEnumBlendFactor(level.color_dst);
+
+                color_blend_attachment.alphaBlendOp = ToVulkanEnumBlendOp(level.alpha_op);
+                color_blend_attachment.srcAlphaBlendFactor = ToVulkanEnumBlendFactor(level.alpha_src);
+                color_blend_attachment.dstAlphaBlendFactor = ToVulkanEnumBlendFactor(level.alpha_dst);
+
+                color_blend_attachments.push_back(color_blend_attachment);
+            }
+        }
+        else 
+        {
+            VkPipelineColorBlendAttachmentState color_blend_attachment{};
+            color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+            color_blend_attachment.blendEnable = VK_FALSE;
+            color_blend_attachments.push_back(color_blend_attachment);
+        }
+        
         VkPipelineColorBlendStateCreateInfo color_blending{};
         color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
         color_blending.logicOpEnable = VK_FALSE;
         color_blending.logicOp = VK_LOGIC_OP_COPY;
-        color_blending.attachmentCount = 1;
-        color_blending.pAttachments = &color_blend_attachment;
-        color_blending.blendConstants[0] = 0.0f;
-        color_blending.blendConstants[1] = 0.0f;
-        color_blending.blendConstants[2] = 0.0f;
-        color_blending.blendConstants[3] = 0.0f;
+        color_blending.attachmentCount = color_blend_attachments.size();
+        color_blending.pAttachments = color_blend_attachments.data();
+        color_blending.blendConstants[0] = info.color_blend_constant.x;
+        color_blending.blendConstants[1] = info.color_blend_constant.y;
+        color_blending.blendConstants[2] = info.color_blend_constant.z;
+        color_blending.blendConstants[3] = info.color_blend_constant.w;
 
         pipeline_info.pColorBlendState = &color_blending;
 
