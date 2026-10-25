@@ -1,0 +1,144 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 riceliker and all contributors
+#pragma once
+#include "render.hpp"
+
+namespace PWEngine::Pipeline 
+{
+    class PipelineHUD;
+    class PipelineHUD : public Render::IPipeline
+    {
+    public:
+        /* Constructor */
+        PipelineHUD(Render::RenderContext* super);
+        std::unique_ptr<Render::DescriptorSet> createDS();
+        friend class RenderContext;
+    };
+
+    class Pipeline3D;
+
+    class Transform3D
+    {
+    private:
+        std::vector<Vec3<float>> positions;
+        std::vector<Vec4<float>> rotations;
+        std::vector<Vec3<float>> scales;
+    public:
+        size_t length;
+        std::shared_ptr<Uniform> m_uniform;
+        void resizeTransform(size_t size);
+        void addTransform();
+        Vec3<float> getPosition(size_t index);
+        void setPosition(size_t index, Vec3<float> new_position);
+        void addPosition(size_t index, Vec3<float> delta_postion);
+        Vec3<float> getRotation(size_t index);
+        void setRotation(size_t index, Vec3<float> new_rotation);
+        void addRotation(size_t index, Vec3<float> delta_rotation);
+        Vec3<float> getScale(size_t index);
+        void setScale(size_t index, Vec3<float> new_scale);
+        void addScale(size_t index, Vec3<float> delta_scale);
+        void calculateNodeMatrix(Command* command);
+        Transform3D();
+    };
+
+    class Mesh3D
+    {
+    private:
+        void setVertices(RenderContext* super, std::vector<Vertex3D>& vertices);
+        void setIndices(RenderContext* super, std::vector<uint32_t>& indices);
+    public:
+        /* parent */
+        Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        std::shared_ptr<Transform3D> transform;
+        size_t indices_size;
+        /* impl */
+        struct Vertex3D;
+        std::unique_ptr<Vertex3D> m_vertex;
+        /* public */
+        void bindTransform3D(std::shared_ptr<Transform3D> transform);
+        /* constructor */
+        Mesh3D();
+        ~Mesh3D();
+        friend class Pipeline3D;
+    };
+
+    /* set 1 */
+    class Material
+    {
+    private:
+        void createDescriptorSet();
+        std::optional<std::shared_ptr<Texture2D>> basic_texture;
+    public:
+        Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        struct Uniform;
+        std::unique_ptr<Uniform> m_uniform;
+        void bindBasicTexture(std::shared_ptr<Texture2D> texture);
+        void updateDescriptor();
+        Material();
+        ~Material();
+        friend class Pipeline3D;
+    };
+
+    class Node3D
+    {
+    private:
+        std::optional<std::shared_ptr<Mesh3D>> m_mesh;
+        std::optional<std::shared_ptr<Material>> m_material;
+        std::optional<std::shared_ptr<Transform3D>> m_transform;
+    public:
+        Pipeline3D* p_pipeline;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set; 
+        Node3D(Pipeline3D* pipeline);
+        ~Node3D();
+        void bindMesh3D(std::shared_ptr<Mesh3D> mesh3D);
+        void bindMaterial(std::shared_ptr<Material> material);
+        void bindTransform3D(std::shared_ptr<Transform3D> transform3D);
+        void updateDescriptor();
+    };
+
+    class Camera3D
+    {
+    public:
+        struct CameraData
+        {
+            Mat4 view{0};
+            Mat4 project{0};
+        };
+        RenderContext* p_context;
+        Pipeline3D* p_pipeline;
+        Vec3<float> position;
+        Vec3<float> look_vector;
+        float view_degree = 45;
+        Vec2<float> view_depth = {0.01, 100};
+        CameraData data;
+        struct DescriptorSet;
+        std::unique_ptr<DescriptorSet> m_descriptor_set;
+        struct Uniform;
+        std::unique_ptr<Uniform> m_uniform;
+        Camera3D();
+        ~Camera3D();
+        void calculateLookVector(Vec2<float> look_degree);
+        void cameraMoveFromLook(Vec2<float> step);
+        void updateDescriptor();
+        void updateData(Command* command);
+        friend class Pipeline3D;
+    };
+
+    
+
+    class Pipeline3D : public Render::IPipeline
+    {
+    public:
+        /* Constructor */
+        Pipeline3D(Render::RenderContext* super, ShaderPath path);
+        std::unique_ptr<Mesh3D> createMesh3D(Model3D* model);
+        std::unique_ptr<Material> createMaterial();
+        std::unique_ptr<Camera3D> createCamera();
+        friend class RenderContext;
+    };
+}

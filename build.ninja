@@ -21,39 +21,24 @@ rule shared_library
 # ===== Make Object =====
 obj = ./build/obj
 bin = ./build/libPWEngine.dylib
-build $obj/PWEngine/runtime/core/file/shader.o: compile runtime/core/file/shader.cpp
-build $obj/PWEngine/runtime/core/file/obj.o: compile runtime/core/file/obj.cpp
-build $obj/PWEngine/runtime/core/file/tga.o: compile runtime/core/file/tga.cpp
-build $obj/PWEngine/runtime/core/render/pipeline/shader.o: compile runtime/core/render/pipeline/shader.cpp
-build $obj/PWEngine/runtime/core/render/pipeline/builder.o: compile runtime/core/render/pipeline/builder.cpp
-build $obj/PWEngine/runtime/core/render/context/uniform.o: compile runtime/core/render/context/uniform.cpp
-build $obj/PWEngine/runtime/core/render/context/window.o: compile runtime/core/render/context/window.cpp
-build $obj/PWEngine/runtime/core/render/context/context.o: compile runtime/core/render/context/context.cpp
-build $obj/PWEngine/runtime/core/render/context/descripter.o: compile runtime/core/render/context/descripter.cpp
-build $obj/PWEngine/runtime/core/render/context/texture.o: compile runtime/core/render/context/texture.cpp
-build $obj/PWEngine/runtime/core/render/context/buffer.o: compile runtime/core/render/context/buffer.cpp
-build $obj/PWEngine/runtime/core/render/context/swapchain.o: compile runtime/core/render/context/swapchain.cpp
-build $obj/PWEngine/runtime/core/render/context/check.o: compile runtime/core/render/context/check.cpp
-build $obj/PWEngine/runtime/core/render/input/mouse.o: compile runtime/core/render/input/mouse.cpp
-build $obj/PWEngine/runtime/core/render/input/keyborad.o: compile runtime/core/render/input/keyborad.cpp
-build $obj/PWEngine/runtime/core/render/node3D/mesh.o: compile runtime/core/render/node3D/mesh.cpp
-build $obj/PWEngine/runtime/core/render/node3D/camera.o: compile runtime/core/render/node3D/camera.cpp
-build $obj/PWEngine/runtime/core/render/node3D/node.o: compile runtime/core/render/node3D/node.cpp
-build $obj/PWEngine/runtime/core/render/node3D/pipeline.o: compile runtime/core/render/node3D/pipeline.cpp
-build $obj/PWEngine/runtime/core/render/node3D/transform.o: compile runtime/core/render/node3D/transform.cpp
-build $obj/PWEngine/runtime/core/render/node3D/material.o: compile runtime/core/render/node3D/material.cpp
-build $obj/PWEngine/runtime/core/render/instance/validlayer.o: compile runtime/core/render/instance/validlayer.cpp
-build $obj/PWEngine/runtime/core/render/instance/instance.o: compile runtime/core/render/instance/instance.cpp
-build $obj/PWEngine/runtime/core/render/loop/loop.o: compile runtime/core/render/loop/loop.cpp
-build $obj/PWEngine/runtime/core/render/loop/frame.o: compile runtime/core/render/loop/frame.cpp
-build $obj/PWEngine/runtime/core/render/loop/command.o: compile runtime/core/render/loop/command.cpp
-build $obj/PWEngine/runtime/core/render/loop/singletimer.o: compile runtime/core/render/loop/singletimer.cpp
-build $obj/PWEngine/runtime/core/render/loop/rendering.o: compile runtime/core/render/loop/rendering.cpp
-build $obj/PWEngine/runtime/core/render/hud/pipeline.o: compile runtime/core/render/hud/pipeline.cpp
+build $obj/PWEngine/runtime/gpu/pipeline/descriptor.o: compile runtime/gpu/pipeline/descriptor.cpp
+build $obj/PWEngine/runtime/gpu/pipeline/shader.o: compile runtime/gpu/pipeline/shader.cpp
+build $obj/PWEngine/runtime/gpu/pipeline/builder.o: compile runtime/gpu/pipeline/builder.cpp
+build $obj/PWEngine/runtime/gpu/input/input.o: compile runtime/gpu/input/input.cpp
+build $obj/PWEngine/runtime/gpu/window/window.o: compile runtime/gpu/window/window.cpp
+build $obj/PWEngine/runtime/gpu/window/swapchain.o: compile runtime/gpu/window/swapchain.cpp
+build $obj/PWEngine/runtime/gpu/allocator/image.o: compile runtime/gpu/allocator/image.cpp
+build $obj/PWEngine/runtime/gpu/allocator/buffer.o: compile runtime/gpu/allocator/buffer.cpp
+build $obj/PWEngine/runtime/gpu/task/window.o: compile runtime/gpu/task/window.cpp
+build $obj/PWEngine/runtime/gpu/task/normal.o: compile runtime/gpu/task/normal.cpp
+build $obj/PWEngine/runtime/gpu/task/interface.o: compile runtime/gpu/task/interface.cpp
+build $obj/PWEngine/runtime/gpu/instance/cmdpool.o: compile runtime/gpu/instance/cmdpool.cpp
+build $obj/PWEngine/runtime/gpu/instance/run.o: compile runtime/gpu/instance/run.cpp
+build $obj/PWEngine/runtime/gpu/instance/device.o: compile runtime/gpu/instance/device.cpp
+build $obj/PWEngine/runtime/gpu/instance/instance.o: compile runtime/gpu/instance/instance.cpp
 build $obj/PWEngine/runtime/stream/log.o: compile runtime/stream/log.cpp
 build $obj/PWEngine/runtime/stream/config.o: compile runtime/stream/config.cpp
-build $obj/PWEngine/runtime/stb/image.o: compile runtime/stb/image.cpp
-build $bin: shared_library $obj/PWEngine/runtime/core/file/shader.o $obj/PWEngine/runtime/core/file/obj.o $obj/PWEngine/runtime/core/file/tga.o $obj/PWEngine/runtime/core/render/pipeline/shader.o $obj/PWEngine/runtime/core/render/pipeline/builder.o $obj/PWEngine/runtime/core/render/context/uniform.o $obj/PWEngine/runtime/core/render/context/window.o $obj/PWEngine/runtime/core/render/context/context.o $obj/PWEngine/runtime/core/render/context/descripter.o $obj/PWEngine/runtime/core/render/context/texture.o $obj/PWEngine/runtime/core/render/context/buffer.o $obj/PWEngine/runtime/core/render/context/swapchain.o $obj/PWEngine/runtime/core/render/context/check.o $obj/PWEngine/runtime/core/render/input/mouse.o $obj/PWEngine/runtime/core/render/input/keyborad.o $obj/PWEngine/runtime/core/render/node3D/mesh.o $obj/PWEngine/runtime/core/render/node3D/camera.o $obj/PWEngine/runtime/core/render/node3D/node.o $obj/PWEngine/runtime/core/render/node3D/pipeline.o $obj/PWEngine/runtime/core/render/node3D/transform.o $obj/PWEngine/runtime/core/render/node3D/material.o $obj/PWEngine/runtime/core/render/instance/validlayer.o $obj/PWEngine/runtime/core/render/instance/instance.o $obj/PWEngine/runtime/core/render/loop/loop.o $obj/PWEngine/runtime/core/render/loop/frame.o $obj/PWEngine/runtime/core/render/loop/command.o $obj/PWEngine/runtime/core/render/loop/singletimer.o $obj/PWEngine/runtime/core/render/loop/rendering.o $obj/PWEngine/runtime/core/render/hud/pipeline.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o $obj/PWEngine/runtime/stb/image.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: shared_library $obj/PWEngine/runtime/gpu/pipeline/descriptor.o $obj/PWEngine/runtime/gpu/pipeline/shader.o $obj/PWEngine/runtime/gpu/pipeline/builder.o $obj/PWEngine/runtime/gpu/input/input.o $obj/PWEngine/runtime/gpu/window/window.o $obj/PWEngine/runtime/gpu/window/swapchain.o $obj/PWEngine/runtime/gpu/allocator/image.o $obj/PWEngine/runtime/gpu/allocator/buffer.o $obj/PWEngine/runtime/gpu/task/window.o $obj/PWEngine/runtime/gpu/task/normal.o $obj/PWEngine/runtime/gpu/task/interface.o $obj/PWEngine/runtime/gpu/instance/cmdpool.o $obj/PWEngine/runtime/gpu/instance/run.o $obj/PWEngine/runtime/gpu/instance/device.o $obj/PWEngine/runtime/gpu/instance/instance.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin
 # ===== Make Object =====
 obj = ./build/obj

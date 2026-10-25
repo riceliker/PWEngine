@@ -1,0 +1,378 @@
+// SPDX-License-Identifier: LGPL-3.0-or-later
+// Copyright (C) 2026 riceliker and all contributors
+#pragma once
+#include "core/stream.hpp"
+#include "core/math.hpp"
+#include "format.hpp"
+
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
+#include <variant>
+#include <vector>
+
+/* The number of frame in swapchain. The 3 is best now. */
+#define MAX_FRAMES_IN_FLIGHT 3
+
+namespace PWEngine::Render
+{
+/*    Structure Of PWEngine Render Module   */
+class RenderInstance;
+/*    |                                                                                                 */ 
+/*    |--> */class RenderContext;/* ------------------------------------------------------------------->*/         
+/*    |            |                                                                                    */
+/*    |            V                                                                                    */
+/*    |    */class Pipeline3D;/*------------------------------------------------------->*/class Input;
+/*    |            |                |                    |                 |                  |         */
+/*    |            V                V                    V                 V                  |         */
+/*    |    */class Mesh3D;   class Uniform;      class Texture2D;    class Camera3D;/*        |         */
+/*    |            |                |                    |                 |                  |         */
+/*    |            |                V                    V                 |                  |         */
+/*    |            |<-----*/class Transform3D;    class Material;/*        |                  |         */
+/*    |            |                                     |                 |                  |         */
+/*    V            V                                     V                 V                  |         */
+class Command;/*<---------------------------------------------------------------------------------------*/ class DescriptorSet;
+/*
+     ███████     ███████    ███    ██░  ████████ ███   ▓██████         ███████  █████████ ░████████   ███    ███   ░██████▒  █████████
+    ██▓   ░██  ▒██░   ░██░  ████   ██░  ██       ███  ███    ███      ███   ███    ███    ░██    ███  ███    ███  ███    ███    ███
+   ███         ██▒     ▓██  ██ ██  ██░  ██▒▒▒▒▒  ███ ███              ▓█████       ███    ░██    ███  ███    ███ ░██            ███
+   ███         ██▒     ▓██  ██  ██▒██░  ███████  ███ ███   █████          █████    ███    ░████████   ███    ███ ░██            ███
+   ░██░   ░██  ▓██     ██▓  ██   ████░  ██       ███  ███    ███      ██░    ██    ███    ░██    ▓██  ███    ███  ███    ███    ███
+     ███████     ███████    ██    ███░  ██       ███   █████████       ███████     ███    ░██     ██   ████████    ▒██████▓     ███
+*/
+
+    struct ContextInfo
+    {
+        Vec2<uint32_t> window_default_resolution;
+        std::string window_title;
+        bool is_window_resizable;
+    };
+    /*
+        The data type of DescriptorSetLayout.
+        - Uniform: The uniform buffer
+        - Sampler: The image buffer
+        - Storage: The multi-uniform buffer
+    */
+    enum class DescriptorType
+    {
+        Uniform, Sampler, Storage
+    };
+    enum class ShaderType
+    {
+        Vertex, Fragment, Compute
+    };
+    struct ShaderPath
+    {
+        std::string vertex_shader;
+        std::string fragment_shader;
+    };
+    struct ShaderLayoutInfo
+    {
+        uint32_t binding_index;
+        uint32_t binding_array_count;
+        DescriptorType descriptor_type;
+        ShaderType shader_type;
+    };
+    enum class Key : uint16_t
+    {
+        Unknown = 0,    
+        A, B, C, D, E, F, G, H, I, J, K, L, M,
+        N, O, P, Q, R, S, T, U, V, W, X, Y, Z,  
+        Num0, Num1, Num2, Num3, Num4, Num5, Num6, Num7, Num8, Num9,
+        Space, Enter, Tab, Backspace,
+        Left, Right, Up, Down,
+        Insert, Delete, Home, End, PageUp, PageDown,
+        F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12,
+        Kp0, Kp1, Kp2, Kp3, Kp4, Kp5, Kp6, Kp7, Kp8, Kp9,
+        KpDecimal, KpDivide, KpMultiply, KpSubtract, KpAdd, KpEnter,
+        LShift, RShift, LCtrl,  RCtrl, LAlt, RAlt, LSuper, RSuper,
+        Menu, Escape
+    };
+    enum MouseKey : uint8_t
+    {
+        Unknown = 0,
+        BtnLeft, BtnRight, BtnMiddle
+    };
+/*
+    ██  ░███    ███   ███████  ██████████  ████     ███    ░██    ███████    █████████
+    ██  ░████   ███  ██    ███    ▓██      ████▓    ████░  ░██  ▓██▒    ██▓  ██
+    ██  ░██ ██  ███  █████▓       ▓██     ██  ██    ██░███ ░██  ███          ████████
+    ██  ░██  ██▓███     ░█████    ▓██    ███  ▓██   ██░ ███░██  ██▓          ██
+    ██  ░██   █████ ███     ██    ▓██   ██████████  ██░  ▒████  ███     ██▓  ██
+    ██  ░██    ▓███  ▓███████     ▓██  ░██      ███ ██░    ███    ███████    █████████
+*/
+    /*
+        The RenderInstance is the start of PWEngine::Render.
+        And the information about application will be registry here.
+    */
+    
+
+/*
+     ███████     ███████░   ███░    ██ ▓█████████ █████████ ▓██▒   ███ █████████
+    ███    ███  ███    ███  █████   ██     ██▒    ███         ███ ██▒     ███
+   ███         ███      ██▒ ██████  ██     ██▒    ████████▒    ████       ███
+   ███         ███      ██▒ ███ ▓██ ██     ██▒    ███          ████▒      ███
+    ██▓    ███  ███    ███  ███   ████     ██▒    ███        ▒██░ ███     ███
+     ███████     ███████▓   ███    ███     ██▒    █████████ ███    ███    ███
+*/
+
+    class RenderContext
+    {
+    private:
+        /* call vkQueueSumbit to submit the command buffer. */
+        void frameSubmit(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
+        /* get GLFW event.*/
+        void pollEvents();
+        /* check window is closed by GLFW. */
+        bool getIsWindowClosed();
+        void waitIdle();
+        /* wait fence to wait GPU finished this task and send CPU data. */
+        void waitFence(size_t swapchain_loop_frame_index, uint32_t* swapchain_image_index);
+        Command* commandBegin(size_t swapchain_loop_frame_index, uint32_t swapchain_image_index);
+        void commandEnd(Command* command);
+        std::shared_ptr<Input> createInput();
+    public:
+        RenderInstance* p_instance;
+        /* PImpl */
+        struct Device;
+        std::unique_ptr<Device> m_device;
+        struct Window;
+        std::unique_ptr<Window> m_window;
+        struct Swapchain;
+        std::unique_ptr<Swapchain> m_swapchain;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        RenderContext();
+        ~RenderContext();
+        /* create */
+        void recreateSwapchain();
+        std::unique_ptr<Pipeline3D> createPipeline3D(std::vector<std::vector<ShaderLayoutInfo>> infos, ShaderPath path);
+        std::shared_ptr<Texture2D> createTexture2D(ImageRGBA8* surface);
+        std::shared_ptr<Transform3D> createTransform3D();
+        std::shared_ptr<Uniform> createUniform(size_t size, DescriptorType type);
+        void hideMouseCursor();
+        void showMouseCursor();
+        /* Loop */
+        template<std::invocable<Command*, Input*, float> F> void frameLoop(F&& func);      
+        friend class RenderInstance;
+    };
+
+    template<std::invocable<Command*, Input*, float> F> void RenderContext::frameLoop(F&& func)
+    {
+        float delta = 0;
+        size_t swapchain_loop_frame_index = 0;
+        uint32_t swapchain_image_index = 0;
+        auto input = this->createInput();
+        while (!this->getIsWindowClosed()) 
+        {
+            auto start_time = std::chrono::high_resolution_clock::now();
+            this->waitFence(swapchain_loop_frame_index, &swapchain_image_index);
+            auto cmd = this->commandBegin(swapchain_loop_frame_index, swapchain_image_index);
+            this->pollEvents();
+            func(cmd, input.get(), delta);
+            this->commandEnd(cmd);
+            this->frameSubmit(swapchain_loop_frame_index, &swapchain_image_index);
+            swapchain_loop_frame_index = (swapchain_loop_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
+            auto current_time = std::chrono::high_resolution_clock::now();
+            delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+        }
+        this->waitIdle();
+    }        
+    
+    class Uniform
+    {
+    private:
+        void* data;
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        void updateData(Command* command, void* data, size_t size);
+        Uniform(RenderContext* p_context);
+        ~Uniform();
+    };
+
+    struct Mesh3DNodeTransform
+    {
+        Mat4 transform = Mat4(1);
+    };
+    class VertexBuffer
+    {
+
+    };
+
+    class Texture2D
+    {
+    private:
+        void setTexture2D(ImageRGBA8* surface);
+        void setTextureView();
+        void setTextureSampler();
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Texture2D();
+        ~Texture2D();
+        void setBasicTexture();        
+        friend class RenderContext;
+    };
+
+    struct NodeHUD
+    {
+        Vec4<float> position_rect;
+        Vec4<float> uv_rect;
+        Mat4 vp;
+    };  
+    struct PushConstant
+    {
+        uint32_t offset;
+        uint32_t size;
+    };
+    struct VertexBinding
+    {
+        uint32_t binding;
+        uint32_t size;
+    };
+    struct VertexInput
+    {
+        uint32_t binding;
+        uint32_t location;
+        uint32_t offset;
+        enum class Type { u8, i32, f32 } type;
+        enum class Length { vec2, vec3, vec4 } len;
+    };
+    enum class BlendOp 
+    {
+        add, src_minus_dst, dst_minus_src, min, max 
+    };
+    enum class BlendObject
+    {
+        zero, one,
+        src_color, one_minus_src_color, dst_color, one_minus_dst_color,
+        src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha,
+        constant_color, one_minus_constant_color, constant_alpha, one_minus_constant_alpha,
+    };
+    struct ColorBlend
+    {
+        BlendOp color_op;
+        BlendObject color_src;
+        BlendObject color_dst;
+
+        BlendOp alpha_op;
+        BlendObject alpha_src;
+        BlendObject alpha_dst;
+
+        Vec4<bool> write_mask;
+    };
+    struct DepthStencilInfo
+    {
+
+    };
+    struct RenderingInfo
+    {
+
+    };
+    struct RenderPassInfo
+    {
+
+    };
+    struct PipelineInfo
+    {
+        std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
+        std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
+        std::vector<VertexBinding> vertex_bindings;
+        std::vector<VertexInput> vertex_formats;
+        std::optional<std::vector<std::vector<ShaderLayoutInfo>>> descriptor_set;
+        std::optional<std::vector<PushConstant>> push_constant_layout;
+        enum class VertexTopology {Triangle_List, Triangle_Strip} topology;
+        enum class CullMode {Front, Back, None} cull_mode;
+        std::optional<std::vector<ColorBlend>> color_blend;
+        Vec4<float> color_blend_constant;
+        std::optional<DepthStencilInfo> depth_stencil;
+        std::variant<RenderingInfo, RenderPassInfo> render_mode;
+    };
+
+    std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> compilerShader(const std::string& source, ShaderType type, const std::string& name);
+    std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> openShader(std::string file_path);
+
+    class IPipeline
+    {
+    protected:
+        void builder(PipelineInfo info);
+    public:
+        RenderContext* p_context;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        /* Constructor */
+        IPipeline(RenderContext* super);
+        virtual ~IPipeline();
+    };
+
+    class DescriptorSet
+    {
+    public:
+        struct Impl;
+        std::unique_ptr<Impl> self; 
+        DescriptorSet(IPipeline* pipeline);
+        ~DescriptorSet();
+        void update(IPipeline* pipeline, Texture2D* texture);
+    };
+
+/*
+     ███████     ███████    ████     ████  ████    ████     ████    ░███    ██  ▒████████
+    ███    ██▒  ███    ███  █████   █████  ████░   ████    ░████    ░████   ██  ▒██    ███
+   ███         ███      ██  ██▓██  ▓█████  ██ ██  ██░██    ██ ░██   ░██▒██  ██  ▒██     ███
+   ███         ███      ██  ██▓ ██ ██ ███  ██ ███▒██ ██   ███  ███  ░██  ██ ██  ▒██     ███
+   ░██▒    ██▒  ██▓    ███  ██▓ ████  ███  ██  ████  ██  █████████▓ ░██   ████  ▒██    ███
+     ███████     ███████    ██▓  ███  ███  ██   ██   ██ ░██     ░██ ░██    ███  ▒████████
+*/
+
+    class Command
+    {
+    private:
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        RenderContext* p_context;
+    public:
+        Command(); 
+        ~Command()=default;
+        size_t swapchain_loop_frame_index;
+        uint32_t swapchain_image_index = 0; /* the DS image index */
+        void setViewPort();
+        void setScissor();
+        void bindPipeline(IPipeline* pipeline);
+        void renderingBegin(Vec4<float> color, bool is_clear_background);
+        void renderingEnd();
+        void renderingBarrier();
+        friend class RenderContext;
+    };
+
+/*
+    ██░  ███    ▓██  █████████  ░██     ███ ██████████
+    ██░  ████   ▓██  ███    ███ ░██     ███     ██▓
+    ██░  ██ ██▓ ▓██  ███    ███ ░██     ███     ██▓
+    ██░  ██  ███▓██  ████████▓  ░██     ███     ██▓
+    ██░  ██   █████  ███         ██▓    ███     ██▓
+    ██░  ██     ███  ███          ████████      ██▓
+*/
+
+    class Input
+    {
+    private:
+        RenderContext* p_context;
+    public:
+        Input(){};
+        ~Input(){};
+        bool checkIsKeyInput(Key key);
+        bool checkIsMouseInput(MouseKey key);
+        Vec2<float> checkMousePosition();
+        bool checkIsHoverScreen();
+        friend class RenderContext;
+    };  
+}
+
+

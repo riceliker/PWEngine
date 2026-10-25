@@ -1,0 +1,123 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 riceliker and all contributors
+
+#pragma once
+/* include library */
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+#include <vulkan/vulkan.h>
+#if(__APPLE__)
+#include <vulkan/vulkan_beta.h>
+#endif
+/* header */
+#include "core/render.hpp"
+/* std library */
+#include <cstddef>
+
+
+namespace PWEngine::Render 
+{
+ /*
+    ██  ░███    ███   ███████  ██████████  ████     ███    ░██    ███████    █████████
+    ██  ░████   ███  ██    ███    ▓██      ████▓    ████░  ░██  ▓██▒    ██▓  ██
+    ██  ░██ ██  ███  █████▓       ▓██     ██  ██    ██░███ ░██  ███          ████████
+    ██  ░██  ██▓███     ░█████    ▓██    ███  ▓██   ██░ ███░██  ██▓          ██
+    ██  ░██   █████ ███     ██    ▓██   ██████████  ██░  ▒████  ███     ██▓  ██
+    ██  ░██    ▓███  ▓███████     ▓██  ░██      ███ ██░    ███    ███████    █████████
+*/
+    
+/*
+     ███████     ███████░   ███░    ██ ▓█████████ █████████ ▓██▒   ███ █████████
+    ███    ███  ███    ███  █████   ██     ██▒    ███         ███ ██▒     ███
+   ███         ███      ██▒ ██████  ██     ██▒    ████████▒    ████       ███
+   ███         ███      ██▒ ███ ▓██ ██     ██▒    ███          ████▒      ███
+    ██▓    ███  ███    ███  ███   ████     ██▒    ███        ▒██░ ███     ███
+     ███████     ███████▓   ███    ███     ██▒    █████████ ███    ███    ███
+*/
+
+    struct RenderContext::Device
+    {
+        VkPhysicalDevice adapter;
+        VkDevice device;
+        VkQueue graphics_queue;
+        Device(RenderContext* super);
+    };
+
+    struct RenderContext::Window
+    {
+        GLFWwindow* window;
+        VkSurfaceKHR surface;
+        
+        Window(RenderContext* super, bool is_resizable, Vec2<uint32_t> window_default_resolution, std::string window_title);
+    };
+
+    struct RenderContext::Swapchain
+    {
+        VkSwapchainKHR swapchain;
+        std::vector<VkImage> swapchain_images;
+        VkFormat swapchain_image_format;
+        VkExtent2D swapchain_extent;
+
+        VkImage depth_image;
+        VkDeviceMemory depth_image_memory;
+        VkImageView depth_image_view;
+
+        std::vector<VkImageView> swapchain_image_views;
+
+        Swapchain(RenderContext* super);
+        void createSwapchain(RenderContext* super, VkExtent2D& swapchain_extent);
+        void createDepth(RenderContext* super, VkExtent2D swapchain_extent);
+        void createImageView(RenderContext* super);
+    };
+
+    struct RenderContext::Impl
+    {
+        std::vector<VkSemaphore> image_available_semaphores;
+        std::vector<VkSemaphore> render_finished_semaphores;
+        std::vector<VkFence> in_flight_fences;
+
+        VkCommandPool command_pool;
+        std::vector<VkCommandBuffer> command_buffers;
+
+        VkDescriptorPool descriptor_pool;
+    };
+
+    struct DescriptorSet::Impl
+    {
+        std::vector<VkDescriptorSet> descriptor_sets;
+    };
+/*
+    ████████   ███  ████████   █████████  ███       ███  ███     ██  ░█████████
+    ██    ▓██  ███  ███    ██▒ ███        ███       ███  █████   ██  ░██
+    ██    ███  ███  ███    ██░ █████████  ███       ███  ██████  ██  ░████████
+    ████████   ███  ████████   ███        ███       ███  ███ ▓██ ██  ░██
+    ██         ███  ███        ███        ███       ███  ███   ████  ░██
+    ██         ███  ███        █████████  █████████ ███  ███    ███  ░█████████
+*/ 
+
+    struct Texture2D::Impl
+    {
+        uint32_t mip_level;
+        VkImage texture_image;
+        VkDeviceMemory texture_image_memory;
+        VkImageView texture_image_view;
+        VkSampler texture_sampler;
+    };
+
+    
+
+    struct Command::Impl
+    {
+        VkCommandBuffer* command_buffer;
+        VkExtent2D extent;
+    };
+
+    struct Uniform::Impl
+    {
+        RenderContext* p_context;
+        std::vector<VkBuffer> uniform_buffers;
+        std::vector<VkDeviceMemory> uniform_buffers_memory;
+        std::vector<void*> uniform_buffers_mapped;
+    };
+
+}

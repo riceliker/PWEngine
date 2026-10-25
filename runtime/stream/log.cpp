@@ -1,4 +1,4 @@
-#include "core/stream.hpp"
+#include "stream.hpp"
 #include <chrono>
 #include <cstdio>
 #include <ctime>
