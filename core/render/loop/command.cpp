@@ -64,7 +64,7 @@ namespace PWEngine::Render
         vkCmdSetScissor(*this->self->command_buffer, 0, 1, &scissor);            
     }
 
-    void Command::bindPipeline(IPipeline *pipeline)
+    void Command::bindPipeline(Pipeline *pipeline)
     {
         vkCmdBindPipeline(*this->self->command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
     }

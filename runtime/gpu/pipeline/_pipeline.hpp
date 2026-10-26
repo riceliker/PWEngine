@@ -7,7 +7,7 @@
 
 namespace PWEngine::GPU
 {
-    struct IPipeline::Impl
+    struct Pipeline::Impl
     {
         VkPipelineLayout pipeline_layout;
         VkPipeline graphics_pipeline;

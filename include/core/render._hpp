@@ -299,7 +299,7 @@ class Command;/*<---------------------------------------------------------------
     std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> compilerShader(const std::string& source, ShaderType type, const std::string& name);
     std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> openShader(std::string file_path);
 
-    class IPipeline
+    class Pipeline
     {
     protected:
         void builder(PipelineInfo info);
@@ -308,8 +308,8 @@ class Command;/*<---------------------------------------------------------------
         struct Impl;
         std::unique_ptr<Impl> self;
         /* Constructor */
-        IPipeline(RenderContext* super);
-        virtual ~IPipeline();
+        Pipeline(RenderContext* super);
+        virtual ~Pipeline();
     };
 
     class DescriptorSet
@@ -317,9 +317,9 @@ class Command;/*<---------------------------------------------------------------
     public:
         struct Impl;
         std::unique_ptr<Impl> self; 
-        DescriptorSet(IPipeline* pipeline);
+        DescriptorSet(Pipeline* pipeline);
         ~DescriptorSet();
-        void update(IPipeline* pipeline, Texture2D* texture);
+        void update(Pipeline* pipeline, Texture2D* texture);
     };
 
 /*
@@ -344,7 +344,7 @@ class Command;/*<---------------------------------------------------------------
         uint32_t swapchain_image_index = 0; /* the DS image index */
         void setViewPort();
         void setScissor();
-        void bindPipeline(IPipeline* pipeline);
+        void bindPipeline(Pipeline* pipeline);
         void renderingBegin(Vec4<float> color, bool is_clear_background);
         void renderingEnd();
         void renderingBarrier();

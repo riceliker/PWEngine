@@ -41,10 +41,10 @@ namespace PWEngine::GPU
         if (this->m_window->input != nullptr && this->m_window->input->window_should_close.load()) return true;
         uint32_t swapchain_image_index = 0;
         this->waitFenceInProcess(&swapchain_image_index);
+        this->swapchain_image_index = swapchain_image_index;
         bool result = this->loop(delta);
         this->submitCommandInProcess(&swapchain_image_index);
         this->flight_fences_index = (this->flight_fences_index + 1) % this->flight_fences_index_counts;
-        
         return result;
     }    
 

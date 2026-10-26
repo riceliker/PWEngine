@@ -6,7 +6,7 @@
 namespace PWEngine::Pipeline 
 {
     class PipelineHUD;
-    class PipelineHUD : public Render::IPipeline
+    class PipelineHUD : public Render::Pipeline
     {
     public:
         /* Constructor */
@@ -131,7 +131,7 @@ namespace PWEngine::Pipeline
 
     
 
-    class Pipeline3D : public Render::IPipeline
+    class Pipeline3D : public Render::Pipeline
     {
     public:
         /* Constructor */

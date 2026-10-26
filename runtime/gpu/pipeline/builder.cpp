@@ -1,7 +1,6 @@
 #include "gpu.hpp"
 #include "gpu/instance/_instance.hpp"
 #include "_pipeline.hpp"
-#include "gpu/_format.hpp"
 
 #include "stream.hpp"
 #include <cstdint>
@@ -10,10 +9,6 @@
 #include <vector>
 namespace PWEngine::GPU
 {
-    IPipeline::IPipeline(GPUInstance* super) : self(std::make_unique<Impl>())
-    {
-        this->p_instance= super;
-    }
     static inline VkBlendFactor ToVulkanEnumBlendFactor(BlendObject obj)
     {   
         switch (obj) 
@@ -64,8 +59,10 @@ namespace PWEngine::GPU
             return VK_BLEND_OP_MAX;
         }
     }
-    void IPipeline::builder(PipelineInfo info)
+    Pipeline::Pipeline(GPUInstance* instance, PipelineInfo info) : self(std::make_unique<Impl>())
     {
+        this->p_instance= instance;
+
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 
@@ -391,13 +388,14 @@ namespace PWEngine::GPU
         const auto srgb8 = VK_FORMAT_R8G8B8A8_SRGB;
         /* render mode */
         VkPipelineRenderingCreateInfo rendering{};
+        VkFormat format = VK_FORMAT_B8G8R8A8_SRGB;
         std::visit([&](auto& arg) {
             if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, RenderingInfo>) 
             {
                 /* --- Rendering --- */
                 rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
                 rendering.colorAttachmentCount = 1;
-                rendering.pColorAttachmentFormats = &info.format->format;
+                rendering.pColorAttachmentFormats = &format;
                 rendering.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
                 rendering.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
@@ -424,7 +422,7 @@ namespace PWEngine::GPU
         }
         self->graphics_pipeline = graphics_pipeline;
     }
-    IPipeline::~IPipeline()
+    Pipeline::~Pipeline()
     {
         vkDestroyPipeline(this->p_instance->self->device, this->self->graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(this->p_instance->self->device, this->self->pipeline_layout, nullptr);

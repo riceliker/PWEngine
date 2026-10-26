@@ -14,6 +14,8 @@ namespace PWEngine::GPU
         this->createWindow(info);
         Vec2<uint32_t> extent;
         this->createSwapchain(extent);
+        this->createDepth(extent);
+        this->createImageView();
     }
 
     Window::~Window()

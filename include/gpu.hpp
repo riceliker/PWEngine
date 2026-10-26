@@ -32,9 +32,9 @@ namespace PWEngine::GPU
     /* allocator */
     class GPUBuffer; class GPUImage;
     /* pipeline */
-    class IPipeline; class GPUTask;
+    class Pipeline; class GPUTask;
     /* window */
-    class Window; class GPUTaskWithWindow;
+    class Window; class GPUTaskWithWindow; class RenderingCommand; class RecordCommandWithWindow;
 }
 
 /*----------------------------------------------------------------------
@@ -94,7 +94,6 @@ namespace PWEngine::GPU
         Vec4<float> color_blend_constant;
         std::optional<DepthStencilInfo> depth_stencil;
         std::variant<RenderingInfo, RenderPassInfo> render_mode;
-        Format* format;
     };
     enum class PipelineType {Render, Compute};
     enum class Key : uint8_t
@@ -119,6 +118,9 @@ namespace PWEngine::GPU
         BtnLeft, BtnRight, BtnMiddle,
         EndOfEnum
     };
+
+    enum class InputUintType { u8, u16, u32 };
+    enum class GPUBufferType { vertex, index };
     
 }
 
@@ -155,7 +157,7 @@ struct IRecordCommand
 {
     IRecordCommand(IGPUTask* task): p_task(task){};
     IGPUTask* p_task;
-    virtual void bindPipeline(IPipeline* pipeline, PipelineType type);
+    virtual void bindPipeline(Pipeline* pipeline, PipelineType type);
 };
 
 class IGPUTask
@@ -164,7 +166,6 @@ class IGPUTask
         void createSync();
         void createCommandPool();
     protected:
-        uint8_t flight_fences_index;
         void beginCommandInProcess();
         void endCommandInProcess();
         virtual bool sub_thread_loop(double delta) = 0;
@@ -174,14 +175,7 @@ class IGPUTask
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        template<typename T, std::invocable<T& > F> requires std::derived_from<T, IRecordCommand>
-        void recordCommand(F&& func)
-        {
-            const T command(this);
-            this->beginCommandInProcess();
-            func(command);
-            this->endCommandInProcess();
-        }
+        uint8_t flight_fences_index;
         virtual bool loop(double delta) = 0;
         virtual ~IGPUTask();
         
@@ -275,17 +269,21 @@ class IGPUTask
     class GPUBuffer
     {
     private:
-        void createGPUBuffer(size_t element_total_size, void* element);
+        void createGPUBuffer(size_t element_total_size, void* element, GPUBufferType type);
     public:
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        template<typename T>
-        GPUBuffer(GPUInstance* p_instance, std::vector<T> object_array)
+        GPUBuffer(GPUInstance* p_instance, GPUBufferType type, size_t byte_size, void* data);
+        template<typename T> static std::unique_ptr<GPUBuffer> builderUnique(GPUInstance* p_instance, GPUBufferType type, std::vector<T> element)
         {
-            this->p_instance = p_instance;
-            createGPUBuffer(sizeof(T) * object_array.size(), object_array.data());
+            return std::make_unique<GPUBuffer>(p_instance, type, element.size() * sizeof(T), element.data());
         }
+        template<typename T> static std::shared_ptr<GPUBuffer> builderShared(GPUInstance* p_instance, GPUBufferType type, std::vector<T> element)
+        {
+            return std::make_shared<GPUBuffer>(p_instance, type, element.size() * sizeof(T), element.data());
+        }
+        ~GPUBuffer();
     };
 
     class GPUImage
@@ -302,23 +300,23 @@ class IGPUTask
             this->p_instance = p_instance;
             createGPUImage(image_size, sizeof(T), format, pixels.data());
         }
+        ~GPUImage();
     };
 
 /* -------- */
 /* pipeline */
 /* -------- */
 
-    class IPipeline
+    class Pipeline
     {
-    protected:
-        void builder(PipelineInfo info);
     public:
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
+        void builder(PipelineInfo info);
         /* Constructor */
-        IPipeline(GPUInstance* super);
-        virtual ~IPipeline();
+        Pipeline(GPUInstance* instance, PipelineInfo info);
+        ~Pipeline();
     };
 
 /* ------ */
@@ -362,10 +360,37 @@ class IGPUTask
         ~GPUTask();
     };
 
-    struct RecordCommandWithWindow: public IRecordCommand
+    class RenderingCommand
     {
-        void bindPipeline(IPipeline* pipeline, PipelineType type) override;
-        void 
+    private:
+    public:
+        RenderingCommand(RecordCommandWithWindow* command): p_command(command){}
+        RecordCommandWithWindow* p_command;
+        void bindVertices(std::vector<GPUBuffer*> buffers, std::vector<uint64_t> offset);
+        void bindIndex(GPUBuffer* buffer, InputUintType size);
+        void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
+    };
+
+    class RecordCommandWithWindow
+    {
+    private:
+        void BeginRendering(Vec4<float> color, bool is_clear_background);
+        void EndRendering();
+        void BeginRenderPass();
+        void EndRenderingPass();
+    public:
+        RecordCommandWithWindow(GPUTaskWithWindow* task): p_task(task){};
+        GPUTaskWithWindow* p_task;
+        void bindPipeline(Pipeline* pipeline, PipelineType type);
+        void setViewPort();
+        void setScissor();
+        template<std::invocable<RenderingCommand&> F> void Rendering(Vec4<float> color, bool is_clear_background, F&& func)
+        {
+            RenderingCommand rendering(this);
+            this->BeginRendering(color, is_clear_background);
+            func(rendering);
+            this->EndRendering();
+        }
     };
 
     class GPUTaskWithWindow : public IGPUTask
@@ -376,6 +401,15 @@ class IGPUTask
         bool sub_thread_loop(double delta) override;
     public:
         std::unique_ptr<Window> m_window;
+        uint32_t swapchain_image_index;
+        template<std::invocable<RecordCommandWithWindow*> F>
+        void recordCommand(F&& func)
+        {
+            RecordCommandWithWindow command(this);
+            this->beginCommandInProcess();
+            func(&command);
+            this->endCommandInProcess();
+        }
         GPUTaskWithWindow(GPUInstance* instance, WindowInfo info);
         ~GPUTaskWithWindow();
     };

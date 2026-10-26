@@ -14,7 +14,7 @@ namespace PWEngine::Render
         return obj;
     }
 
-    Pipeline3D::Pipeline3D(RenderContext* super, ShaderPath path) : IPipeline(super)
+    Pipeline3D::Pipeline3D(RenderContext* super, ShaderPath path) : Pipeline(super)
     {
         PipelineInfo info{};
 

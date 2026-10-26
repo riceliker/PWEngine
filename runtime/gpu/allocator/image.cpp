@@ -1,4 +1,5 @@
 #include "_allocator.hpp"
+#include "gpu.hpp"
 namespace PWEngine::GPU 
 {
     static inline void transitionImageLayoutCommand(GPUInstance* instance, uint32_t mip_level, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
@@ -155,7 +156,13 @@ namespace PWEngine::GPU
         vkDestroyBuffer(this->p_instance->self->device, staging_buffer, nullptr);
         vkFreeMemory(this->p_instance->self->device, staging_buffer_memory, nullptr);
 
-        this->self->texture_image = texture_image;
-        this->self->texture_image_memory = staging_buffer_memory;
+        this->self->image = texture_image;
+        this->self->memory = staging_buffer_memory;
+    }
+
+    GPUImage::~GPUImage()
+    {
+        vkDestroyImage(this->p_instance->self->device, this->self->image, nullptr);
+        vkFreeMemory(this->p_instance->self->device, this->self->memory, nullptr);
     }
 }

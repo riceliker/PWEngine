@@ -56,7 +56,7 @@ namespace PWEngine::Render
         }
     )";
 
-    PipelineHUD::PipelineHUD(RenderContext* super) : IPipeline(super)
+    PipelineHUD::PipelineHUD(RenderContext* super) : Pipeline(super)
     {
         this->p_context = super;
 

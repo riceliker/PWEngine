@@ -3,6 +3,9 @@
 
 #pragma once
 /* include library */
+#include <cstdint>
+#include <format>
+#include <string>
 #include <vulkan/vulkan.h>
 #if(__APPLE__)
 #include <vulkan/vulkan_beta.h>
@@ -26,23 +29,9 @@ namespace PWEngine::GPU
     struct GPUImage::Impl
     {
         uint32_t mip_level;
-        VkImage texture_image;
-        VkDeviceMemory texture_image_memory;
+        VkImage image;
+        VkDeviceMemory memory;
     };
-
-    inline uint32_t findMemoryType(GPUInstance* instance, uint32_t type_filter, VkMemoryPropertyFlags properties) 
-    {
-        VkPhysicalDeviceMemoryProperties mem_properties;
-        vkGetPhysicalDeviceMemoryProperties(instance->self->adapter, &mem_properties);
-        for (uint32_t i = 0; i < mem_properties.memoryTypeCount; i++) 
-        {
-            if ((type_filter & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & properties) == properties)
-                return i;
-            
-        }
-        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
-        return 0;
-    }
 
     struct CreateBufferInfo
     {
@@ -66,8 +55,8 @@ namespace PWEngine::GPU
 
         VkBufferCreateInfo buffer_info{};
         buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_info.size = buffer_info.size;
-        buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+        buffer_info.size = info.size;
+        buffer_info.usage = info.usage;
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         if (vkCreateBuffer(instance->self->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
             return std::nullopt;
@@ -78,12 +67,16 @@ namespace PWEngine::GPU
         VkPhysicalDeviceMemoryProperties mem_properties;
         vkGetPhysicalDeviceMemoryProperties(instance->self->adapter, &mem_properties);
         uint32_t index;
-        for (uint32_t index = 0; index < mem_properties.memoryTypeCount; ++index) 
+        for (uint32_t i = 0; i < mem_properties.memoryTypeCount; ++i) 
         {
-            if ((mem_requirements.memoryTypeBits & (1 << index)) && (mem_properties.memoryTypes[index].propertyFlags & info.properties) == info.properties)
+            if ((mem_requirements.memoryTypeBits & (1 << i)) && (mem_properties.memoryTypes[i].propertyFlags & info.properties) == info.properties)
+            {
+                index = i;
                 goto get_memory_type_index_success;
-        }
-        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
+            }
+        }      
+        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type! memoryTypeBits="+std::to_string(mem_requirements.memoryTypeBits)+", required flags="+std::to_string(info.properties));
+        exit(-1);
         get_memory_type_index_success:
         VkMemoryAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
@@ -138,7 +131,67 @@ namespace PWEngine::GPU
         VkPhysicalDeviceMemoryProperties mem_properties;
         vkGetPhysicalDeviceMemoryProperties(instance->self->adapter, &mem_properties);
         uint32_t index;
-        for (uint32_t index = 0; index < mem_properties.memoryTypeCount; ++index) 
+        for (index = 0; index < mem_properties.memoryTypeCount; ++index) 
+        {
+            if ((mem_requirements.memoryTypeBits & (1 << index)) && (mem_properties.memoryTypes[index].propertyFlags & info.properties) == info.properties)
+                goto get_memory_type_index_success;
+        }
+        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
+        return std::nullopt;
+        get_memory_type_index_success:
+        VkMemoryAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = index;
+        
+        if (vkAllocateMemory(instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
+            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+
+        vkBindImageMemory(instance->self->device, image, memory, 0);
+        return std::make_tuple(image, memory);
+    }
+
+    inline std::optional<std::tuple<VkImage, VkDeviceMemory>> createDepthImage(GPUInstance* instance, CreateImageInfo info)
+    {
+        VkImage image;
+        VkDeviceMemory memory;
+
+        VkImageCreateInfo image_info{};
+        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_info.imageType = VK_IMAGE_TYPE_2D;
+        image_info.extent.width = static_cast<uint32_t>(info.size.x);
+        image_info.extent.height = static_cast<uint32_t>(info.size.y);
+        image_info.extent.depth = 1;
+        image_info.mipLevels = info.mip_level;
+        image_info.arrayLayers = 1;
+        switch (info.format) 
+        {
+        case ImageFormat::RGBA8:
+            image_info.format = VK_FORMAT_R8G8B8A8_SRGB;
+        break;
+        case ImageFormat::RGB8:
+            image_info.format = VK_FORMAT_R8G8B8_SRGB;
+        break;
+        case ImageFormat::D_F32_S_U8:
+            image_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        }
+        image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
+        image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        image_info.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+        image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        image_info.samples = VK_SAMPLE_COUNT_1_BIT;
+        image_info.flags = 0; // Optional
+
+        if (vkCreateImage(instance->self->device, &image_info, nullptr, &image) != VK_SUCCESS) 
+            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
+        
+        VkMemoryRequirements mem_requirements;
+        vkGetImageMemoryRequirements(instance->self->device, image, &mem_requirements);
+
+        VkPhysicalDeviceMemoryProperties mem_properties;
+        vkGetPhysicalDeviceMemoryProperties(instance->self->adapter, &mem_properties);
+        uint32_t index;
+        for (index = 0; index < mem_properties.memoryTypeCount; ++index) 
         {
             if ((mem_requirements.memoryTypeBits & (1 << index)) && (mem_properties.memoryTypes[index].propertyFlags & info.properties) == info.properties)
                 goto get_memory_type_index_success;

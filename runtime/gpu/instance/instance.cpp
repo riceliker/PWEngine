@@ -22,6 +22,7 @@ namespace PWEngine::GPU
 
         this->createInstance(info);
         this->createDevice();
+        this->createCommandPool();
     }
     void GPUInstance::createInstance(GPUInstanceInfo info)
     {

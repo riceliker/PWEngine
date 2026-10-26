@@ -134,7 +134,7 @@ namespace PWEngine::GPU
             1,
             ImageFormat::D_F32_S_U8
         };
-        auto [depth_image, depth_image_memory] = createImage(this->p_instance, depth_info).value();
+        auto [depth_image, depth_image_memory] = createDepthImage(this->p_instance, depth_info).value();
 
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

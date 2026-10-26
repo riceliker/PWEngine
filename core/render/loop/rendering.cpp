@@ -106,7 +106,7 @@ namespace PWEngine::Render
         );
     }
 
-    void Command::draw(IPipeline* pipeline, std::vector<VertexBuffer> vertex_buffer, std::vector<DescriptorSet> descriptor_set, void* push_constant)
+    void Command::draw(Pipeline* pipeline, std::vector<VertexBuffer> vertex_buffer, std::vector<DescriptorSet> descriptor_set, void* push_constant)
 
 
     void Command::draw(Pipeline3D* pipeline, Mesh3D* mesh, Material* material, Camera3D* camera)

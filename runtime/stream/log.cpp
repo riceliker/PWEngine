@@ -79,7 +79,7 @@ namespace PWEngine
                 }
                 if (message.type == LogType::Error)
                 {
-                    std::runtime_error("message");
+                    exit(-1);
                 }
             }
             log_file.close();
