@@ -54,9 +54,9 @@ namespace PWEngine::Render
    ▒██   ████   ██▓    ███  ███    ███  ███
    ▒██    ███    ███████░   ████████░   █████████
 */ 
-    template<typename T> inline VkVertexInputBindingDescription getBindingDescription()
+    template<typename T> inline VkVertexInputbindingDescription getbindingDescription()
     {
-        VkVertexInputBindingDescription bindingDescription{};
+        VkVertexInputbindingDescription bindingDescription{};
         bindingDescription.binding = 0;
         bindingDescription.stride = sizeof(T);
         bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;

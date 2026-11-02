@@ -93,7 +93,7 @@ namespace PWEngine::GPU
 
         /* --- Vertex Layout --- */
         std::vector<VkVertexInputBindingDescription> binding;
-        for (const auto& vertex_binding : info.vertex_bindings)
+        for (const auto& vertex_binding : info.vertex_binding)
         {
             VkVertexInputBindingDescription binding_description{};
             binding_description.binding = vertex_binding.binding;
@@ -166,8 +166,11 @@ namespace PWEngine::GPU
 
         pipeline_info.pVertexInputState = &vertex_input_info;
 
-        /* --- Buffer Layout --- */
+        /* --- Binding Layout --- */
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
+        uint32_t uniform_buffer_count = 0;
+        uint32_t sampler_buffer_count = 0;
+        uint32_t storage_buffer_count = 0;
         if (info.descriptor_set.has_value())
         {
             for (const auto layout : info.descriptor_set.value())
@@ -184,13 +187,16 @@ namespace PWEngine::GPU
                     {
                     case DescriptorType::Uniform:
                         binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+                        ++uniform_buffer_count;
                     break;
                     case DescriptorType::Sampler:
                         binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                        ++sampler_buffer_count;
                         binding.pImmutableSamplers = nullptr;
                     break;
                     case DescriptorType::Storage:
                         binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                        ++storage_buffer_count;
                     break;
                     }
                     
@@ -420,6 +426,7 @@ namespace PWEngine::GPU
         {
             vkDestroyShaderModule(this->p_instance->self->device, shader_module.module, nullptr);
         }
+
         self->graphics_pipeline = graphics_pipeline;
     }
     Pipeline::~Pipeline()

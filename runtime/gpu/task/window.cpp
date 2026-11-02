@@ -44,7 +44,7 @@ namespace PWEngine::GPU
         this->swapchain_image_index = swapchain_image_index;
         bool result = this->loop(delta);
         this->submitCommandInProcess(&swapchain_image_index);
-        this->flight_fences_index = (this->flight_fences_index + 1) % this->flight_fences_index_counts;
+        this->flight_fences_index = (this->flight_fences_index + 1) % flight_fences_index_counts;
         return result;
     }    
 

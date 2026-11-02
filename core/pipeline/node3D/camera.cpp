@@ -66,7 +66,7 @@ namespace PWEngine::Render
             std::array<VkWriteDescriptorSet, 1> descriptor_writes{};
             descriptor_writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptor_writes[0].dstSet = this->m_descriptor_set->descriptor_sets.at(slot);
-            descriptor_writes[0].dstBinding = 0;
+            descriptor_writes[0].dstbinding = 0;
             descriptor_writes[0].dstArrayElement = 0;
             descriptor_writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptor_writes[0].descriptorCount = 1;

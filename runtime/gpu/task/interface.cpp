@@ -50,9 +50,9 @@ namespace PWEngine::GPU
         std::vector<VkSemaphore> render_finished_semaphores;
         std::vector<VkFence> in_flight_fences;
 
-        image_available_semaphores.resize(this->flight_fences_index_counts);
-        render_finished_semaphores.resize(this->flight_fences_index_counts);
-        in_flight_fences.resize(this->flight_fences_index_counts);
+        image_available_semaphores.resize(flight_fences_index_counts);
+        render_finished_semaphores.resize(flight_fences_index_counts);
+        in_flight_fences.resize(flight_fences_index_counts);
 
         VkSemaphoreCreateInfo semaphore_info{};
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -61,7 +61,7 @@ namespace PWEngine::GPU
         fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
         fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-        for (size_t i = 0; i < this->flight_fences_index_counts; i++) {
+        for (size_t i = 0; i < flight_fences_index_counts; i++) {
             if (vkCreateSemaphore(this->p_instance->self->device, &semaphore_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS ||
                 vkCreateSemaphore(this->p_instance->self->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(this->p_instance->self->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) 
@@ -79,7 +79,7 @@ namespace PWEngine::GPU
     {
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
-        command_buffers.resize(this->flight_fences_index_counts);
+        command_buffers.resize(flight_fences_index_counts);
 
         QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->p_instance->self->adapter);
 

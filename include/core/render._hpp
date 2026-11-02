@@ -232,7 +232,7 @@ class Command;/*<---------------------------------------------------------------
         uint32_t offset;
         uint32_t size;
     };
-    struct VertexBinding
+    struct Vertexbinding
     {
         uint32_t binding;
         uint32_t size;
@@ -284,7 +284,7 @@ class Command;/*<---------------------------------------------------------------
     {
         std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
         std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
-        std::vector<VertexBinding> vertex_bindings;
+        std::vector<Vertexbinding> vertex_bindings;
         std::vector<VertexInput> vertex_formats;
         std::optional<std::vector<std::vector<ShaderLayoutInfo>>> descriptor_set;
         std::optional<std::vector<PushConstant>> push_constant_layout;

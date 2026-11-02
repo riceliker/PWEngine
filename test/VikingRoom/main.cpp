@@ -30,9 +30,9 @@ public:
     {
         this->render_pipeline = std::make_unique<PWEngine::GPU::Pipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
-        this->vertex_buffer = std::move(PWEngine::GPU::GPUBuffer::builderUnique(instance, PWEngine::GPU::GPUBufferType::vertex, vertex));
+        this->vertex_buffer = std::move(PWEngine::GPU::GPUBuffer::builderUnique(instance, PWEngine::GPU::GPUBufferDataType::vertex, vertex));
         std::vector<uint32_t> index = {0, 1, 2};
-        this->index_buffer = std::move(PWEngine::GPU::GPUBuffer::builderUnique(instance, PWEngine::GPU::GPUBufferType::index, index));
+        this->index_buffer = std::move(PWEngine::GPU::GPUBuffer::builderUnique(instance, PWEngine::GPU::GPUBufferDataType::index, index));
     }
     bool loop(double delta) override
     {
@@ -84,7 +84,7 @@ int main()
     PWEngine::LogSystem log(true);
 
     PWEngine::GPU::GPUInstanceInfo instance_info = {
-        false, "Viking Room", {1, 0, 0}
+        true, "Viking Room", {1, 0, 0}
     };
     PWEngine::GPU::GPUInstance instance(&log, instance_info);
 

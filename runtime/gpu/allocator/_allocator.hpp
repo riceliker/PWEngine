@@ -4,7 +4,6 @@
 #pragma once
 /* include library */
 #include <cstdint>
-#include <format>
 #include <string>
 #include <vulkan/vulkan.h>
 #if(__APPLE__)
@@ -31,6 +30,17 @@ namespace PWEngine::GPU
         uint32_t mip_level;
         VkImage image;
         VkDeviceMemory memory;
+    };
+
+    struct GPUBufferView::Impl
+    {
+        VkBufferView view;
+    };
+
+    struct GPUImageView::Impl
+    {
+        VkImageView view;
+        VkSampler sampler;
     };
 
     struct CreateBufferInfo

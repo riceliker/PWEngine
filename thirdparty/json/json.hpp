@@ -5611,7 +5611,7 @@ template<typename IteratorType> class iteration_proxy
     }
 };
 
-// Structured Bindings Support
+// Structured bindings Support
 // For further reference see https://blog.tartanllama.xyz/structured-bindings/
 // And see https://github.com/nlohmann/json/pull/1391
 template<std::size_t N, typename IteratorType, enable_if_t<N == 0, int> = 0>
@@ -5619,7 +5619,7 @@ auto get(const nlohmann::detail::iteration_proxy_value<IteratorType>& i) -> decl
 {
     return i.key();
 }
-// Structured Bindings Support
+// Structured bindings Support
 // For further reference see https://blog.tartanllama.xyz/structured-bindings/
 // And see https://github.com/nlohmann/json/pull/1391
 template<std::size_t N, typename IteratorType, enable_if_t<N == 1, int> = 0>
@@ -5632,7 +5632,7 @@ auto get(const nlohmann::detail::iteration_proxy_value<IteratorType>& i) -> decl
 NLOHMANN_JSON_NAMESPACE_END
 
 // The Addition to the STD Namespace is required to add
-// Structured Bindings Support to the iteration_proxy_value class
+// Structured bindings Support to the iteration_proxy_value class
 // For further reference see https://blog.tartanllama.xyz/structured-bindings/
 // And see https://github.com/nlohmann/json/pull/1391
 namespace std

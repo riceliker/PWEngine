@@ -2,18 +2,13 @@
 The game engine for game Physic World.
 Welcome to use PWEngine. It is Lite, Easy, Editable.
 PWEngine support 2D(Main) and 3D Game Developing.
+PWEngine will support common GPU compute.
 
 ## Different
 What the different of other game engine:
 1. PWEngine is both Engine and Library.
 2. PWEngine is modularization.
 3. PWEngine is self-select. Choose just you want.
-
-## File Support
-1. Image
-tga(native) png(stb) jpg(stb) 
-2. Audio
-ogg(stb) wav(midi-audio) midi(midi-audio)
 
 ## Platform
 No DRM Prison:

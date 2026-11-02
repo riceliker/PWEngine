@@ -2,6 +2,7 @@
 // Copyright (C) 2026 riceliker and all contributors
 
 #pragma once
+#include <vector>
 #include <vulkan/vulkan.h>
 #include "gpu.hpp"
 

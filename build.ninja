@@ -21,14 +21,15 @@ rule shared_library
 # ===== Make Object =====
 obj = ./build/obj
 bin = ./build/libPWEngine.dylib
-build $obj/PWEngine/runtime/gpu/pipeline/descriptor.o: compile runtime/gpu/pipeline/descriptor.cpp
 build $obj/PWEngine/runtime/gpu/pipeline/shader.o: compile runtime/gpu/pipeline/shader.cpp
 build $obj/PWEngine/runtime/gpu/pipeline/builder.o: compile runtime/gpu/pipeline/builder.cpp
 build $obj/PWEngine/runtime/gpu/input/input.o: compile runtime/gpu/input/input.cpp
+build $obj/PWEngine/runtime/gpu/binding/layout.o: compile runtime/gpu/binding/layout.cpp
 build $obj/PWEngine/runtime/gpu/window/window.o: compile runtime/gpu/window/window.cpp
 build $obj/PWEngine/runtime/gpu/window/swapchain.o: compile runtime/gpu/window/swapchain.cpp
 build $obj/PWEngine/runtime/gpu/allocator/image.o: compile runtime/gpu/allocator/image.cpp
 build $obj/PWEngine/runtime/gpu/allocator/buffer.o: compile runtime/gpu/allocator/buffer.cpp
+build $obj/PWEngine/runtime/gpu/allocator/image_view.o: compile runtime/gpu/allocator/image_view.cpp
 build $obj/PWEngine/runtime/gpu/task/window.o: compile runtime/gpu/task/window.cpp
 build $obj/PWEngine/runtime/gpu/task/normal.o: compile runtime/gpu/task/normal.cpp
 build $obj/PWEngine/runtime/gpu/task/interface.o: compile runtime/gpu/task/interface.cpp
@@ -41,7 +42,7 @@ build $obj/PWEngine/runtime/gpu/command/pipeline.o: compile runtime/gpu/command/
 build $obj/PWEngine/runtime/gpu/command/rendering.o: compile runtime/gpu/command/rendering.cpp
 build $obj/PWEngine/runtime/stream/log.o: compile runtime/stream/log.cpp
 build $obj/PWEngine/runtime/stream/config.o: compile runtime/stream/config.cpp
-build $bin: shared_library $obj/PWEngine/runtime/gpu/pipeline/descriptor.o $obj/PWEngine/runtime/gpu/pipeline/shader.o $obj/PWEngine/runtime/gpu/pipeline/builder.o $obj/PWEngine/runtime/gpu/input/input.o $obj/PWEngine/runtime/gpu/window/window.o $obj/PWEngine/runtime/gpu/window/swapchain.o $obj/PWEngine/runtime/gpu/allocator/image.o $obj/PWEngine/runtime/gpu/allocator/buffer.o $obj/PWEngine/runtime/gpu/task/window.o $obj/PWEngine/runtime/gpu/task/normal.o $obj/PWEngine/runtime/gpu/task/interface.o $obj/PWEngine/runtime/gpu/instance/cmdpool.o $obj/PWEngine/runtime/gpu/instance/run.o $obj/PWEngine/runtime/gpu/instance/device.o $obj/PWEngine/runtime/gpu/instance/instance.o $obj/PWEngine/runtime/gpu/command/window.o $obj/PWEngine/runtime/gpu/command/pipeline.o $obj/PWEngine/runtime/gpu/command/rendering.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
+build $bin: shared_library $obj/PWEngine/runtime/gpu/pipeline/shader.o $obj/PWEngine/runtime/gpu/pipeline/builder.o $obj/PWEngine/runtime/gpu/input/input.o $obj/PWEngine/runtime/gpu/binding/layout.o $obj/PWEngine/runtime/gpu/window/window.o $obj/PWEngine/runtime/gpu/window/swapchain.o $obj/PWEngine/runtime/gpu/allocator/image.o $obj/PWEngine/runtime/gpu/allocator/buffer.o $obj/PWEngine/runtime/gpu/allocator/image_view.o $obj/PWEngine/runtime/gpu/task/window.o $obj/PWEngine/runtime/gpu/task/normal.o $obj/PWEngine/runtime/gpu/task/interface.o $obj/PWEngine/runtime/gpu/instance/cmdpool.o $obj/PWEngine/runtime/gpu/instance/run.o $obj/PWEngine/runtime/gpu/instance/device.o $obj/PWEngine/runtime/gpu/instance/instance.o $obj/PWEngine/runtime/gpu/command/window.o $obj/PWEngine/runtime/gpu/command/pipeline.o $obj/PWEngine/runtime/gpu/command/rendering.o $obj/PWEngine/runtime/stream/log.o $obj/PWEngine/runtime/stream/config.o /opt/homebrew/opt/GLFW/lib/libGLFW.dylib /opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib /opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib /opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib 
 default $bin
 # ===== Make Object =====
 obj = ./build/obj
