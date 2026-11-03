@@ -47,7 +47,7 @@ namespace PWEngine::GPU
             case BindingType::storage_texel:
                 this->binding_type_count[5] += 1;
             break;
-            case BindingType::sampler:
+            case BindingType::image_sampler:
                 this->binding_type_count[6] += 1;
             break;
             case BindingType::sampled_image:
@@ -77,7 +77,7 @@ namespace PWEngine::GPU
         pool_sizes[5].type = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
         pool_sizes[5].descriptorCount = flight_fences_index_counts * this->binding_type_count[5];
 
-        pool_sizes[6].type = VK_DESCRIPTOR_TYPE_SAMPLER;
+        pool_sizes[6].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         pool_sizes[6].descriptorCount = flight_fences_index_counts * this->binding_type_count[6];
 
         pool_sizes[7].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
@@ -102,7 +102,7 @@ namespace PWEngine::GPU
         std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
         for (const auto& buffer_info : this->binding_infos)
         {
-            VkDescriptorSetLayoutBinding binding;
+            VkDescriptorSetLayoutBinding binding{};
             binding.binding = buffer_info.binding_index;
             binding.descriptorCount = buffer_info.binding_array_count;
             switch (buffer_info.binding_type) 
@@ -125,13 +125,15 @@ namespace PWEngine::GPU
             case BindingType::storage_texel:
                 binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
             break;
-            case BindingType::sampler:
-                binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+            case BindingType::image_sampler:
+                binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                binding.pImmutableSamplers = nullptr;
             break;
             case BindingType::sampled_image:
                 binding.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             break;
             }
+            
 
             switch (buffer_info.shader_type) 
             {
@@ -143,6 +145,7 @@ namespace PWEngine::GPU
             break;
             case ShaderType::Compute:
                 binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+            break;
             }
 
             layout_bindings.push_back(binding);

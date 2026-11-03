@@ -10,10 +10,10 @@ If you want to do actual development on PWEngine, pull requests are the best pla
 Notice: If you use agent to developing your program. Read `AGENT.md` firstly.
 
 ### The C++ Style
-Namespace/Class Style: BigCamel
-Function Style: smallCamel
+Namespace/Class Style: PascalCase
+Function Style: camelCase
 Variable Style: snack_case
-Constant Style: snack_case
+Constant Style: Snack_Case
 
 The namespace is only two level:
 `PWEngine::ModulesName`

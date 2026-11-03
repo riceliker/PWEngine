@@ -1,7 +1,14 @@
 #include "_allocator.hpp"
 #include "gpu.hpp"
+#include <memory>
 namespace PWEngine::GPU 
 {
+    GPUImage::GPUImage(GPUInstance* p_instance, Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* pixels_data) : self(std::make_unique<Impl>())
+    {
+        this->p_instance = p_instance;
+        createGPUImage(image_size, format, image_depth, pixels_data);
+    }
+
     static inline void transitionImageLayoutCommand(GPUInstance* instance, uint32_t mip_level, VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout)
     {
         instanceCommand(instance, [&](VkCommandBuffer& command_buffer){

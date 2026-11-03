@@ -54,7 +54,7 @@ namespace PWEngine::Pipeline
     RectPipeline::RectPipeline(GPU::GPUInstance* instance)
     {
         std::vector<GPU::BindingInfo> texture_binding_info = {
-            {0, 1, GPU::ShaderType::Fragment, GPU::BindingType::sampler}
+            {0, 1, GPU::ShaderType::Fragment, GPU::BindingType::image_sampler}
         };
         this->set_texture = std::make_unique<GPU::BindingLayout>(instance, texture_binding_info);
 

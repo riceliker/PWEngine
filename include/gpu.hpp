@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2026 riceliker and all contributors
 #pragma once
+#include "file.hpp"
 #include "math.hpp"
 #include "stream.hpp"
 
@@ -129,7 +130,7 @@ namespace PWEngine::GPU
     enum class GPUVertexDataType { vertex, index };
     
     enum class GPUBindingDataType { uniform, storage };
-    enum class BindingType { uniform, uniform_dynamic, uniform_texel, storage, storage_dynamic, storage_texel, sampler, sampled_image };
+    enum class BindingType { uniform, uniform_dynamic, uniform_texel, storage, storage_dynamic, storage_texel, image_sampler, sampled_image };
     struct BindingInfo { uint32_t binding_index; uint32_t binding_array_count; ShaderType shader_type; BindingType binding_type; };
 
 }
@@ -317,11 +318,14 @@ class IGPUTask
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        template<typename T>
-        GPUImage(GPUInstance* p_instance, Vec2<uint32_t> image_size, ImageFormat format, std::vector<T> pixels)
+        GPUImage(GPUInstance* p_instance, Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* pixels_data);
+        static std::unique_ptr<GPUImage> builderUnique(GPUInstance* p_instance, File::ImageRGBA8* image)
         {
-            this->p_instance = p_instance;
-            createGPUImage(image_size, sizeof(T), format, pixels.data());
+            return std::make_unique<GPUImage>(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data());
+        }
+        static std::shared_ptr<GPUImage> builderShared(GPUInstance* p_instance, File::ImageRGBA8* image)
+        {
+            return std::make_shared<GPUImage>(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data());
         }
         ~GPUImage();
     };
@@ -403,7 +407,7 @@ class IGPUTask
         BindingLayout* p_layout;
         Binding(BindingLayout* layout);
         ~Binding();
-        void update(uint32_t start_offset, std::vector<std::variant<std::tuple<GPUBinding*, Vec2<uint32_t>>, GPUImageView*>> objects);
+        void update(uint32_t start_offset, std::vector<std::variant<GPUBinding*, GPUImageView*>> objects);
     };
 
 /* ---- */

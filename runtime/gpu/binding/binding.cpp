@@ -39,27 +39,25 @@ namespace PWEngine::GPU
 
     }
 
-    void Binding::update(uint32_t start_offset, std::vector<std::variant<std::tuple<GPUBinding*, Vec2<uint32_t>>, GPUImageView*>> objects)
+    void Binding::update(uint32_t start_offset, std::vector<std::variant<GPUBinding*, GPUImageView*>> objects)
     {
         for (size_t slot = 0; slot < flight_fences_index_counts; slot++)
         {
-            std::vector<VkDescriptorBufferInfo> buffer_info;
-            std::vector<VkDescriptorImageInfo> image_info;
+            std::vector<VkDescriptorBufferInfo> buffer_info{};
+            std::vector<VkDescriptorImageInfo> image_info{};
             for (uint32_t i = start_offset; i < start_offset + objects.size(); ++i)
             {
                 std::visit([this, slot, i](auto& arg){
                     VkWriteDescriptorSet descriptor_write{};
                     VkDescriptorBufferInfo buffer_info{};
                     VkDescriptorImageInfo image_info{};
-                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::tuple<GPUBinding*, Vec2<uint32_t>>>) 
+                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, GPUBinding*>) 
                     {
-                        auto [buffer, area] = (std::tuple<GPUBinding*, Vec2<uint32_t>>)arg;
-                        buffer_info.buffer = buffer->self->buffer;
-                        buffer_info.offset = area.x;
-                        buffer_info.range = (area.y == 0)? VK_WHOLE_SIZE: area.y;
+                        buffer_info.buffer = arg->self->buffer;
+                        buffer_info.offset = 0;
+                        buffer_info.range = VK_WHOLE_SIZE;
                         descriptor_write.pBufferInfo = &buffer_info;
                     } else {
-                        GPUImageView* arg = arg;
                         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
                         image_info.imageView = arg->self->view;
                         image_info.sampler = arg->self->sampler;
@@ -90,8 +88,8 @@ namespace PWEngine::GPU
                     case BindingType::storage_texel:
                         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
                     break;
-                    case BindingType::sampler:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                    case BindingType::image_sampler:
+                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                     break;
                     case BindingType::sampled_image:
                         descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
