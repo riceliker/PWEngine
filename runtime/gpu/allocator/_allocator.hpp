@@ -19,7 +19,13 @@
 
 namespace PWEngine::GPU
 {
-    struct GPUBuffer::Impl
+    struct GPUVertex::Impl
+    {
+        VkBuffer buffer;
+        VkDeviceMemory memory;
+    };
+
+    struct GPUBinding::Impl
     {
         VkBuffer buffer;
         VkDeviceMemory memory;
@@ -30,11 +36,6 @@ namespace PWEngine::GPU
         uint32_t mip_level;
         VkImage image;
         VkDeviceMemory memory;
-    };
-
-    struct GPUBufferView::Impl
-    {
-        VkBufferView view;
     };
 
     struct GPUImageView::Impl
@@ -262,37 +263,45 @@ namespace PWEngine::GPU
         });
     }
 
-    
+    inline std::optional<std::tuple<VkBuffer, VkDeviceMemory>> createDirectBuffer(GPUInstance* instance, size_t size, VkBufferUsageFlags usage, CreateBufferInfo info)
+    {
+        VkBuffer buffer;
+        VkDeviceMemory memory;
 
-    // inline void createDirectBuffer(GPUInstance* instance, size_t size, VkBufferUsageFlags usage, VkBuffer& buffer, VkDeviceMemory& memory)
-    // {
-    //     VkBufferCreateInfo buffer_info{};
-    //     buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    //     buffer_info.size = size;
-    //     buffer_info.usage = usage;
-    //     buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        VkBufferCreateInfo buffer_info{};
+        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.size = size;
+        buffer_info.usage = usage;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    //     if (vkCreateBuffer(context->m_device->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
-    //         sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
+        if (vkCreateBuffer(instance->self->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
+            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create buffer!");
         
 
-    //     VkMemoryRequirements mem_requirements;
-    //     vkGetBufferMemoryRequirements(context->m_device->device, buffer, &mem_requirements);
+        VkMemoryRequirements mem_requirements;
+        vkGetBufferMemoryRequirements(instance->self->device, buffer, &mem_requirements);
 
-    //     VkMemoryAllocateInfo alloc_info{};
-    //     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    //     alloc_info.allocationSize = mem_requirements.size;
-    //     alloc_info.memoryTypeIndex = findMemoryType(context, mem_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        VkPhysicalDeviceMemoryProperties mem_properties;
+        vkGetPhysicalDeviceMemoryProperties(instance->self->adapter, &mem_properties);
+        uint32_t index;
+        for (index = 0; index < mem_properties.memoryTypeCount; ++index) 
+        {
+            if ((mem_requirements.memoryTypeBits & (1 << index)) && (mem_properties.memoryTypes[index].propertyFlags & info.properties) == info.properties)
+                goto get_memory_type_index_success;
+        }
+        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
+        return std::nullopt;
+        get_memory_type_index_success:
+        VkMemoryAllocateInfo alloc_info{};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = index;
 
-    //     if (vkAllocateMemory(context->m_device->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-    //         sendLog(context->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+        if (vkAllocateMemory(instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
+            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
         
-    //     vkBindBufferMemory(context->m_device->device, buffer, memory, 0);
-    // }
+        vkBindBufferMemory(instance->self->device, buffer, memory, 0);
 
-    
-
-    
-    
-    
+        return std::make_tuple(buffer, memory);
+    }
 }

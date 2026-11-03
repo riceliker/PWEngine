@@ -1,23 +1,26 @@
 #include "gpu.hpp"
 #include "gpu/instance/_instance.hpp"
-#include "gpu/allocator/_allocator.hpp"
 #include "_binding.hpp"
 
 #include "stream.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>
-#include <variant>
 #include <vector>
 namespace PWEngine::GPU
 {
-    BindingLayout::BindingLayout(GPUInstance* instance, std::vector<BindingInfo> binding_info)
+    BindingLayout::BindingLayout(GPUInstance* instance, std::vector<BindingInfo> binding_info) : self(std::make_unique<Impl>())
     {
         this->p_instance = instance;
         this->binding_infos = std::move(binding_info);
+        std::fill(this->binding_type_count.begin(), this->binding_type_count.end(), 8);
         this->createPool();
         this->createLayout();
-        this->allocateBinding();
+    }
+
+    BindingLayout::~BindingLayout()
+    {
+        
     }
 
     void BindingLayout::createPool()
@@ -84,10 +87,12 @@ namespace PWEngine::GPU
         poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
         poolInfo.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
         poolInfo.pPoolSizes = pool_sizes.data();
-        poolInfo.maxSets = 1;
+        poolInfo.maxSets = 8;
 
         if (vkCreateDescriptorPool(this->p_instance->self->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) 
             sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor pool!");
+
+        this->self->descriptor_pool = descriptorPool;
     }
 
     void BindingLayout::createLayout()
@@ -151,93 +156,5 @@ namespace PWEngine::GPU
         if (vkCreateDescriptorSetLayout(this->p_instance->self->device, &descriptor_set, nullptr, &descriptor_set_layout) != VK_SUCCESS)
             sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
         this->self->descriptor_set_layout = descriptor_set_layout;  
-    }
-
-    void BindingLayout::allocateBinding()
-    {
-        for (const auto& buffer_info : this->binding_infos)
-        {
-            std::vector<VkDescriptorSetLayout> layouts(flight_fences_index_counts, this->self->descriptor_set_layout);
-
-            VkDescriptorSetAllocateInfo alloc_info{};
-            alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-            alloc_info.descriptorPool = this->self->descriptor_pool;
-            alloc_info.descriptorSetCount = flight_fences_index_counts;
-            alloc_info.pSetLayouts = layouts.data();
-
-            std::vector<VkDescriptorSet> descriptor_sets;
-
-            descriptor_sets.resize(flight_fences_index_counts);
-            VkResult res = vkAllocateDescriptorSets(this->p_instance->self->device, &alloc_info, descriptor_sets.data());
-            if (res != VK_SUCCESS) 
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate descriptor sets! vulkan return code:"+std::to_string(res));
-
-            this->self->descriptor_sets_list.push_back(std::move(descriptor_sets));
-        }
-    }
-
-    void BindingLayout::update(size_t index, uint32_t start_offset, std::vector<std::variant<std::tuple<GPUBuffer*, Vec2<uint32_t>>, GPUImageView*>> objects)
-    {
-        for (size_t slot = 0; slot < flight_fences_index_counts; slot++)
-        {
-            std::vector<VkDescriptorBufferInfo> buffer_info;
-            std::vector<VkDescriptorImageInfo> image_info;
-            for (uint32_t i = start_offset; i < start_offset + objects.size(); ++i)
-            {
-                std::visit([&](auto& arg){
-                    VkWriteDescriptorSet descriptor_write{};
-                    VkDescriptorBufferInfo buffer_info{};
-                    VkDescriptorImageInfo image_info{};
-                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::tuple<GPUBuffer*, Vec2<uint32_t>>>) 
-                    {
-                        auto [buffer, area] = (std::tuple<GPUBuffer*, Vec2<uint32_t>>)arg;
-                        buffer_info.buffer = buffer->self->buffer;
-                        buffer_info.offset = area.x;
-                        buffer_info.range = area.y;
-                        descriptor_write.pBufferInfo = &buffer_info;
-                    } else {
-                        GPUImageView* arg = arg;
-                        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-                        image_info.imageView = arg->self->view;
-                        image_info.sampler = arg->self->sampler;
-                        descriptor_write.pImageInfo = &image_info;
-                    }
-                    descriptor_write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                    descriptor_write.dstSet = this->self->descriptor_sets_list.at(index).at(slot);
-                    descriptor_write.dstBinding = i;
-                    descriptor_write.dstArrayElement = 0;
-                    descriptor_write.descriptorCount = 1;
-                    switch (this->binding_infos[index].binding_type) 
-                    {
-                    case BindingType::uniform:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                    break;
-                    case BindingType::uniform_dynamic:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC;
-                    break;
-                    case BindingType::uniform_texel:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-                    break;
-                    case BindingType::storage:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                    break;
-                    case BindingType::storage_dynamic:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC;
-                    break;
-                    case BindingType::storage_texel:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-                    break;
-                    case BindingType::sampler:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-                    break;
-                    case BindingType::sampled_image:
-                        descriptor_write.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-                    break;
-                    }  
-                    
-                    vkUpdateDescriptorSets(this->p_instance->self->device, 1, &descriptor_write, 0, nullptr);
-                }, objects[i]);
-            }            
-        }
     }
 }

@@ -1,5 +1,6 @@
 #include "gpu.hpp"
 #include "gpu/instance/_instance.hpp"
+#include "gpu/binding/_binding.hpp"
 #include "_pipeline.hpp"
 
 #include "stream.hpp"
@@ -168,68 +169,18 @@ namespace PWEngine::GPU
 
         /* --- Binding Layout --- */
         std::vector<VkDescriptorSetLayout> descriptor_set_layouts;
-        uint32_t uniform_buffer_count = 0;
-        uint32_t sampler_buffer_count = 0;
-        uint32_t storage_buffer_count = 0;
-        if (info.descriptor_set.has_value())
+        if (info.binding_layout.size() !=0)
         {
-            for (const auto layout : info.descriptor_set.value())
+            for(const auto& binding_layout : info.binding_layout)
             {
-                VkDescriptorSetLayout descriptor_set_layout;
-                
-                std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
-                for (const auto info : layout)
-                {
-                    VkDescriptorSetLayoutBinding binding;
-                    binding.binding = info.binding_index;
-                    binding.descriptorCount = info.binding_array_count;
-                    switch (info.descriptor_type) 
-                    {
-                    case DescriptorType::Uniform:
-                        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-                        ++uniform_buffer_count;
-                    break;
-                    case DescriptorType::Sampler:
-                        binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-                        ++sampler_buffer_count;
-                        binding.pImmutableSamplers = nullptr;
-                    break;
-                    case DescriptorType::Storage:
-                        binding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-                        ++storage_buffer_count;
-                    break;
-                    }
-                    
-                    switch (info.shader_type) 
-                    {
-                    case ShaderType::Vertex:
-                        binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-                    break;
-                    case ShaderType::Fragment:
-                        binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-                    break;
-                    default:
-                    break;
-                    }
-
-                    layout_bindings.push_back(binding);
-                }
-
-                VkDescriptorSetLayoutCreateInfo descriptor_set{};
-                descriptor_set.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-                descriptor_set.bindingCount = static_cast<uint32_t>(layout_bindings.size());
-                descriptor_set.pBindings = layout_bindings.data();
-
-                if (vkCreateDescriptorSetLayout(this->p_instance->self->device, &descriptor_set, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
-                descriptor_set_layouts.push_back(descriptor_set_layout);            
+                descriptor_set_layouts.push_back(binding_layout->self->descriptor_set_layout);
             }
         }
-
+        
         std::vector<VkPushConstantRange> push_constant_ranges;
-        if (info.push_constant_layout.has_value())
+        if (info.push_constant_layout.size() != 0)
         {
-            for (const auto& range : info.push_constant_layout.value())
+            for (const auto& range : info.push_constant_layout)
             {
                 VkPushConstantRange push_range{};
                 push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
@@ -321,10 +272,11 @@ namespace PWEngine::GPU
         pipeline_info.pMultisampleState = &multisampling;
 
         /* --- Color Blending --- */
-        std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
         if (info.color_blend.has_value())
         {
-            for (const auto& level : info.color_blend.value())
+            std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
+            auto [color_blend, color_blend_constant] = info.color_blend.value();
+            for (const auto& level : color_blend)
             {
                 VkPipelineColorBlendAttachmentState color_blend_attachment{};
                 color_blend_attachment.blendEnable = VK_TRUE;
@@ -345,27 +297,39 @@ namespace PWEngine::GPU
 
                 color_blend_attachments.push_back(color_blend_attachment);
             }
+
+            VkPipelineColorBlendStateCreateInfo color_blending{};
+            color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            color_blending.logicOpEnable = VK_FALSE;
+            color_blending.logicOp = VK_LOGIC_OP_COPY;
+            color_blending.attachmentCount = color_blend_attachments.size();
+            color_blending.pAttachments = color_blend_attachments.data();
+            color_blending.blendConstants[0] = color_blend_constant.x;
+            color_blending.blendConstants[1] = color_blend_constant.y;
+            color_blending.blendConstants[2] = color_blend_constant.z;
+            color_blending.blendConstants[3] = color_blend_constant.w;
+
+            pipeline_info.pColorBlendState = &color_blending;
         }
         else 
         {
             VkPipelineColorBlendAttachmentState color_blend_attachment{};
             color_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
             color_blend_attachment.blendEnable = VK_FALSE;
-            color_blend_attachments.push_back(color_blend_attachment);
-        }
-        
-        VkPipelineColorBlendStateCreateInfo color_blending{};
-        color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        color_blending.logicOpEnable = VK_FALSE;
-        color_blending.logicOp = VK_LOGIC_OP_COPY;
-        color_blending.attachmentCount = color_blend_attachments.size();
-        color_blending.pAttachments = color_blend_attachments.data();
-        color_blending.blendConstants[0] = info.color_blend_constant.x;
-        color_blending.blendConstants[1] = info.color_blend_constant.y;
-        color_blending.blendConstants[2] = info.color_blend_constant.z;
-        color_blending.blendConstants[3] = info.color_blend_constant.w;
 
-        pipeline_info.pColorBlendState = &color_blending;
+            VkPipelineColorBlendStateCreateInfo color_blending{};
+            color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+            color_blending.logicOpEnable = VK_FALSE;
+            color_blending.logicOp = VK_LOGIC_OP_COPY;
+            color_blending.attachmentCount = 1;
+            color_blending.pAttachments = &color_blend_attachment;
+            color_blending.blendConstants[0] = 0;
+            color_blending.blendConstants[1] = 0;
+            color_blending.blendConstants[2] = 0;
+            color_blending.blendConstants[3] = 0;
+
+            pipeline_info.pColorBlendState = &color_blending;
+        }
 
         /* --- Depth Stencil --- */
         VkPipelineDepthStencilStateCreateInfo depth_stencil{};

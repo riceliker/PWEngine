@@ -56,7 +56,8 @@ namespace PWEngine::GPU
                 this->updateInput();
             }
         }
+        if (is_debug) vkDeviceWaitIdle(this->self->device);
         this->gpu_tasks.clear();
-        vkDeviceWaitIdle(this->self->device);
+        this->is_stop = true;
     }
 }

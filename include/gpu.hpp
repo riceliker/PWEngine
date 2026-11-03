@@ -32,11 +32,11 @@ namespace PWEngine::GPU
     /* instance */
     class GPUInstance; class Input; 
     /* allocator */
-    class GPUBuffer; class GPUImage; class GPUBufferView; class GPUImageView;
+    class GPUVertex; class GPUImage; class GPUBinding; class GPUImageView;
     /* pipeline */
     class Pipeline; struct BindingPool; struct Binding;
     /* binding */
-    class BindingLayout; class BufferBinding; class ImageBinding;
+    class BindingLayout; struct Binding;
     /* task */
     class IGPUTask; class GPUTask; class GPUTaskWithWindow; 
     /* window */
@@ -93,12 +93,11 @@ namespace PWEngine::GPU
         std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
         std::vector<VertexBinding> vertex_binding;
         std::vector<VertexInput> vertex_formats;
-        std::optional<std::vector<std::vector<ShaderLayoutInfo>>> descriptor_set;
-        std::optional<std::vector<PushConstant>> push_constant_layout;
+        std::vector<BindingLayout*> binding_layout;
+        std::vector<PushConstant> push_constant_layout;
         enum class VertexTopology {Triangle_List, Triangle_Strip} topology;
         enum class CullMode {Front, Back, None} cull_mode;
-        std::optional<std::vector<ColorBlend>> color_blend;
-        Vec4<float> color_blend_constant;
+        std::optional<std::tuple<std::vector<ColorBlend>, Vec4<float>>> color_blend;
         std::optional<DepthStencilInfo> depth_stencil;
         std::variant<RenderingInfo, RenderPassInfo> render_mode;
     };
@@ -127,7 +126,9 @@ namespace PWEngine::GPU
     };
 
     enum class InputUintType { u8, u16, u32 };
-    enum class GPUBufferDataType { vertex, index };
+    enum class GPUVertexDataType { vertex, index };
+    
+    enum class GPUBindingDataType { uniform, storage };
     enum class BindingType { uniform, uniform_dynamic, uniform_texel, storage, storage_dynamic, storage_texel, sampler, sampled_image };
     struct BindingInfo { uint32_t binding_index; uint32_t binding_array_count; ShaderType shader_type; BindingType binding_type; };
 
@@ -274,37 +275,38 @@ class IGPUTask
 /* --------- */
 /* allocator */
 /* --------- */
-    class GPUBuffer
+    class GPUVertex
     {
     private:
-        void createGPUBuffer(size_t element_total_size, void* element, GPUBufferDataType type);
-        size_t index_count = 0;
-        std::unordered_map<size_t, std::unique_ptr<GPUBufferView>> view_map;
+        void createGPUVertex(size_t element_total_size, void* element, GPUVertexDataType type);
     public:
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        GPUBuffer(GPUInstance* p_instance, GPUBufferDataType type, size_t byte_size, void* data);
-        template<typename T> static std::unique_ptr<GPUBuffer> builderUnique(GPUInstance* p_instance, GPUBufferDataType type, std::vector<T> element)
+        GPUVertex(GPUInstance* p_instance, GPUVertexDataType type, size_t byte_size, void* data);
+        template<typename T> static std::unique_ptr<GPUVertex> builderUnique(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element)
         {
-            return std::make_unique<GPUBuffer>(p_instance, type, element.size() * sizeof(T), element.data());
+            return std::make_unique<GPUVertex>(p_instance, type, element.size() * sizeof(T), element.data());
         }
-        template<typename T> static std::shared_ptr<GPUBuffer> builderShared(GPUInstance* p_instance, GPUBufferDataType type, std::vector<T> element)
+        template<typename T> static std::shared_ptr<GPUVertex> builderShared(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element)
         {
-            return std::make_shared<GPUBuffer>(p_instance, type, element.size() * sizeof(T), element.data());
+            return std::make_shared<GPUVertex>(p_instance, type, element.size() * sizeof(T), element.data());
         }
-        size_t createView(BufferFormat format, uint32_t offset, uint32_t range);
-        std::optional<GPUBufferView*> getView(size_t index);
-        ~GPUBuffer();
+        ~GPUVertex();
     };
 
-    struct GPUBufferView
+    class GPUBinding
     {
-        GPUBuffer* buffer;
+    private:
+        void* map_pointer;
+        void createGPUBinding(GPUBindingDataType type, size_t size);
+    public:
+        GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        GPUBufferView(GPUBuffer* buffer, BufferFormat format, uint32_t offset, uint32_t range);
-        ~GPUBufferView(); 
+        GPUBinding(GPUInstance* p_instance, GPUBindingDataType type, size_t size);
+        void writeData(void* data, size_t size);
+        ~GPUBinding();
     };
 
     class GPUImage
@@ -381,19 +383,27 @@ class IGPUTask
     class BindingLayout
     {
     private:
-        std::vector<BindingInfo> binding_infos;
-        std::array<size_t, 8> binding_type_count;
-        void countType();
         void createPool();
         void createLayout();
-        void allocateBinding();
     public:
+        std::vector<BindingInfo> binding_infos;
+        std::array<size_t, 8> binding_type_count;
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
         BindingLayout(GPUInstance* instance, std::vector<BindingInfo> binding_info);
+        std::unique_ptr<Binding> createBinding();
         ~BindingLayout();
-        void update(size_t index, uint32_t start_offset, std::vector<std::variant<std::tuple<GPUBuffer*, Vec2<uint32_t>>, GPUImageView*>> objects);
+    };  
+
+    struct Binding
+    {
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        BindingLayout* p_layout;
+        Binding(BindingLayout* layout);
+        ~Binding();
+        void update(uint32_t start_offset, std::vector<std::variant<std::tuple<GPUBinding*, Vec2<uint32_t>>, GPUImageView*>> objects);
     };
 
 /* ---- */
@@ -420,8 +430,9 @@ class IGPUTask
     public:
         RenderingCommand(RecordCommandWithWindow* command): p_command(command){}
         RecordCommandWithWindow* p_command;
-        void bindVertices(std::vector<GPUBuffer*> buffers, std::vector<uint64_t> offset);
-        void bindIndex(GPUBuffer* buffer, InputUintType size);
+        void bindVertices(std::vector<GPUVertex*> buffers, std::vector<uint64_t> offset);
+        void bindIndex(GPUVertex* buffer, InputUintType size);
+        void bindBinding(std::vector<Binding*> binding, Pipeline* pipeline);
         void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
     };
 
@@ -454,7 +465,7 @@ class IGPUTask
         void submitCommandInProcess(uint32_t* swapchain_image_index);
         bool sub_thread_loop(double delta) override;
 
-        std::unordered_map<size_t, std::unique_ptr<GPUBuffer>> local_buffer;
+        std::unordered_map<size_t, std::unique_ptr<GPUVertex>> local_buffer;
         std::unordered_map<size_t, std::unique_ptr<GPUImage>> local_image;
 
     public:

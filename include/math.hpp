@@ -2,6 +2,7 @@
 // Copyright (C) 2026 riceliker and all contributors
 #pragma once
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 
@@ -161,12 +162,13 @@ namespace PWEngine
 
     struct Mat4
     {
-        float data[16];
+        std::array<float, 16> data;
         constexpr float& rc(size_t row, size_t col) noexcept {return data[col * 4 + row];}
         constexpr const float& rc(size_t row, size_t col) const noexcept {return data[col * 4 + row];}
         constexpr float& cr(size_t col, size_t row) noexcept {return data[col * 4 + row];}
         constexpr const float& cr(size_t col, size_t row) const noexcept {return data[col * 4 + row];}
         Mat4(float a){for(auto& f : data) f = 0.0f;rc(0,0)=a; rc(1,1)=a; rc(2,2)=a; rc(3,3)=a;}
+        Mat4(std::array<float, 16> data) {this->data = data;}
     };
 
     inline constexpr Mat4 operator*(const Mat4& A, const Mat4& B) noexcept
