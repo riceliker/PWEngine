@@ -18,6 +18,11 @@ namespace PWEngine::GPU
         this->createImageView();
     }
 
+    Vec2<uint32_t> Window::getWindowSize()
+    {
+        return {this->self->swapchain_extent.width, this->self->swapchain_extent.height};
+    }
+
     Window::~Window()
     {
         for (auto image_view : this->self->swapchain_image_views) {
@@ -36,6 +41,7 @@ namespace PWEngine::GPU
     static void focus_callback(GLFWwindow* window, int focused)
     {
         Window* win_ptr = (Window*)glfwGetWindowUserPointer(window);
+        glfwSetInputMode(win_ptr->self->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         if (focused)
         {
             win_ptr->p_instance->focused_window = win_ptr;

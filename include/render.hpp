@@ -4,9 +4,8 @@
 
 #include "math.hpp"
 #include "gpu.hpp"
-#include <vector>
 
-namespace PWEngine::Pipeline
+namespace PWEngine::Render
 {
     struct RectTexture
     {

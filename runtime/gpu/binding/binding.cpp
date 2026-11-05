@@ -36,7 +36,7 @@ namespace PWEngine::GPU
 
     Binding::~Binding()
     {
-
+        
     }
 
     void Binding::update(uint32_t start_offset, std::vector<std::variant<GPUBinding*, GPUImageView*>> objects)

@@ -131,7 +131,7 @@ namespace PWEngine::GPU
     }
     void GPUImage::createGPUImage(Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* element)
     {
-        size_t size = image_size.x * image_size.y * image_depth;
+        size_t size = image_size.x * image_size.y * image_depth / 8;
         uint32_t mip_level = log(std::max(image_size.x, image_size.y));
         this->self->mip_level = mip_level;
 

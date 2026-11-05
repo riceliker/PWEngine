@@ -1,8 +1,7 @@
 #include "gpu.hpp"
 #include "math.hpp"
-#include "stream.hpp"
+#include "utils.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -67,9 +66,7 @@ public:
         };
         this->render_pipeline = std::make_unique<PWEngine::GPU::Pipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
-        this->vertex_buffer = std::move(PWEngine::GPU::GPUVertex::builderUnique(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex));
-        std::vector<uint32_t> index = {0, 1, 2};
-        this->index_buffer = std::move(PWEngine::GPU::GPUVertex::builderUnique(instance, PWEngine::GPU::GPUVertexDataType::index, index));
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
     }
     bool loop(double delta) override
     {

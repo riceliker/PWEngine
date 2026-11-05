@@ -3,7 +3,7 @@
 #include "gpu/binding/_binding.hpp"
 #include "_pipeline.hpp"
 
-#include "stream.hpp"
+#include "utils.hpp"
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -182,8 +182,25 @@ namespace PWEngine::GPU
         {
             for (const auto& range : info.push_constant_layout)
             {
+                VkShaderStageFlags stage;
+                switch (range.type) 
+                {
+                case ShaderType::Vertex:
+                    stage = VK_SHADER_STAGE_VERTEX_BIT;
+                break;
+                case ShaderType::Fragment:
+                    stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+                break;
+                case ShaderType::Compute:
+                    stage = VK_SHADER_STAGE_COMPUTE_BIT;
+                break;
+                case ShaderType::VertexFragment:
+                    stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                break;
+                }
                 VkPushConstantRange push_range{};
-                push_range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+                push_range.stageFlags = stage;
                 push_range.offset = range.offset;
                 push_range.size = range.size;
                 push_constant_ranges.push_back(push_range);

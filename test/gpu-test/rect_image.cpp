@@ -1,9 +1,10 @@
 #include "file.hpp"
 #include "gpu.hpp"
 #include "math.hpp"
-#include "stream.hpp"
+#include "utils.hpp"
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -32,6 +33,10 @@ static const std::string vertex_shader_code = R"(
 static const std::string fragment_shader_code = R"(
     #version 450
 
+    layout(push_constant) uniform ConstData {
+        float color_weight;
+    } pc; 
+
     layout(location = 0) in vec3 frag_color;
     layout(location = 1) in vec2 frag_uv;
     layout(location = 0) out vec4 out_color;
@@ -39,7 +44,7 @@ static const std::string fragment_shader_code = R"(
     layout(set = 1, binding = 0) uniform sampler2D texture_sampler;
 
     void main() {
-        out_color = texture(texture_sampler, frag_uv);
+        out_color = mix(texture(texture_sampler, frag_uv), vec4(frag_color, 1), pc.color_weight);
     }
 )";
 
@@ -61,14 +66,14 @@ private:
     std::unique_ptr<PWEngine::GPU::BindingLayout> uniform_binding_layout;
     std::unique_ptr<PWEngine::GPU::BindingLayout> sampler_binding_layout;
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_buffer0;
-    std::unique_ptr<PWEngine::GPU::Binding> uniform_binding0;
+    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_buffer;
+    std::unique_ptr<PWEngine::GPU::Binding> uniform_binding;
 
     std::unique_ptr<PWEngine::GPU::GPUImage> image;
     std::unique_ptr<PWEngine::GPU::GPUImageView> image_view;
     std::unique_ptr<PWEngine::GPU::Binding> image_binding;
 
-
+    uint8_t value = 0;
 public:
     MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
     {
@@ -82,7 +87,6 @@ public:
         };
         this->sampler_binding_layout = std::make_unique<PWEngine::GPU::BindingLayout>(instance, sampler_binding_info);
 
-
         PWEngine::GPU::PipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
             PWEngine::GPU::compilerShader(fragment_shader_code, PWEngine::GPU::ShaderType::Fragment, "main").value(),
@@ -93,7 +97,7 @@ public:
                 {0, 2, offsetof(MyVertex, uv), PWEngine::GPU::VertexInput::Type::f32, PWEngine::GPU::VertexInput::Length::vec2},
             },
             {this->uniform_binding_layout.get(), this->sampler_binding_layout.get()},
-            {},
+            {{0, sizeof(float), PWEngine::GPU::ShaderType::Fragment}},
             PWEngine::GPU::PipelineInfo::VertexTopology::Triangle_List,
             PWEngine::GPU::PipelineInfo::CullMode::None,
             std::nullopt,
@@ -105,14 +109,14 @@ public:
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{-0.5, 0.5}, {1, 1, 1}, {0, 1}},
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{0.5, -0.5}, {1, 1, 1}, {1, 0}}
         };
-        this->vertex_buffer = std::move(PWEngine::GPU::GPUVertex::builderUnique(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex));
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
 
-        this->uniform_binding0 = this->uniform_binding_layout->createBinding();
-        this->uniform_buffer0 = std::make_unique<PWEngine::GPU::GPUBinding>(instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(PWEngine::Mat4));
-        this->uniform_binding0->update(0, {uniform_buffer0.get()});
+        this->uniform_binding = this->uniform_binding_layout->createBinding();
+        this->uniform_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(PWEngine::Mat4));
+        this->uniform_binding->update(0, {uniform_buffer.get()});
 
-        auto image = PWEngine::File::tgaReader(instance->log, "./assets/icon.tga");
-        this->image = std::move(PWEngine::GPU::GPUImage::builderUnique(instance, image.get()));
+        auto image = std::make_unique<PWEngine::File::ImageRGBA8>(PWEngine::File::TGA{}, instance->log, "./assets/icon.tga");
+        this->image = std::make_unique<PWEngine::GPU::GPUImage>(instance, image.get());
         this->image_view = std::make_unique<PWEngine::GPU::GPUImageView>(this->image.get());
 
         this->image_binding = this->sampler_binding_layout->createBinding();
@@ -130,15 +134,19 @@ public:
             0.0f,  0.0f, 0.0f, 1.0f
         });
         
-        this->uniform_buffer0->writeData(&mat, sizeof(mat));
-        this->recordCommand([this](PWEngine::GPU::RecordCommandWithWindow* cmd){
+        this->uniform_buffer->writeData(&mat, sizeof(mat));
+        this->recordCommand([this, delta](PWEngine::GPU::RecordCommandWithWindow* cmd){
             cmd->setScissor();
             cmd->setViewPort();
             cmd->bindPipeline(this->render_pipeline.get(), PWEngine::GPU::PipelineType::Render);
 
-            cmd->Rendering({0, 0, 0, 1},true, [this](PWEngine::GPU::RenderingCommand& rendering){
-                rendering.bindBinding({this->uniform_binding0.get(), this->image_binding.get()}, this->render_pipeline.get());
+            cmd->Rendering({0, 0, 0, 1},true, [this, delta](PWEngine::GPU::RenderingCommand& rendering){
+                rendering.bindBinding(this->render_pipeline.get(), {this->uniform_binding.get(), this->image_binding.get()});
                 rendering.bindVertices({this->vertex_buffer.get()}, {0});
+                value = (value + 1) % 100;
+                float weight = value / 100.0; 
+
+                rendering.pushConstant(this->render_pipeline.get(), 0, sizeof(float), &weight, PWEngine::GPU::ShaderType::Fragment);
                 rendering.draw(6, 1, 0, 0);
             });
         });

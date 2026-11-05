@@ -1,4 +1,5 @@
 #include "_instance.hpp"
+#include "utils.hpp"
 #include <cstdint>
 #include <memory>
 #include <string>

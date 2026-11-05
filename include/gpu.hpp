@@ -3,7 +3,7 @@
 #pragma once
 #include "file.hpp"
 #include "math.hpp"
-#include "stream.hpp"
+#include "utils.hpp"
 
 #include <array>
 #include <concepts>
@@ -77,10 +77,10 @@ namespace PWEngine::GPU
     struct WindowInfo { Vec2<uint32_t> window_default_resolution; std::string window_title; bool is_window_resizable; };
 
     enum class DescriptorType { Uniform, Sampler, Storage };
-    enum class ShaderType { Vertex, Fragment, Compute };
+    enum class ShaderType { Vertex, Fragment, Compute, VertexFragment };
     struct RenderShaderPath { std::string vertex_shader; std::string fragment_shader; };
     struct ShaderLayoutInfo { uint32_t binding_index; uint32_t binding_array_count; DescriptorType descriptor_type; ShaderType shader_type; };
-    struct PushConstant { uint32_t offset; uint32_t size; };
+    struct PushConstant { uint32_t offset; uint32_t size; ShaderType type;};
     struct VertexBinding { uint32_t binding; uint32_t size; };
     struct VertexInput { uint32_t binding; uint32_t location; uint32_t offset; enum class Type { u8, i32, f32 } type; enum class Length { vec2, vec3, vec4 } len; };
     enum class BlendOp { add, src_minus_dst, dst_minus_src, min, max };
@@ -119,12 +119,13 @@ namespace PWEngine::GPU
         Menu, Escape,
         EndOfEnum
     };
-    enum MouseKey : uint8_t
+    enum class MouseKey : uint8_t
     {
         Unknown = 0,
         BtnLeft, BtnRight, BtnMiddle,
         EndOfEnum
     };
+    enum class MouseInputMode : uint8_t { show, hide, disable };
 
     enum class InputUintType { u8, u16, u32 };
     enum class GPUVertexDataType { vertex, index };
@@ -234,7 +235,7 @@ class IGPUTask
         void launchTask(uint64_t task_id);
 
         Window* focused_window = nullptr;
-        void onFocus(Window* win, int focused);
+        void setMouseCursor(MouseInputMode mode);
 
         template<class T, class... Args> requires std::derived_from<T, IGPUTask>
         uint64_t createGPUTask(Args&&... args)
@@ -285,14 +286,7 @@ class IGPUTask
         struct Impl;
         std::unique_ptr<Impl> self;
         GPUVertex(GPUInstance* p_instance, GPUVertexDataType type, size_t byte_size, void* data);
-        template<typename T> static std::unique_ptr<GPUVertex> builderUnique(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element)
-        {
-            return std::make_unique<GPUVertex>(p_instance, type, element.size() * sizeof(T), element.data());
-        }
-        template<typename T> static std::shared_ptr<GPUVertex> builderShared(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element)
-        {
-            return std::make_shared<GPUVertex>(p_instance, type, element.size() * sizeof(T), element.data());
-        }
+        template<typename T> GPUVertex(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element) : GPUVertex(p_instance, type, element.size() * sizeof(T), element.data()) {}
         ~GPUVertex();
     };
 
@@ -319,14 +313,7 @@ class IGPUTask
         struct Impl;
         std::unique_ptr<Impl> self;
         GPUImage(GPUInstance* p_instance, Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* pixels_data);
-        static std::unique_ptr<GPUImage> builderUnique(GPUInstance* p_instance, File::ImageRGBA8* image)
-        {
-            return std::make_unique<GPUImage>(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data());
-        }
-        static std::shared_ptr<GPUImage> builderShared(GPUInstance* p_instance, File::ImageRGBA8* image)
-        {
-            return std::make_shared<GPUImage>(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data());
-        }
+        GPUImage(GPUInstance* p_instance, File::ImageRGBA8* image) : GPUImage(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data()) {}
         ~GPUImage();
     };
 
@@ -377,6 +364,8 @@ class IGPUTask
         Input* input;
         Window(GPUInstance* instance, WindowInfo info);
         Format getFormat();
+        Vec2<uint32_t> getWindowSize();
+        bool checkIsHoverScreen();
         ~Window();
         friend class GPUTaskWithWindow;
     };
@@ -436,7 +425,8 @@ class IGPUTask
         RecordCommandWithWindow* p_command;
         void bindVertices(std::vector<GPUVertex*> buffers, std::vector<uint64_t> offset);
         void bindIndex(GPUVertex* buffer, InputUintType size);
-        void bindBinding(std::vector<Binding*> binding, Pipeline* pipeline);
+        void bindBinding(Pipeline* pipeline, std::vector<Binding*> binding);
+        void pushConstant(Pipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
         void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
     };
 
@@ -482,11 +472,6 @@ class IGPUTask
             this->beginCommandInProcess();
             func(&command);
             this->endCommandInProcess();
-        }
-        template<std::invocable<RecordCommandWithWindow*> F>
-        void recordBinding()
-        {
-
         }
         GPUTaskWithWindow(GPUInstance* instance, WindowInfo info);
         ~GPUTaskWithWindow();

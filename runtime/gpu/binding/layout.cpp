@@ -2,7 +2,7 @@
 #include "gpu/instance/_instance.hpp"
 #include "_binding.hpp"
 
-#include "stream.hpp"
+#include "utils.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <memory>

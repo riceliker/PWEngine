@@ -1,7 +1,8 @@
 #include "gpu.hpp"
-#include "stream.hpp"
+#include "utils.hpp"
 #include "gpu/instance/_instance.hpp"
 #include <cstddef>
+#include <cstdint>
 #include <mutex>
 #include <string>
 #define GLFW_INCLUDE_VULKAN
@@ -51,9 +52,11 @@ namespace PWEngine::GPU
                 break;
             glfwPollEvents();
 
-            if (this->focused_window !=nullptr)
+            if (this->focused_window != nullptr)
             {
                 this->updateInput();
+                if (this->input.key_list[static_cast<uint16_t>(Key::Escape)] && this->input.key_list[static_cast<uint16_t>(Key::LShift)])
+                    this->setMouseCursor(MouseInputMode::show);
             }
         }
         if (is_debug) vkDeviceWaitIdle(this->self->device);

@@ -19,7 +19,7 @@ $same($is_macos, "macos", __platform__)
 ;
 
 @files("test")
-	add_file("test/RectImage/main.cpp")
+	add_file("test/gpu-test/viking_room.cpp")
 ;
 
 @project("PWEngine", "shared")

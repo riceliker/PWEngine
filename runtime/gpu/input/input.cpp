@@ -1,5 +1,6 @@
 #include "gpu.hpp"
 #include "gpu/window/_window.hpp"
+#include <cstdint>
 
 namespace PWEngine::GPU
 {
@@ -84,10 +85,26 @@ namespace PWEngine::GPU
     {
         switch (key) 
         {
-        case BtnLeft: return GLFW_MOUSE_BUTTON_LEFT;
-        case BtnRight: return GLFW_MOUSE_BUTTON_RIGHT;
-        case BtnMiddle: return GLFW_MOUSE_BUTTON_MIDDLE;
+        case MouseKey::BtnLeft: return GLFW_MOUSE_BUTTON_LEFT;
+        case MouseKey::BtnRight: return GLFW_MOUSE_BUTTON_RIGHT;
+        case MouseKey::BtnMiddle: return GLFW_MOUSE_BUTTON_MIDDLE;
         default: return -1;
+        }
+    }
+
+    void GPUInstance::setMouseCursor(MouseInputMode mode)
+    {
+        switch (mode) 
+        {
+        case MouseInputMode::show:
+            glfwSetInputMode(this->focused_window->self->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        break;
+        case MouseInputMode::hide:
+            glfwSetInputMode(this->focused_window->self->window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+        break;
+        case MouseInputMode::disable:
+            glfwSetInputMode(this->focused_window->self->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        break;
         }
     }
 
@@ -103,8 +120,8 @@ namespace PWEngine::GPU
         uint8_t mouse_index = 0;
         while (static_cast<MouseKey>(mouse_index) != MouseKey::EndOfEnum) 
         {
-            this->input.mouse_key[mouse_index] = glfwGetKey(this->focused_window->self->window, key2GLFW(static_cast<MouseKey>(mouse_index)));
-            ++mouse_index;    
+            this->input.mouse_key[mouse_index] = glfwGetMouseButton(this->focused_window->self->window, key2GLFW(static_cast<MouseKey>(mouse_index)));
+            ++mouse_index;   
         }
 
         double x, y;

@@ -49,6 +49,7 @@ namespace PWEngine::GPU
         if (info.is_debug)
         {
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+            
         }
         #if (__APPLE__)
             extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);

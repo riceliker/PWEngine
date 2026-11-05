@@ -1,10 +1,10 @@
-#include "pipeline.hpp"
+#include "render.hpp"
 #include "gpu.hpp"
 #include <memory>
 #include <optional>
 #include <vector>
 
-namespace PWEngine::Pipeline
+namespace PWEngine::Render
 {
     const std::string vertex_shader_code = R"(
         #version 450
