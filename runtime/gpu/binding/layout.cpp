@@ -146,6 +146,9 @@ namespace PWEngine::GPU
             case ShaderType::Compute:
                 binding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
             break;
+            case PWEngine::GPU::ShaderType::VertexFragment:
+                binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+            break;
             }
 
             layout_bindings.push_back(binding);

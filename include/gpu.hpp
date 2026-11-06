@@ -443,11 +443,11 @@ class IGPUTask
         void bindPipeline(Pipeline* pipeline, PipelineType type);
         void setViewPort();
         void setScissor();
-        template<std::invocable<RenderingCommand&> F> void Rendering(Vec4<float> color, bool is_clear_background, F&& func)
+        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, F&& func)
         {
             RenderingCommand rendering(this);
             this->BeginRendering(color, is_clear_background);
-            func(rendering);
+            func(&rendering);
             this->EndRendering();
         }
     };
