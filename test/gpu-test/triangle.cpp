@@ -41,14 +41,13 @@ struct MyVertex
 class MyTask : public PWEngine::GPU::GPUTaskWithWindow
 {
 private:
-    std::unique_ptr<PWEngine::GPU::Pipeline> render_pipeline;
+    std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
     std::unique_ptr<PWEngine::GPU::GPUVertex> vertex_buffer;
-    std::unique_ptr<PWEngine::GPU::GPUVertex> index_buffer;
 public:
     MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
     {
-        PWEngine::GPU::PipelineInfo pipeline_info = {
+        PWEngine::GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
             PWEngine::GPU::compilerShader(fragment_shader_code, PWEngine::GPU::ShaderType::Fragment, "main").value(),
             {{0,sizeof(MyVertex)}},
@@ -58,27 +57,26 @@ public:
             },
             {},
             {},
-            PWEngine::GPU::PipelineInfo::VertexTopology::Triangle_List,
-            PWEngine::GPU::PipelineInfo::CullMode::None,
+            PWEngine::GPU::RenderPipelineInfo::VertexTopology::Triangle_List,
+            PWEngine::GPU::RenderPipelineInfo::CullMode::None,
             std::nullopt,
             std::nullopt,
             PWEngine::GPU::RenderingInfo{},
         };
-        this->render_pipeline = std::make_unique<PWEngine::GPU::Pipeline>(instance, pipeline_info);
+        this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
         this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
     }
     bool loop(double delta) override
     {
-        this->recordCommand([this](PWEngine::GPU::RecordCommandWithWindow* cmd){
-            cmd->setScissor();
-            cmd->setViewPort();
-            cmd->bindPipeline(this->render_pipeline.get(), PWEngine::GPU::PipelineType::Render);
+        this->recordCommand([this](PWEngine::GPU::RecordCommand* cmd){
+            cmd->setScissor({0, 0}, this->m_window->getWindowSize());
+            cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
+            cmd->bindPipeline(this->render_pipeline.get());
 
-            cmd->Rendering({0, 0, 0, 1},true, [this](PWEngine::GPU::RenderingCommand& rendering){
-                rendering.bindVertices({this->vertex_buffer.get()}, {0});
-                rendering.bindIndex(this->index_buffer.get(), PWEngine::GPU::InputUintType::u32);
-                rendering.draw(3, 1, 0, 0);
+            cmd->Rendering({0, 0, 0, 1}, true, this, [this](PWEngine::GPU::RenderingCommand* rendering){
+                rendering->bindVertices({this->vertex_buffer.get()}, {0});
+                rendering->draw(3, 1, 0, 0);
             });
         });
         return false;

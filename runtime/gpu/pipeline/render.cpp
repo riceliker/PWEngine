@@ -60,7 +60,7 @@ namespace PWEngine::GPU
             return VK_BLEND_OP_MAX;
         }
     }
-    Pipeline::Pipeline(GPUInstance* instance, PipelineInfo info) : self(std::make_unique<Impl>())
+    RenderPipeline::RenderPipeline(GPUInstance* instance, RenderPipelineInfo info) : self(std::make_unique<Impl>())
     {
         this->p_instance= instance;
 
@@ -186,18 +186,29 @@ namespace PWEngine::GPU
                 switch (range.type) 
                 {
                 case ShaderType::Vertex:
-                    stage = VK_SHADER_STAGE_VERTEX_BIT;
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
                 break;
                 case ShaderType::Fragment:
-                    stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
                 break;
                 case ShaderType::Compute:
                     stage = VK_SHADER_STAGE_COMPUTE_BIT;
                 break;
                 case ShaderType::VertexFragment:
-                    stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
+                break;
+                case ShaderType::VertexCompute:
+                    stage = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT;
+                break;
+                case ShaderType::FragmentCompute:
+                    stage = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+                break;
+                case ShaderType::VertexFragmentCompute:
+                    stage = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
                 break;
                 }
+
+                
                 VkPushConstantRange push_range{};
 
                 push_range.stageFlags = stage;
@@ -218,7 +229,6 @@ namespace PWEngine::GPU
             sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
         }
         this->self->pipeline_layout = pipeline_layout;
-        this->self->descriptor_set_layouts = descriptor_set_layouts;
         pipeline_info.layout = pipeline_layout;
 
         /* --- Input Assembly --- */
@@ -228,10 +238,10 @@ namespace PWEngine::GPU
         input_assembly.primitiveRestartEnable = VK_FALSE;
         switch (info.topology) 
         {
-        case PipelineInfo::VertexTopology::Triangle_List:
+        case RenderPipelineInfo::VertexTopology::Triangle_List:
             input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         break;
-        case PipelineInfo::VertexTopology::Triangle_Strip:
+        case RenderPipelineInfo::VertexTopology::Triangle_Strip:
             input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
         }
         pipeline_info.pInputAssemblyState = &input_assembly;
@@ -267,13 +277,13 @@ namespace PWEngine::GPU
         rasterizer.depthBiasEnable = VK_FALSE; /* dynamic: see setDepthBias() */
         switch (info.cull_mode) 
         {
-        case PipelineInfo::CullMode::None:
+        case RenderPipelineInfo::CullMode::None:
             rasterizer.cullMode = VK_CULL_MODE_NONE;
         break;
-        case PipelineInfo::CullMode::Front:
+        case RenderPipelineInfo::CullMode::Front:
             rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
         break;
-        case PipelineInfo::CullMode::Back:
+        case RenderPipelineInfo::CullMode::Back:
             rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
         break;
         }
@@ -397,7 +407,6 @@ namespace PWEngine::GPU
             }
         }, info.render_mode);
         
-
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         VkPipeline graphics_pipeline;
         if (vkCreateGraphicsPipelines(this->p_instance->self->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS)
@@ -410,13 +419,9 @@ namespace PWEngine::GPU
 
         self->graphics_pipeline = graphics_pipeline;
     }
-    Pipeline::~Pipeline()
+    RenderPipeline::~RenderPipeline()
     {
         vkDestroyPipeline(this->p_instance->self->device, this->self->graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(this->p_instance->self->device, this->self->pipeline_layout, nullptr);
-        for (const auto& layout : this->self->descriptor_set_layouts)
-        {
-            vkDestroyDescriptorSetLayout(this->p_instance->self->device, layout, nullptr);
-        }
     }
 }

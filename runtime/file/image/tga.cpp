@@ -72,22 +72,22 @@ namespace PWEngine::File
 
             break;
             case 32:
-                if (start_direct) {
-                    for (size_t i = 0; i < width * height; ++i) {
-                        uint8_t b = get8(ptr);
-                        uint8_t g = get8(ptr);
-                        uint8_t r = get8(ptr);
-                        uint8_t a = get8(ptr);
-                        pixels.emplace_back(Vec4<uint8_t>{r, g, b, a});
-                    }
-                } else {
-                    ptr += width * height - 4;
-                    for (size_t i = 0; i < width * height; ++i) {
-                        uint8_t b = get8m(ptr);
-                        uint8_t g = get8m(ptr);
-                        uint8_t r = get8m(ptr);
-                        uint8_t a = get8(ptr);
-                        pixels.emplace_back(Vec4<uint8_t>{r, g, b, a});
+                for (size_t i = 0; i < width * height; ++i) {
+                    uint8_t b = get8(ptr);
+                    uint8_t g = get8(ptr);
+                    uint8_t r = get8(ptr);
+                    uint8_t a = get8(ptr);
+                    pixels.emplace_back(Vec4<uint8_t>{r, g, b, a});
+                }
+                if (!start_direct) {
+                    for(size_t y = 0; y < height / 2; y++) {
+                        size_t y2 = height - 1 - y;
+                        for(size_t x = 0; x < width; x++) {
+                            std::swap(
+                                pixels[y * width + x],
+                                pixels[y2 * width + x]
+                            );
+                        }
                     }
                 }
             break;

@@ -58,7 +58,7 @@ namespace PWEngine::Render
         };
         this->set_texture = std::make_unique<GPU::BindingLayout>(instance, texture_binding_info);
 
-        GPU::PipelineInfo pipeline_info = {
+        GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
             PWEngine::GPU::compilerShader(fragment_shader_code, PWEngine::GPU::ShaderType::Fragment, "main").value(),
             {{0,sizeof(UnlitVertex)}},
@@ -68,13 +68,13 @@ namespace PWEngine::Render
             },
             {set_texture.get()},
             {{}},
-            PWEngine::GPU::PipelineInfo::VertexTopology::Triangle_List,
-            PWEngine::GPU::PipelineInfo::CullMode::None,
+            PWEngine::GPU::RenderPipelineInfo::VertexTopology::Triangle_List,
+            PWEngine::GPU::RenderPipelineInfo::CullMode::None,
             std::nullopt,
             std::nullopt,
             PWEngine::GPU::RenderingInfo{},
         };
-        this->p_pipeline = std::make_unique<GPU::Pipeline>(instance, pipeline_info);
+        this->p_pipeline = std::make_unique<GPU::RenderPipeline>(instance, pipeline_info);
     
 
     }

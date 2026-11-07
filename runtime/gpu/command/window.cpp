@@ -1,44 +1,32 @@
 #include "gpu.hpp"
 #include "gpu/task/_task.hpp"
-#include "gpu/pipeline/_pipeline.hpp"
 #include "gpu/window/_window.hpp"
+#include "math.hpp"
+#include <cstdint>
 
 namespace PWEngine::GPU 
 {
-    void RecordCommandWithWindow::bindPipeline(Pipeline *pipeline, PipelineType type)
-    {
-        switch (type) 
-        {
-        case PipelineType::Render:
-            vkCmdBindPipeline(this->p_task->self->command_buffers[this->p_task->flight_fences_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
-        break;
-        case PipelineType::Compute:
-            vkCmdBindPipeline(this->p_task->self->command_buffers[this->p_task->flight_fences_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->self->graphics_pipeline);
-        break;
-        }
-    }
-
-    void RecordCommandWithWindow::setViewPort()
+    void RecordCommand::setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area)
     {
         VkViewport viewport{};
-        viewport.x = 0.0f;
-        viewport.y = 0.0f;
-        viewport.width = (float) this->p_task->m_window->self->swapchain_extent.width;
-        viewport.height = (float) this->p_task->m_window->self->swapchain_extent.height;
-        viewport.minDepth = 0.0f;
-        viewport.maxDepth = 1.0f;
+        viewport.x = offset.x;
+        viewport.y = offset.y;
+        viewport.width = (float) window_size.x;
+        viewport.height = (float) window_size.y;
+        viewport.minDepth = depth_area.x;
+        viewport.maxDepth = depth_area.y;   
         vkCmdSetViewport(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &viewport);
     }
 
-    void RecordCommandWithWindow::setScissor()
+    void RecordCommand::setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size)
     {
         VkRect2D scissor{};
-        scissor.offset = {0, 0};
-        scissor.extent = this->p_task->m_window->self->swapchain_extent;
+        scissor.offset = {offset.x, offset.y};
+        scissor.extent = {.width = window_size.x, .height = window_size.y};
         vkCmdSetScissor(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &scissor);            
     }
 
-    void RecordCommandWithWindow::BeginRendering(Vec4<float> color, bool is_clear_background)
+    void RecordCommand::BeginRendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task)
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -47,7 +35,7 @@ namespace PWEngine::GPU
         color_barrier.newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         color_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        color_barrier.image = this->p_task->m_window->self->swapchain_images[this->p_task->swapchain_image_index];
+        color_barrier.image = task->m_window->self->swapchain_images[task->swapchain_image_index];
         color_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         color_barrier.subresourceRange.baseMipLevel = 0;
         color_barrier.subresourceRange.levelCount = 1;
@@ -61,7 +49,7 @@ namespace PWEngine::GPU
         depth_barrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         depth_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        depth_barrier.image = this->p_task->m_window->self->depth_image;
+        depth_barrier.image = task->m_window->self->depth_image;
         depth_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT; /**/
         depth_barrier.subresourceRange.baseMipLevel = 0;
         depth_barrier.subresourceRange.levelCount = 1;
@@ -81,7 +69,7 @@ namespace PWEngine::GPU
         
         VkRenderingAttachmentInfo color_attachment_info{};
         color_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        color_attachment_info.imageView = this->p_task->m_window->self->swapchain_image_views[this->p_task->swapchain_image_index];
+        color_attachment_info.imageView = task->m_window->self->swapchain_image_views[task->swapchain_image_index];
         color_attachment_info.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_attachment_info.loadOp = (is_clear_background)? VK_ATTACHMENT_LOAD_OP_CLEAR: VK_ATTACHMENT_LOAD_OP_LOAD;
         color_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -89,7 +77,7 @@ namespace PWEngine::GPU
 
         VkRenderingAttachmentInfo depth_attachment_info{};
         depth_attachment_info.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-        depth_attachment_info.imageView = this->p_task->m_window->self->depth_image_view;
+        depth_attachment_info.imageView = task->m_window->self->depth_image_view;
         depth_attachment_info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         depth_attachment_info.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         depth_attachment_info.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -99,7 +87,7 @@ namespace PWEngine::GPU
         VkRenderingInfo rendering_info{};
         rendering_info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
         rendering_info.renderArea.offset = {0, 0};
-        rendering_info.renderArea.extent = this->p_task->m_window->self->swapchain_extent;
+        rendering_info.renderArea.extent = task->m_window->self->swapchain_extent;
         rendering_info.layerCount = 1;
         rendering_info.colorAttachmentCount = 1;
         rendering_info.pColorAttachments = &color_attachment_info;
@@ -109,7 +97,7 @@ namespace PWEngine::GPU
         vkCmdBeginRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index], &rendering_info);
     }
 
-    void RecordCommandWithWindow::EndRendering()
+    void RecordCommand::EndRendering(GPUTaskWithWindow* task)
     {
         vkCmdEndRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index]);
         VkImageMemoryBarrier present_barrier{};
@@ -118,7 +106,7 @@ namespace PWEngine::GPU
         present_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         present_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
         present_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-        present_barrier.image = this->p_task->m_window->self->swapchain_images[this->p_task->swapchain_image_index];
+        present_barrier.image = task->m_window->self->swapchain_images[task->swapchain_image_index];
         present_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         present_barrier.subresourceRange.baseMipLevel = 0;
         present_barrier.subresourceRange.levelCount = 1;

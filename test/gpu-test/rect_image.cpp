@@ -59,7 +59,7 @@ class MyTask : public PWEngine::GPU::GPUTaskWithWindow
 {
 private:
     float rotation = 0;
-    std::unique_ptr<PWEngine::GPU::Pipeline> render_pipeline;
+    std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
     std::unique_ptr<PWEngine::GPU::GPUVertex> vertex_buffer;
 
@@ -87,7 +87,7 @@ public:
         };
         this->sampler_binding_layout = std::make_unique<PWEngine::GPU::BindingLayout>(instance, sampler_binding_info);
 
-        PWEngine::GPU::PipelineInfo pipeline_info = {
+        PWEngine::GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
             PWEngine::GPU::compilerShader(fragment_shader_code, PWEngine::GPU::ShaderType::Fragment, "main").value(),
             {{0,sizeof(MyVertex)}},
@@ -98,13 +98,13 @@ public:
             },
             {this->uniform_binding_layout.get(), this->sampler_binding_layout.get()},
             {{0, sizeof(float), PWEngine::GPU::ShaderType::Fragment}},
-            PWEngine::GPU::PipelineInfo::VertexTopology::Triangle_List,
-            PWEngine::GPU::PipelineInfo::CullMode::None,
+            PWEngine::GPU::RenderPipelineInfo::VertexTopology::Triangle_List,
+            PWEngine::GPU::RenderPipelineInfo::CullMode::None,
             std::nullopt,
             std::nullopt,
             PWEngine::GPU::RenderingInfo{},
         };
-        this->render_pipeline = std::make_unique<PWEngine::GPU::Pipeline>(instance, pipeline_info);
+        this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{-0.5, 0.5}, {1, 1, 1}, {0, 1}},
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{0.5, -0.5}, {1, 1, 1}, {1, 0}}
@@ -135,19 +135,18 @@ public:
         });
         
         this->uniform_buffer->writeData(&mat, sizeof(mat));
-        this->recordCommand([this, delta](PWEngine::GPU::RecordCommandWithWindow* cmd){
+        this->recordCommand([this, delta](PWEngine::GPU::RecordCommand* cmd){
             cmd->setScissor();
             cmd->setViewPort();
-            cmd->bindPipeline(this->render_pipeline.get(), PWEngine::GPU::PipelineType::Render);
+            cmd->bindPipeline(this->render_pipeline.get());
+            cmd->bindBinding(this->render_pipeline.get(), {this->uniform_binding.get(), this->image_binding.get()});
+            value = (value + 1) % 100;
+            float weight = value / 100.0; 
+            cmd->pushConstant(this->render_pipeline.get(), 0, sizeof(float), &weight, PWEngine::GPU::ShaderType::Fragment);
 
-            cmd->Rendering({0, 0, 0, 1},true, [this, delta](PWEngine::GPU::RenderingCommand& rendering){
-                rendering.bindBinding(this->render_pipeline.get(), {this->uniform_binding.get(), this->image_binding.get()});
-                rendering.bindVertices({this->vertex_buffer.get()}, {0});
-                value = (value + 1) % 100;
-                float weight = value / 100.0; 
-
-                rendering.pushConstant(this->render_pipeline.get(), 0, sizeof(float), &weight, PWEngine::GPU::ShaderType::Fragment);
-                rendering.draw(6, 1, 0, 0);
+            cmd->Rendering({0, 0, 0, 1},true, [this, delta](PWEngine::GPU::RenderingCommand* rendering){
+                rendering->bindVertices({this->vertex_buffer.get()}, {0});
+                rendering->draw(6, 1, 0, 0);
             });
         });
         return false;

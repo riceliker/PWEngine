@@ -46,4 +46,9 @@ namespace PWEngine::GPU
     {
         memcpy(this->map_pointer, data, size);
     }
+
+    void GPUBinding::getData(void* data, size_t size)
+    {
+        memcpy(data, this->map_pointer, size);
+    }
 }

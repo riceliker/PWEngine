@@ -17,7 +17,7 @@ namespace PWEngine::Render
     private:
         
     public:
-        std::unique_ptr<GPU::Pipeline> p_pipeline;
+        std::unique_ptr<GPU::RenderPipeline> p_pipeline;
         std::unique_ptr<GPU::BindingLayout> set_texture; /* set = 0 */
         RectPipeline(GPU::GPUInstance* instance);
     };
@@ -45,7 +45,7 @@ namespace PWEngine::Render
 
     };
 
-    class UnlitPipeline : public GPU::Pipeline
+    class UnlitPipeline : public GPU::RenderPipeline
     {
     public:
         

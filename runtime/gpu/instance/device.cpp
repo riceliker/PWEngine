@@ -60,7 +60,7 @@ namespace PWEngine::GPU
         float queue_priority = 1.0f;
         VkDeviceQueueCreateInfo queue_create_info{};
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_create_info.queueFamilyIndex = indices.graphicsFamily.value();
+        queue_create_info.queueFamilyIndex = indices.graphics_family.value();
         queue_create_info.queueCount = 1;
         queue_create_info.pQueuePriorities = &queue_priority;
         queue_create_infos.push_back(queue_create_info);
@@ -94,7 +94,7 @@ namespace PWEngine::GPU
         if (vkCreateDevice(adapter, &device_create_info, nullptr, &device) != VK_SUCCESS)
             sendLog(this->log, LogType::Error, LogFrom::VulkanRender, "failed to create logical device!");
 
-        vkGetDeviceQueue(device, indices.graphicsFamily.value(), 0, &graphics_queue);
+        vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
 
         this->self->adapter = adapter;
         this->self->device = device;

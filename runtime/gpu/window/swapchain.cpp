@@ -98,7 +98,7 @@ namespace PWEngine::GPU
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyIndices indices = findQueueFamilies(this->p_instance->self->adapter);
-        uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value()};
+        uint32_t queue_family_indices[] = {indices.graphics_family.value()};
 
         create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 

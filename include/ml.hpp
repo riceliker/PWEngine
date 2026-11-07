@@ -24,7 +24,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
-namespace PWEngine::Torch
+namespace PWEngine::ML
 {
     class Tensor;
     class MathAST;
@@ -40,7 +40,7 @@ namespace PWEngine::Torch
  | ░██  ███ ░████ ▓██  ███        ██▓      |
  | ░██  ███  ███  ▓██  ███        ████████ |
 -------------------------------------------*/
-namespace PWEngine::Torch
+namespace PWEngine::ML
 {
     class Tensor
     {

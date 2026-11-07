@@ -10323,7 +10323,7 @@ typedef enum
 
 
 /*
-Pipeline notifications used by the resource manager. Made up of both an async notification and a fence, both of which are optional.
+RenderPipeline notifications used by the resource manager. Made up of both an async notification and a fence, both of which are optional.
 */
 typedef struct
 {

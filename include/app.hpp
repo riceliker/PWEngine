@@ -27,8 +27,8 @@ namespace PWEngine::App
     class Render : public PWEngine::GPU::GPUTaskWithWindow
     {
     private:
-        std::unique_ptr<PWEngine::GPU::Pipeline> world_pipeline;
-        std::unique_ptr<PWEngine::GPU::Pipeline> canvas_pipeline;
+        std::unique_ptr<PWEngine::GPU::RenderPipeline> world_pipeline;
+        std::unique_ptr<PWEngine::GPU::RenderPipeline> canvas_pipeline;
     public:
         bool loop(double delta) override;
     };

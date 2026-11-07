@@ -30,27 +30,27 @@ namespace PWEngine::GPU
 
     struct QueueFamilyIndices
     {
-        std::optional<uint32_t> graphicsFamily;
-        bool isComplete() { return graphicsFamily.has_value(); }
+        std::optional<uint32_t> graphics_family;
+        bool isComplete() { return graphics_family.has_value(); }
     };
 
     inline QueueFamilyIndices findQueueFamilies(VkPhysicalDevice device)
     {
         QueueFamilyIndices indices;
 
-        uint32_t queueFamilyCount = 0;
+        uint32_t queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(
-            device, &queueFamilyCount, nullptr);
+            device, &queue_family_count, nullptr);
 
-        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(
-            device, &queueFamilyCount, queueFamilies.data());
+            device, &queue_family_count, queueFamilies.data());
 
-        for(uint32_t i = 0; i < queueFamilyCount; i++)
+        for(uint32_t i = 0; i < queue_family_count; i++)
         {
-            if(queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            if((queueFamilies[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) && (queueFamilies[i].queueFlags & VK_QUEUE_COMPUTE_BIT) )
             {
-                indices.graphicsFamily = i;
+                indices.graphics_family = i;
                 break;
             }
         }

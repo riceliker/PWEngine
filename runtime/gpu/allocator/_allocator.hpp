@@ -19,10 +19,27 @@
 
 namespace PWEngine::GPU
 {
+    struct CreateBufferInfo
+    {
+        VkBufferUsageFlags usage;
+        VkMemoryPropertyFlags properties;
+        size_t size;
+    };
+
+    struct CreateImageInfo
+    {
+        VkMemoryPropertyFlags properties;
+        Vec2<uint32_t> size;
+        uint32_t mip_level;
+        ImageFormat format;
+    };
+
     struct GPUVertex::Impl
     {
         VkBuffer buffer;
         VkDeviceMemory memory;
+
+        CreateBufferInfo info;
     };
 
     struct GPUBinding::Impl
@@ -42,21 +59,6 @@ namespace PWEngine::GPU
     {
         VkImageView view;
         VkSampler sampler;
-    };
-
-    struct CreateBufferInfo
-    {
-        VkBufferUsageFlags usage;
-        VkMemoryPropertyFlags properties;
-        size_t size;
-    };
-
-    struct CreateImageInfo
-    {
-        VkMemoryPropertyFlags properties;
-        Vec2<uint32_t> size;
-        uint32_t mip_level;
-        ImageFormat format;
     };
 
     inline std::optional<std::tuple<VkBuffer, VkDeviceMemory>> createBuffer(GPUInstance* instance, CreateBufferInfo info)

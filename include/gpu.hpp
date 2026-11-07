@@ -35,13 +35,13 @@ namespace PWEngine::GPU
     /* allocator */
     class GPUVertex; class GPUImage; class GPUBinding; class GPUImageView;
     /* pipeline */
-    class Pipeline; struct BindingPool; struct Binding;
+    struct RenderPipeline; struct ComputePipeline;
     /* binding */
     class BindingLayout; struct Binding;
     /* task */
     class IGPUTask; class GPUTask; class GPUTaskWithWindow; 
     /* window */
-    class Window; class RenderingCommand; class RecordCommandWithWindow;
+    class Window; class RenderingCommand; class RecordCommand;
 }
 
 /*----------------------------------------------------------------------
@@ -77,7 +77,7 @@ namespace PWEngine::GPU
     struct WindowInfo { Vec2<uint32_t> window_default_resolution; std::string window_title; bool is_window_resizable; };
 
     enum class DescriptorType { Uniform, Sampler, Storage };
-    enum class ShaderType { Vertex, Fragment, Compute, VertexFragment };
+    enum class ShaderType { Vertex, Fragment, Compute, VertexFragment, VertexCompute, FragmentCompute, VertexFragmentCompute };
     struct RenderShaderPath { std::string vertex_shader; std::string fragment_shader; };
     struct ShaderLayoutInfo { uint32_t binding_index; uint32_t binding_array_count; DescriptorType descriptor_type; ShaderType shader_type; };
     struct PushConstant { uint32_t offset; uint32_t size; ShaderType type;};
@@ -89,7 +89,7 @@ namespace PWEngine::GPU
     struct DepthStencilInfo { };
     struct RenderingInfo { };
     struct RenderPassInfo { };
-    struct PipelineInfo {
+    struct RenderPipelineInfo {
         std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
         std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
         std::vector<VertexBinding> vertex_binding;
@@ -101,6 +101,11 @@ namespace PWEngine::GPU
         std::optional<std::tuple<std::vector<ColorBlend>, Vec4<float>>> color_blend;
         std::optional<DepthStencilInfo> depth_stencil;
         std::variant<RenderingInfo, RenderPassInfo> render_mode;
+    };
+    struct ComputePipelineInfo {
+        std::variant<std::vector<char>, std::vector<uint32_t>> compute_shader_code;
+        std::vector<BindingLayout*> binding_layout;
+        std::vector<PushConstant> push_constant_layout;
     };
     enum class PipelineType {Render, Compute};
     enum class Key : uint8_t
@@ -165,13 +170,6 @@ namespace PWEngine::GPU
 /* -------- */
 /* instance */
 /* -------- */
-struct IRecordCommand
-{
-    IRecordCommand(IGPUTask* task): p_task(task){};
-    IGPUTask* p_task;
-    virtual void bindPipeline(Pipeline* pipeline, PipelineType type);
-};
-
 class IGPUTask
     {
     private:
@@ -301,6 +299,7 @@ class IGPUTask
         std::unique_ptr<Impl> self;
         GPUBinding(GPUInstance* p_instance, GPUBindingDataType type, size_t size);
         void writeData(void* data, size_t size);
+        void getData(void* data, size_t size);
         ~GPUBinding();
     };
 
@@ -333,16 +332,26 @@ class IGPUTask
 /* -------- */
 /* pipeline */
 /* -------- */
-    class Pipeline
+    struct RenderPipeline
     {
-    public:
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        void builder(PipelineInfo info);
+        void builder(RenderPipelineInfo info);
         /* Constructor */
-        Pipeline(GPUInstance* instance, PipelineInfo info);
-        ~Pipeline();
+        RenderPipeline(GPUInstance* instance, RenderPipelineInfo info);
+        ~RenderPipeline();
+    };
+
+    struct ComputePipeline
+    {
+        GPUInstance* p_instance;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        void builder(ComputePipelineInfo info);
+        /* Constructor */
+        ComputePipeline(GPUInstance* instance, ComputePipelineInfo info);
+        ~ComputePipeline();
     };
 
 /* ------ */
@@ -402,10 +411,6 @@ class IGPUTask
 /* ---- */
 /* task */
 /* ---- */
-    struct RecordCommand
-    {
-       
-    };
 
     class GPUTask : public IGPUTask
     {
@@ -417,40 +422,44 @@ class IGPUTask
         ~GPUTask();
     };
 
-    class RenderingCommand
+    struct RenderingCommand
     {
-    private:
-    public:
-        RenderingCommand(RecordCommandWithWindow* command): p_command(command){}
-        RecordCommandWithWindow* p_command;
+        RenderingCommand(RecordCommand* command): p_command(command){}
+        RecordCommand* p_command;
         void bindVertices(std::vector<GPUVertex*> buffers, std::vector<uint64_t> offset);
         void bindIndex(GPUVertex* buffer, InputUintType size);
-        void bindBinding(Pipeline* pipeline, std::vector<Binding*> binding);
-        void pushConstant(Pipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
         void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
     };
 
-    class RecordCommandWithWindow
+    class RecordCommand
     {
     private:
-        void BeginRendering(Vec4<float> color, bool is_clear_background);
-        void EndRendering();
+        void BeginRendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task);
+        void EndRendering(GPUTaskWithWindow* task);
         void BeginRenderPass();
         void EndRenderingPass();
     public:
-        RecordCommandWithWindow(GPUTaskWithWindow* task): p_task(task){};
-        GPUTaskWithWindow* p_task;
-        void bindPipeline(Pipeline* pipeline, PipelineType type);
-        void setViewPort();
-        void setScissor();
-        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, F&& func)
+        RecordCommand(IGPUTask* task): p_task(task){};
+        IGPUTask* p_task;
+        void bindPipeline(RenderPipeline* pipeline);
+        void bindPipeline(ComputePipeline* pipeline);
+        void bindBinding(RenderPipeline* pipeline, std::vector<Binding*> binding);
+        void pushConstant(RenderPipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
+        void bindBinding(ComputePipeline* pipeline, std::vector<Binding*> binding);
+        void pushConstant(ComputePipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
+        void setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area);
+        void setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size);
+        void Dispatch(Vec3<uint32_t> group_size);
+        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task, F&& func)
         {
             RenderingCommand rendering(this);
-            this->BeginRendering(color, is_clear_background);
+            this->BeginRendering(color, is_clear_background, task);
             func(&rendering);
-            this->EndRendering();
+            this->EndRendering(task);
         }
     };
+
+    
 
     class GPUTaskWithWindow : public IGPUTask
     {
@@ -465,10 +474,10 @@ class IGPUTask
     public:
         std::unique_ptr<Window> m_window;
         uint32_t swapchain_image_index;
-        template<std::invocable<RecordCommandWithWindow*> F>
+        template<std::invocable<RecordCommand*> F>
         void recordCommand(F&& func)
         {
-            RecordCommandWithWindow command(this);
+            RecordCommand command(this);
             this->beginCommandInProcess();
             func(&command);
             this->endCommandInProcess();

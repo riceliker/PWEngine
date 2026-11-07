@@ -43,6 +43,7 @@ namespace PWEngine::File
         {
             if (word == sym)
             {
+                if (token.size() == 0) continue;
                 out.push_back(token);
                 token = "";
             }

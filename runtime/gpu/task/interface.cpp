@@ -81,12 +81,12 @@ namespace PWEngine::GPU
         std::vector<VkCommandBuffer> command_buffers;
         command_buffers.resize(flight_fences_index_counts);
 
-        QueueFamilyIndices queueFamilyIndices = findQueueFamilies(this->p_instance->self->adapter);
+        QueueFamilyIndices queue_family_indices = findQueueFamilies(this->p_instance->self->adapter);
 
         VkCommandPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-        pool_info.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+        pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
         if (vkCreateCommandPool(this->p_instance->self->device, &pool_info, nullptr, &command_pool) != VK_SUCCESS)
             sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create command pool!");

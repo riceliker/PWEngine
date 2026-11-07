@@ -1,4 +1,5 @@
 #include "gpu.hpp"
+#include <optional>
 #include <vulkan/vulkan.h>
 #include <shaderc/shaderc.hpp>
 #include <fstream>
@@ -45,6 +46,8 @@ namespace PWEngine::GPU
         case ShaderType::Compute:
             kind = shaderc_glsl_compute_shader;
         break;
+        default:
+            return std::nullopt;
         }
     
         const shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(source, kind, name.c_str(), options);
