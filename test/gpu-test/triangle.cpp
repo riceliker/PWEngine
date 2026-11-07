@@ -38,14 +38,14 @@ struct MyVertex
     PWEngine::Vec3<float> color;
 };
 
-class MyTask : public PWEngine::GPU::GPUTaskWithWindow
+class MyTask : public PWEngine::GPU::WindowTask
 {
 private:
     std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
-    std::unique_ptr<PWEngine::GPU::GPUVertex> vertex_buffer;
+    std::unique_ptr<PWEngine::GPU::GPULocalBuffer> vertex_buffer;
 public:
-    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
+    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
     {
         PWEngine::GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
@@ -65,9 +65,9 @@ public:
         };
         this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
-        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(instance, PWEngine::GPU::BufferUsage::vertex, vertex.size(), vertex.data());
     }
-    bool loop(double delta) override
+    bool process(double delta) override
     {
         this->recordCommand([this](PWEngine::GPU::RecordCommand* cmd){
             cmd->setScissor({0, 0}, this->m_window->getWindowSize());
@@ -99,7 +99,7 @@ int main()
         true
     };
     
-    auto main_task_id = instance.createGPUTask<MyTask>(&instance, window_info);
+    auto main_task_id = instance.createWindowTask<MyTask>(&instance, window_info);
 
     instance.run(main_task_id);
 }

@@ -1,13 +1,13 @@
 #include "gpu.hpp"
 #include "gpu/task/_task.hpp"
-#include "gpu/allocator/_allocator.hpp"
+#include "gpu/memory/_memory.hpp"
 #include "gpu/binding/_binding.hpp"
 #include <cstdint>
 #include <vector>
 
 namespace PWEngine::GPU 
 {
-    void RenderingCommand::bindVertices(std::vector<GPUVertex*> buffers, std::vector<uint64_t> offset)
+    void RenderingCommand::bindVertices(std::vector<IGPUBuffer*> buffers, std::vector<uint64_t> offset)
     {
         std::vector<VkBuffer> vertex_buffers; 
         for (const auto& buffer : buffers)
@@ -18,7 +18,7 @@ namespace PWEngine::GPU
         vkCmdBindVertexBuffers(this->p_command->p_task->self->command_buffers[this->p_command->p_task->flight_fences_index], 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
     }
 
-    void RenderingCommand::bindIndex(GPUVertex* buffer, InputUintType size)
+    void RenderingCommand::bindIndex(IGPUBuffer* buffer, InputUintType size)
     {
         VkBuffer index_buffer = buffer->self->buffer;
         VkIndexType type;
@@ -36,8 +36,6 @@ namespace PWEngine::GPU
         }
         vkCmdBindIndexBuffer(this->p_command->p_task->self->command_buffers[this->p_command->p_task->flight_fences_index], index_buffer, 0, VK_INDEX_TYPE_UINT32);
     }
-
-    
 
     void RenderingCommand::draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset)
     {

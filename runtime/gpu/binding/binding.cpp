@@ -1,6 +1,6 @@
 #include "_binding.hpp"
 #include "gpu/instance/_instance.hpp"
-#include "gpu/allocator/_allocator.hpp"
+#include "gpu/memory/_memory.hpp"
 #include "gpu.hpp"
 #include <array>
 #include <memory>
@@ -39,7 +39,7 @@ namespace PWEngine::GPU
         
     }
 
-    void Binding::update(uint32_t start_offset, std::vector<std::variant<GPUBinding*, GPUImageView*>> objects)
+    void Binding::update(uint32_t start_offset, std::vector<std::variant<GPUBindingBuffer*, GPUImageView*>> objects)
     {
         for (size_t slot = 0; slot < flight_fences_index_counts; slot++)
         {
@@ -51,7 +51,7 @@ namespace PWEngine::GPU
                     VkWriteDescriptorSet descriptor_write{};
                     VkDescriptorBufferInfo buffer_info{};
                     VkDescriptorImageInfo image_info{};
-                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, GPUBinding*>) 
+                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, GPUBindingBuffer*>) 
                     {
                         buffer_info.buffer = arg->self->buffer;
                         buffer_info.offset = 0;

@@ -60,9 +60,10 @@ namespace PWEngine::GPU
             return VK_BLEND_OP_MAX;
         }
     }
-    RenderPipeline::RenderPipeline(GPUInstance* instance, RenderPipelineInfo info) : self(std::make_unique<Impl>())
+    RenderPipeline::RenderPipeline(GPUInstance* instance, RenderPipelineInfo info) : IPipeline()
     {
         this->p_instance= instance;
+        this->type = IPipeline::PipelineType::Render;
 
         VkGraphicsPipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -417,11 +418,11 @@ namespace PWEngine::GPU
             vkDestroyShaderModule(this->p_instance->self->device, shader_module.module, nullptr);
         }
 
-        self->graphics_pipeline = graphics_pipeline;
+        self->pipeline = graphics_pipeline;
     }
     RenderPipeline::~RenderPipeline()
     {
-        vkDestroyPipeline(this->p_instance->self->device, this->self->graphics_pipeline, nullptr);
+        vkDestroyPipeline(this->p_instance->self->device, this->self->pipeline, nullptr);
         vkDestroyPipelineLayout(this->p_instance->self->device, this->self->pipeline_layout, nullptr);
     }
 }

@@ -24,7 +24,7 @@ namespace PWEngine::GPU
             sendLog(this->log, LogType::Warn, LogFrom::VulkanRender, "Can not find this task id:"+std::to_string(task_id));
             return;
         }
-        IGPUTask* task = result->second.get();
+        WindowTask* task = result->second;
         lk.unlock();
 
         std::thread task_thread([this, task](){
@@ -32,7 +32,7 @@ namespace PWEngine::GPU
             while (!this->is_stop.load()) 
             {
                 auto start_time = std::chrono::high_resolution_clock::now();
-                if (task->sub_thread_loop(delta)) break;
+                if (task->task_loop(delta)) break;
                 auto current_time = std::chrono::high_resolution_clock::now();
                 delta = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
             }

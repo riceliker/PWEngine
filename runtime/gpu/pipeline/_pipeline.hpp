@@ -8,16 +8,10 @@
 
 namespace PWEngine::GPU
 {
-    struct RenderPipeline::Impl
+    struct IPipeline::Impl
     {
         VkPipelineLayout pipeline_layout;
-        VkPipeline graphics_pipeline;
-    };
-
-    struct ComputePipeline::Impl
-    {
-        VkPipelineLayout pipeline_layout;
-        VkPipeline compute_pipeline;
+        VkPipeline pipeline;
     };
 
     inline std::optional<VkShaderModule> createShaderModule(std::variant<std::vector<char>, std::vector<uint32_t>> code, VkDevice device) {

@@ -24,7 +24,7 @@ namespace PWEngine::App
         Image* image;
     };
 
-    class Render : public PWEngine::GPU::GPUTaskWithWindow
+    class Render : public PWEngine::GPU::WindowTask
     {
     private:
         std::unique_ptr<PWEngine::GPU::RenderPipeline> world_pipeline;

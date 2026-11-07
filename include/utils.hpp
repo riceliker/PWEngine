@@ -14,6 +14,35 @@
 
 namespace PWEngine
 {
+    template<typename E>
+    struct BitFlags
+    {
+        using U = std::underlying_type_t<E>;
+        U value{};
+
+        constexpr BitFlags() = default;
+        constexpr BitFlags(E e) : value(static_cast<U>(e)) {}
+
+        constexpr bool test(E e) const
+        {
+            return (value & static_cast<U>(e)) != 0;
+        }
+        constexpr bool none() const { return value == 0; }
+        constexpr bool any() const { return value != 0; }
+
+        constexpr bool operator==(const BitFlags& other) const = default;
+        constexpr bool operator!=(const BitFlags& other) const = default;
+
+        constexpr BitFlags operator|(BitFlags other) const
+        {
+            return BitFlags<E>{static_cast<E>(value | other.value)};
+        }
+        BitFlags& operator|=(BitFlags other)
+        {
+            value |= other.value;
+            return *this;
+        }
+    };
     /* Log System
     If you want to use log system. You should create LogSystem.
 

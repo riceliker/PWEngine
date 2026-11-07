@@ -55,7 +55,7 @@ struct MyVertex
     PWEngine::Vec2<float> uv;
 };
 
-class MyTask : public PWEngine::GPU::GPUTaskWithWindow
+class MyTask : public PWEngine::GPU::WindowTask
 {
 private:
     float rotation = 0;
@@ -66,7 +66,7 @@ private:
     std::unique_ptr<PWEngine::GPU::BindingLayout> uniform_binding_layout;
     std::unique_ptr<PWEngine::GPU::BindingLayout> sampler_binding_layout;
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> uniform_buffer;
     std::unique_ptr<PWEngine::GPU::Binding> uniform_binding;
 
     std::unique_ptr<PWEngine::GPU::GPUImage> image;
@@ -75,7 +75,7 @@ private:
 
     uint8_t value = 0;
 public:
-    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
+    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
     {
         std::vector<PWEngine::GPU::BindingInfo> uniform_binding_info = {
             {0, 1, PWEngine::GPU::ShaderType::Vertex, PWEngine::GPU::BindingType::uniform},
@@ -112,7 +112,7 @@ public:
         this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
 
         this->uniform_binding = this->uniform_binding_layout->createBinding();
-        this->uniform_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(PWEngine::Mat4));
+        this->uniform_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(PWEngine::Mat4));
         this->uniform_binding->update(0, {uniform_buffer.get()});
 
         auto image = std::make_unique<PWEngine::File::ImageRGBA8>(PWEngine::File::TGA{}, instance->log, "./assets/icon.tga");

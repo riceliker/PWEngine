@@ -1,6 +1,6 @@
 #include "gpu.hpp"
 #include "_window.hpp"
-#include "gpu/allocator/_allocator.hpp"
+#include "gpu/memory/_memory.hpp"
 #include "gpu/instance/_instance.hpp"
 #include <cstdint>
 #include <memory>

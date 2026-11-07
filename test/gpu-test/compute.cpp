@@ -3,6 +3,7 @@
 #include "utils.hpp"
 #include <cstddef>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -58,19 +59,18 @@ struct MyVertex
     PWEngine::Vec3<float> color;
 };
 
-class MyTask : public PWEngine::GPU::GPUTaskWithWindow
+class MyTask : public PWEngine::GPU::WindowTask
 {
 private:
     PWEngine::GPU::GPUInstance* instance;
     std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
     std::unique_ptr<PWEngine::GPU::ComputePipeline> compute_pipeline;
-    std::vector<float> data;
     std::unique_ptr<PWEngine::GPU::BindingLayout> layout;
     std::unique_ptr<PWEngine::GPU::Binding> binding;
-    std::unique_ptr<PWEngine::GPU::GPUBinding> binding_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> binding_buffer;
 
-    std::unique_ptr<PWEngine::GPU::GPUVertex> vertex_buffer;
+    std::unique_ptr<PWEngine::GPU::GPULocalBuffer> vertex_buffer;
 public:
     void createRender() 
     {
@@ -92,7 +92,7 @@ public:
         };
         this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
-        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(instance, PWEngine::GPU::BufferUsage::vertex, vertex.size() * sizeof(MyVertex), vertex.data());
     }
     void createCompute()
     {
@@ -110,23 +110,20 @@ public:
         };
         this->compute_pipeline = std::make_unique<PWEngine::GPU::ComputePipeline>(instance, pipeline_info);
 
-        
-        this->data = std::vector<float>(65536);
-        this->binding_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(instance, PWEngine::GPU::GPUBindingDataType::storage, this->data.size() * sizeof(float));
+        float* data = (float*) malloc(4 * 65536);
+        this->binding_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(instance, PWEngine::GPU::BufferUsage::storage, 65536 * sizeof(float), data);
         this->binding = this->layout->createBinding();
         this->binding->update(0, {this->binding_buffer.get()});
     }
-    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
+    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
     {
         this->instance = instance;
         this->createRender();
         this->createCompute();
     }
-    bool loop(double delta) override
+    bool process(double delta) override
     {
-        float* data = (float*)malloc(4 * 65536);
-        this->binding_buffer->getData(data, 4 * 65536)
-;        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, "The data in 1:" + std::to_string(data[0]));
+        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, "The data in 1:" + std::to_string(((float*)this->binding_buffer->map_pointer)[0]));
         this->recordCommand([this](PWEngine::GPU::RecordCommand* cmd){
             cmd->setScissor({0, 0}, this->m_window->getWindowSize());
             cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
@@ -164,7 +161,7 @@ int main()
         true
     };
     
-    auto main_task_id = instance.createGPUTask<MyTask>(&instance, window_info);
+    auto main_task_id = instance.createWindowTask<MyTask>(&instance, window_info);
 
     instance.run(main_task_id);
 }

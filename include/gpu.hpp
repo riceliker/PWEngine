@@ -33,13 +33,13 @@ namespace PWEngine::GPU
     /* instance */
     class GPUInstance; class Input; 
     /* allocator */
-    class GPUVertex; class GPUImage; class GPUBinding; class GPUImageView;
+    class GPUVertex; class GPUImage; class GPUBindingBuffer; class GPUImageView;
     /* pipeline */
     struct RenderPipeline; struct ComputePipeline;
     /* binding */
     class BindingLayout; struct Binding;
     /* task */
-    class IGPUTask; class GPUTask; class GPUTaskWithWindow; 
+    class IGPUTask; class GPUTask; class WindowTask; 
     /* window */
     class Window; class RenderingCommand; class RecordCommand;
 }
@@ -56,7 +56,7 @@ namespace PWEngine::GPU
 {
     struct Format;
     enum class BufferFormat { i32, u32, f32, vec2, vec3, vec4, color };
-    enum class ImageFormat { RGBA8, RGB8, D_F32_S_U8 };
+    enum class ImageFormat { RGBA8_SRGB, RGB8_SRGB, RGBA8_UNORM, RGB8_UNORM, D_F32_S_U8 };
 }
 
 /*-------------------------------------------------------------------
@@ -76,6 +76,7 @@ namespace PWEngine::GPU
 
     struct WindowInfo { Vec2<uint32_t> window_default_resolution; std::string window_title; bool is_window_resizable; };
 
+    /* pipeline */
     enum class DescriptorType { Uniform, Sampler, Storage };
     enum class ShaderType { Vertex, Fragment, Compute, VertexFragment, VertexCompute, FragmentCompute, VertexFragmentCompute };
     struct RenderShaderPath { std::string vertex_shader; std::string fragment_shader; };
@@ -107,7 +108,7 @@ namespace PWEngine::GPU
         std::vector<BindingLayout*> binding_layout;
         std::vector<PushConstant> push_constant_layout;
     };
-    enum class PipelineType {Render, Compute};
+    /* input */
     enum class Key : uint8_t
     {
         Unknown = 0,    
@@ -131,10 +132,22 @@ namespace PWEngine::GPU
         EndOfEnum
     };
     enum class MouseInputMode : uint8_t { show, hide, disable };
-
+    /* memory */
+    enum class BufferUsage : uint32_t
+    {
+        copy_src  = 1U << 0,
+        copy_dst  = 1U << 1,
+        vertex = 1U << 2,
+        index  = 1U << 3,
+        uniform = 1U << 4,
+        storage = 1U << 5,
+        command = 1U << 6,
+    };
+    using BufferUsageMask = BitFlags<BufferUsage>;
     enum class InputUintType { u8, u16, u32 };
-    enum class GPUVertexDataType { vertex, index };
+    struct ImageInfo { Vec2<uint32_t> size; ImageFormat format; size_t depth; void* data;};
     
+    /* binding */
     enum class GPUBindingDataType { uniform, storage };
     enum class BindingType { uniform, uniform_dynamic, uniform_texel, storage, storage_dynamic, storage_texel, image_sampler, sampled_image };
     struct BindingInfo { uint32_t binding_index; uint32_t binding_array_count; ShaderType shader_type; BindingType binding_type; };
@@ -170,27 +183,6 @@ namespace PWEngine::GPU
 /* -------- */
 /* instance */
 /* -------- */
-class IGPUTask
-    {
-    private:
-        void createSync();
-        void createCommandPool();
-    protected:
-        void beginCommandInProcess();
-        void endCommandInProcess();
-        virtual bool sub_thread_loop(double delta) = 0;
-        IGPUTask(GPUInstance* instance);
-    public:
-        GPUInstance* p_instance;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        uint8_t flight_fences_index;
-        virtual bool loop(double delta) = 0;
-        virtual ~IGPUTask();
-        
-        friend class GPUInstance;
-    };
-
     struct Input
     {
         std::atomic<bool> window_should_close{};
@@ -210,7 +202,7 @@ class IGPUTask
         void updateInput();
 
         bool is_debug;
-        std::unordered_map<size_t, std::unique_ptr<IGPUTask>> gpu_tasks;
+        std::unordered_map<size_t, WindowTask*> gpu_tasks;
         mutable std::timed_mutex create_mtx;
         mutable std::timed_mutex task_mtx;
 
@@ -234,9 +226,8 @@ class IGPUTask
 
         Window* focused_window = nullptr;
         void setMouseCursor(MouseInputMode mode);
-
-        template<class T, class... Args> requires std::derived_from<T, IGPUTask>
-        uint64_t createGPUTask(Args&&... args)
+        template<class T, class... Args> requires std::derived_from<T, WindowTask>
+        uint64_t createWindowTask(Args&&... args)
         {
             std::unique_lock<std::timed_mutex> lk(create_mtx, std::defer_lock);
             bool got_lock = false;
@@ -244,8 +235,8 @@ class IGPUTask
                 got_lock = lk.try_lock_for(std::chrono::milliseconds(1));
             }
             if (this->is_stop.load()) return UINT64_MAX;
-            std::unique_ptr<IGPUTask> task = std::make_unique<T>(std::forward<Args>(args)...);
-            this->gpu_tasks.insert({this->task_index, std::move(task)});
+            WindowTask* task = new T(std::forward<Args>(args)...);
+            this->gpu_tasks.insert({this->task_index, task});
             ++this->task_index;
             return task_index - 1;
         }
@@ -275,44 +266,45 @@ class IGPUTask
 /* --------- */
 /* allocator */
 /* --------- */
-    class GPUVertex
+    struct IGPUBuffer
     {
-    private:
-        void createGPUVertex(size_t element_total_size, void* element, GPUVertexDataType type);
-    public:
-        GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        GPUVertex(GPUInstance* p_instance, GPUVertexDataType type, size_t byte_size, void* data);
-        template<typename T> GPUVertex(GPUInstance* p_instance, GPUVertexDataType type, std::vector<T>& element) : GPUVertex(p_instance, type, element.size() * sizeof(T), element.data()) {}
-        ~GPUVertex();
+        IGPUBuffer();
     };
 
-    class GPUBinding
+    struct GPULocalBuffer : public IGPUBuffer
     {
-    private:
+        GPUInstance* p_instance;
+        GPULocalBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        ~GPULocalBuffer();
+    };
+
+    struct GPUStagingBuffer : public IGPUBuffer
+    {
+        GPUInstance* p_instance;
+        void* map_ptr;
+        GPUStagingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        void readData(void* data, size_t offset, size_t size);
+        void writeData(void* data, size_t offset, size_t size);
+        ~GPUStagingBuffer();
+    };
+
+    struct GPUBindingBuffer : public IGPUBuffer
+    {
         void* map_pointer;
-        void createGPUBinding(GPUBindingDataType type, size_t size);
-    public:
         GPUInstance* p_instance;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        GPUBinding(GPUInstance* p_instance, GPUBindingDataType type, size_t size);
-        void writeData(void* data, size_t size);
-        void getData(void* data, size_t size);
-        ~GPUBinding();
+        GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        ~GPUBindingBuffer();
     };
 
-    class GPUImage
+    struct GPUImage
     {
-    private:
-        void createGPUImage(Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* element);
-    public:
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        GPUImage(GPUInstance* p_instance, Vec2<uint32_t> image_size, ImageFormat format, size_t image_depth, void* pixels_data);
-        GPUImage(GPUInstance* p_instance, File::ImageRGBA8* image) : GPUImage(p_instance, image->size, ImageFormat::RGBA8, image->depth, image->data.data()) {}
+        GPUImage(GPUInstance* instance, File::ImageRGBA8* image, bool is_SRGB, bool is_use_mipmap);
+        GPUImage(GPUInstance* instance, ImageInfo image_info, bool is_use_mipmap);
         ~GPUImage();
     };
 
@@ -332,51 +324,29 @@ class IGPUTask
 /* -------- */
 /* pipeline */
 /* -------- */
-    struct RenderPipeline
+    struct IPipeline
     {
         GPUInstance* p_instance;
+        enum class PipelineType {Render, Compute} type;
         struct Impl;
         std::unique_ptr<Impl> self;
+        IPipeline();
+    };
+
+    struct RenderPipeline : public IPipeline
+    {
         void builder(RenderPipelineInfo info);
         /* Constructor */
         RenderPipeline(GPUInstance* instance, RenderPipelineInfo info);
         ~RenderPipeline();
     };
 
-    struct ComputePipeline
-    {
-        GPUInstance* p_instance;
-        struct Impl;
-        std::unique_ptr<Impl> self;
+    struct ComputePipeline : public IPipeline
+    {   
         void builder(ComputePipelineInfo info);
         /* Constructor */
         ComputePipeline(GPUInstance* instance, ComputePipelineInfo info);
         ~ComputePipeline();
-    };
-
-/* ------ */
-/* window */
-/* ------ */
-
-    class Window
-    {
-    private:
-        void createWindow(WindowInfo info);
-        void createSwapchain(Vec2<uint32_t>& swapchain_extent);
-        void createDepth(Vec2<uint32_t> swapchain_extent);
-        void createImageView();
-        void recreateSwapchain();
-    public:
-        GPUInstance* p_instance;
-        struct Impl;
-        std::unique_ptr<Impl> self;
-        Input* input;
-        Window(GPUInstance* instance, WindowInfo info);
-        Format getFormat();
-        Vec2<uint32_t> getWindowSize();
-        bool checkIsHoverScreen();
-        ~Window();
-        friend class GPUTaskWithWindow;
     };
 
 /* ------- */
@@ -405,19 +375,20 @@ class IGPUTask
         BindingLayout* p_layout;
         Binding(BindingLayout* layout);
         ~Binding();
-        void update(uint32_t start_offset, std::vector<std::variant<GPUBinding*, GPUImageView*>> objects);
+        void update(uint32_t start_offset, std::vector<std::variant<GPUBindingBuffer*, GPUImageView*>> objects);
     };
 
 /* ---- */
 /* task */
 /* ---- */
 
-    class GPUTask : public IGPUTask
+    class GPUTask
     {
     private:
         void waitFenceInProcess();
         void submitCommandInProcess();
-        bool sub_thread_loop(double delta) override;
+        bool task(double delta);
+    public:
         GPUTask(GPUInstance* instance);
         ~GPUTask();
     };
@@ -426,31 +397,28 @@ class IGPUTask
     {
         RenderingCommand(RecordCommand* command): p_command(command){}
         RecordCommand* p_command;
-        void bindVertices(std::vector<GPUVertex*> buffers, std::vector<uint64_t> offset);
-        void bindIndex(GPUVertex* buffer, InputUintType size);
+        void bindVertices(std::vector<IGPUBuffer*> buffers, std::vector<uint64_t> offset);
+        void bindIndex(IGPUBuffer* buffer, InputUintType size);
         void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
     };
 
     class RecordCommand
     {
     private:
-        void BeginRendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task);
-        void EndRendering(GPUTaskWithWindow* task);
+        void BeginRendering(Vec4<float> color, bool is_clear_background, WindowTask* task);
+        void EndRendering(WindowTask* task);
         void BeginRenderPass();
         void EndRenderingPass();
     public:
-        RecordCommand(IGPUTask* task): p_task(task){};
-        IGPUTask* p_task;
-        void bindPipeline(RenderPipeline* pipeline);
-        void bindPipeline(ComputePipeline* pipeline);
-        void bindBinding(RenderPipeline* pipeline, std::vector<Binding*> binding);
-        void pushConstant(RenderPipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
-        void bindBinding(ComputePipeline* pipeline, std::vector<Binding*> binding);
-        void pushConstant(ComputePipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
+        RecordCommand(WindowTask* task): p_task(task){};
+        WindowTask* p_task;
+        void bindPipeline(IPipeline* pipeline);
+        void bindBinding(IPipeline* pipeline, std::vector<Binding*> binding);
+        void pushConstant(IPipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
         void setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area);
         void setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size);
         void Dispatch(Vec3<uint32_t> group_size);
-        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task, F&& func)
+        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, WindowTask* task, F&& func)
         {
             RenderingCommand rendering(this);
             this->BeginRendering(color, is_clear_background, task);
@@ -459,21 +427,55 @@ class IGPUTask
         }
     };
 
-    
+/* ------ */
+/* window */
+/* ------ */
 
-    class GPUTaskWithWindow : public IGPUTask
+    class Window
     {
     private:
+        void createWindow(WindowInfo info);
+        void createSwapchain(Vec2<uint32_t>& swapchain_extent);
+        void createDepth(Vec2<uint32_t> swapchain_extent);
+        void createImageView();
+        void recreateSwapchain();
+    public:
+        GPUInstance* p_instance;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        Input* input;
+        Window(GPUInstance* instance, WindowInfo info);
+        Format getFormat();
+        Vec2<uint32_t> getWindowSize();
+        bool checkIsHoverScreen();
+        ~Window();
+        friend class WindowTask;
+    };
+
+    class WindowTask
+    {
+    private:
+        void createSync();
+        void createCommandPool();
+
+        void beginCommandInProcess();
+        void endCommandInProcess();
+
         void waitFenceInProcess(uint32_t* swapchain_image_index);
         void submitCommandInProcess(uint32_t* swapchain_image_index);
-        bool sub_thread_loop(double delta) override;
-
-        std::unordered_map<size_t, std::unique_ptr<GPUVertex>> local_buffer;
-        std::unordered_map<size_t, std::unique_ptr<GPUImage>> local_image;
 
     public:
+        GPUInstance* p_instance;
+        struct Impl;
+        std::unique_ptr<Impl> self;
         std::unique_ptr<Window> m_window;
+
+        uint8_t flight_fences_index;
         uint32_t swapchain_image_index;
+
+        bool task_loop(double delta);
+        virtual bool process(double delta) = 0;
+
         template<std::invocable<RecordCommand*> F>
         void recordCommand(F&& func)
         {
@@ -482,8 +484,8 @@ class IGPUTask
             func(&command);
             this->endCommandInProcess();
         }
-        GPUTaskWithWindow(GPUInstance* instance, WindowInfo info);
-        ~GPUTaskWithWindow();
+        WindowTask(GPUInstance* instance, WindowInfo info);
+        virtual ~WindowTask();
     };
 
 

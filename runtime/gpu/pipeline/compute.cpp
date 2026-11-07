@@ -9,9 +9,10 @@
 #include <vector>
 namespace PWEngine::GPU
 {
-    ComputePipeline::ComputePipeline(GPUInstance* instance, ComputePipelineInfo info) : self(std::make_unique<Impl>())
+    ComputePipeline::ComputePipeline(GPUInstance* instance, ComputePipelineInfo info) : IPipeline()
     {
         this->p_instance= instance;
+        this->type = IPipeline::PipelineType::Compute;
 
         VkComputePipelineCreateInfo pipeline_info{};
         pipeline_info.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
@@ -98,12 +99,12 @@ namespace PWEngine::GPU
 
         vkDestroyShaderModule(this->p_instance->self->device, compute_shader_module_maybe.value(), nullptr);
 
-        self->compute_pipeline = compute_pipeline;
+        self->pipeline = compute_pipeline;
     }
 
     ComputePipeline::~ComputePipeline()
     {
-        vkDestroyPipeline(this->p_instance->self->device, this->self->compute_pipeline, nullptr);
+        vkDestroyPipeline(this->p_instance->self->device, this->self->pipeline, nullptr);
         vkDestroyPipelineLayout(this->p_instance->self->device, this->self->pipeline_layout, nullptr);
     }
 }

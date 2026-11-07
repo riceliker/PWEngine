@@ -1,10 +1,17 @@
 #include "gpu.hpp"
+#include "_pipeline.hpp"
+#include <memory>
 #include <optional>
 #include <vulkan/vulkan.h>
 #include <shaderc/shaderc.hpp>
 #include <fstream>
 namespace PWEngine::GPU
 {
+    IPipeline::IPipeline() : self(std::make_unique<Impl>())
+    {
+
+    }
+    
     std::optional<std::variant<std::vector<char>, std::vector<uint32_t>>> openShader(std::string file_path)
     {
         std::ifstream file(file_path, std::ios::ate | std::ios::binary);

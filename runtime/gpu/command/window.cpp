@@ -1,5 +1,4 @@
 #include "gpu.hpp"
-#include "gpu/task/_task.hpp"
 #include "gpu/window/_window.hpp"
 #include "math.hpp"
 #include <cstdint>
@@ -26,7 +25,7 @@ namespace PWEngine::GPU
         vkCmdSetScissor(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &scissor);            
     }
 
-    void RecordCommand::BeginRendering(Vec4<float> color, bool is_clear_background, GPUTaskWithWindow* task)
+    void RecordCommand::BeginRendering(Vec4<float> color, bool is_clear_background, WindowTask* task)
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -97,7 +96,7 @@ namespace PWEngine::GPU
         vkCmdBeginRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index], &rendering_info);
     }
 
-    void RecordCommand::EndRendering(GPUTaskWithWindow* task)
+    void RecordCommand::EndRendering(WindowTask* task)
     {
         vkCmdEndRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index]);
         VkImageMemoryBarrier present_barrier{};

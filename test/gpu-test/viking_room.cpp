@@ -171,12 +171,12 @@ struct Mesh3D
     size_t vertex_count = 0;
 
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> storage_model_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> storage_model_buffer;
 
     std::unique_ptr<PWEngine::GPU::GPUImage> image;
     std::unique_ptr<PWEngine::GPU::GPUImageView> image_view;
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_material_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> uniform_material_buffer;
 
     Mesh3D(PWEngine::GPU::GPUInstance* instance, std::string model_path, std::string texture_path)
     {
@@ -196,9 +196,9 @@ struct Mesh3D
         auto image = std::make_unique<PWEngine::File::ImageRGBA8>(PWEngine::File::TGA{}, p_instance->log, texture_path);
         this->image = std::make_unique<PWEngine::GPU::GPUImage>(p_instance, image.get());
 
-        this->storage_model_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(p_instance, PWEngine::GPU::GPUBindingDataType::storage, sizeof(PWEngine::Mat4));
+        this->storage_model_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::GPUBindingDataType::storage, sizeof(PWEngine::Mat4));
         this->image_view = std::make_unique<PWEngine::GPU::GPUImageView>(this->image.get());
-        this->uniform_material_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(Material));
+        this->uniform_material_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(Material));
 
         this->binding = this->layout->createBinding();
         this->binding->update(0, {this->storage_model_buffer.get(), this->image_view.get(), this->uniform_material_buffer.get()});
@@ -218,9 +218,9 @@ struct Light
     std::unique_ptr<PWEngine::GPU::BindingLayout> layout;
     std::unique_ptr<PWEngine::GPU::Binding> binding;
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_direct_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> uniform_direct_buffer;
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> storage_point_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> storage_point_buffer;
 
     Light(PWEngine::GPU::GPUInstance* instance)
     {
@@ -232,8 +232,8 @@ struct Light
         };
         this->layout = std::make_unique<PWEngine::GPU::BindingLayout>(this->p_instance, layout_binding_info);
 
-        this->uniform_direct_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(DirectionLight));
-        this->storage_point_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(p_instance, PWEngine::GPU::GPUBindingDataType::storage, sizeof(PointLight));
+        this->uniform_direct_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(DirectionLight));
+        this->storage_point_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::GPUBindingDataType::storage, sizeof(PointLight));
 
         this->binding = this->layout->createBinding();
         this->binding->update(0, {this->uniform_direct_buffer.get(), this->storage_point_buffer.get()});
@@ -261,7 +261,7 @@ struct ScenePipeline
     std::unique_ptr<PWEngine::GPU::BindingLayout> uniform_environment_light_binding_layout;
 
 
-    std::unique_ptr<PWEngine::GPU::GPUBinding> uniform_camera_buffer;
+    std::unique_ptr<PWEngine::GPU::GPUBindingBuffer> uniform_camera_buffer;
     std::unique_ptr<PWEngine::GPU::Binding> uniform_camera_binding;
 
     void createLayout()
@@ -274,7 +274,7 @@ struct ScenePipeline
 
     void createAsset()
     {
-        this->uniform_camera_buffer = std::make_unique<PWEngine::GPU::GPUBinding>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(CameraData));
+        this->uniform_camera_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(CameraData));
         this->uniform_camera_binding = this->uniform_camera_binding_layout->createBinding();
         this->uniform_camera_binding->update(0, {uniform_camera_buffer.get()});
     }
@@ -328,7 +328,7 @@ static inline void cameraMoveFromLook(PWEngine::Vec2<float> step, PWEngine::Vec3
     position.y -= step.y * look_vector.x;
 }
 
-class MyTask : public PWEngine::GPU::GPUTaskWithWindow
+class MyTask : public PWEngine::GPU::WindowTask
 {
 private:
     std::unique_ptr<ScenePipeline> scene_pipeline;
@@ -338,7 +338,7 @@ private:
     PWEngine::Vec3<float> position = {0, 0, 0};
     CameraData camera_data = {PWEngine::Mat4(1), PWEngine::Mat4(1)};
 public:
-    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::GPUTaskWithWindow(instance, window_info)
+    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
     {
         this->scene_pipeline = std::make_unique<ScenePipeline>(instance);
     }

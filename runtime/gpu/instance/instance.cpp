@@ -113,6 +113,10 @@ namespace PWEngine::GPU
 
     GPUInstance::~GPUInstance()
     {
+        for (auto& [key, val] : this->gpu_tasks)
+        {
+            delete val;
+        }
         if (this->is_debug) 
         {
             destroyDebugUtilsMessengerEXT(this->self->instance, this->self->debug_messenger, nullptr);
