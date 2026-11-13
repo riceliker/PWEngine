@@ -4,7 +4,7 @@
 /*
     Although PWEngine is a game engine. It also have ability to support the 
     generic GPU compute. It's make use PWEngine to realize is possible.
-    The Deep Learning or Machine Learning by PWEngine is possible.
+    The Depth Learning or Machine Learning by PWEngine is possible.
 
     No cuda, not private environment. PWEngine help we can load model in anywhere.
     PWEngine will try to realize simple learning, Computer Vision and even LLM.

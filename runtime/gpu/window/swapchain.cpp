@@ -1,5 +1,6 @@
 #include "gpu.hpp"
 #include "_window.hpp"
+#include "gpu/command/_command.hpp"
 #include "gpu/memory/_memory.hpp"
 #include "gpu/instance/_instance.hpp"
 #include <cstdint>
@@ -205,5 +206,17 @@ namespace PWEngine::GPU
         this->createSwapchain(swapchain_extent);
         this->createDepth(swapchain_extent);
         this->createImageView();
+    }
+
+    std::unique_ptr<ResultImage> WindowTask::getResultImage()
+    {
+        auto obj = std::make_unique<ResultImage>();
+        obj->self = std::make_unique<ResultImage::Impl>();
+        obj->self->result_image = this->m_window->self->swapchain_images[this->swapchain_image_index];
+        obj->self->result_depth_image = this->m_window->self->depth_image;
+        obj->self->result_image_view = this->m_window->self->swapchain_image_views[this->swapchain_image_index];
+        obj->self->result_depth_image_view = this->m_window->self->depth_image_view;
+        obj->self->result_image_size = this->m_window->getWindowSize();
+        return obj;
     }
 }

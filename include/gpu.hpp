@@ -151,7 +151,6 @@ namespace PWEngine::GPU
     enum class GPUBindingDataType { uniform, storage };
     enum class BindingType { uniform, uniform_dynamic, uniform_texel, storage, storage_dynamic, storage_texel, image_sampler, sampled_image };
     struct BindingInfo { uint32_t binding_index; uint32_t binding_array_count; ShaderType shader_type; BindingType binding_type; };
-
 }
 
 /*-------------------------------------------------
@@ -378,19 +377,15 @@ namespace PWEngine::GPU
         void update(uint32_t start_offset, std::vector<std::variant<GPUBindingBuffer*, GPUImageView*>> objects);
     };
 
-/* ---- */
-/* task */
-/* ---- */
-
-    class GPUTask
+/* ------- */
+/* Command */
+/* ------- */
+    struct ResultImage
     {
-    private:
-        void waitFenceInProcess();
-        void submitCommandInProcess();
-        bool task(double delta);
-    public:
-        GPUTask(GPUInstance* instance);
-        ~GPUTask();
+        struct Impl;
+        std::unique_ptr<Impl> self;
+        ResultImage();
+        ~ResultImage();
     };
 
     struct RenderingCommand
@@ -405,8 +400,8 @@ namespace PWEngine::GPU
     class RecordCommand
     {
     private:
-        void BeginRendering(Vec4<float> color, bool is_clear_background, WindowTask* task);
-        void EndRendering(WindowTask* task);
+        void BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background);
+        void EndRendering(ResultImage* image);
         void BeginRenderPass();
         void EndRenderingPass();
     public:
@@ -418,12 +413,12 @@ namespace PWEngine::GPU
         void setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area);
         void setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size);
         void Dispatch(Vec3<uint32_t> group_size);
-        template<std::invocable<RenderingCommand*> F> void Rendering(Vec4<float> color, bool is_clear_background, WindowTask* task, F&& func)
+        template<std::invocable<RenderingCommand*> F> void Rendering(ResultImage* image, Vec4<float> color, bool is_clear_background, F&& func)
         {
             RenderingCommand rendering(this);
-            this->BeginRendering(color, is_clear_background, task);
+            this->BeginRendering(image, color, is_clear_background);
             func(&rendering);
-            this->EndRendering(task);
+            this->EndRendering(image);
         }
     };
 
@@ -484,10 +479,23 @@ namespace PWEngine::GPU
             func(&command);
             this->endCommandInProcess();
         }
+        std::unique_ptr<ResultImage> getResultImage();
         WindowTask(GPUInstance* instance, WindowInfo info);
         virtual ~WindowTask();
     };
 
-
+/* ---- */
+/* task */
+/* ---- */
+    class GPUTask
+    {
+    private:
+        void waitFenceInProcess();
+        void submitCommandInProcess();
+        bool task(double delta);
+    public:
+        GPUTask(GPUInstance* instance);
+        ~GPUTask();
+    };
 }
 

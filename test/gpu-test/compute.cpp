@@ -128,8 +128,8 @@ public:
             cmd->setScissor({0, 0}, this->m_window->getWindowSize());
             cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
             cmd->bindPipeline(this->render_pipeline.get());
-
-            cmd->Rendering({0, 0, 0, 1}, true, this, [this](PWEngine::GPU::RenderingCommand* rendering){
+            auto result = this->getResultImage();
+            cmd->Rendering(result.get(), {0, 0, 0, 1}, true, [this](PWEngine::GPU::RenderingCommand* rendering){
                 rendering->bindVertices({this->vertex_buffer.get()}, {0});
                 rendering->draw(3, 1, 0, 0);
             });

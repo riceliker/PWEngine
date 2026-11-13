@@ -30,7 +30,7 @@ namespace PWEngine::App
         std::unique_ptr<PWEngine::GPU::RenderPipeline> world_pipeline;
         std::unique_ptr<PWEngine::GPU::RenderPipeline> canvas_pipeline;
     public:
-        bool loop(double delta) override;
+        bool loop(double delta);
     };
 
     class App
@@ -38,8 +38,7 @@ namespace PWEngine::App
     private:
         std::unique_ptr<GPU::GPUInstance> instance;
     public:
-        virtual bool loop(double delta) = 0;
         App(); 
-        void run();
+        void run(std::string project_file);
     };
 }
