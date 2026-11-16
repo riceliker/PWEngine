@@ -20,7 +20,7 @@ $same($is_macos, "macos", __platform__)
 ;
 
 @files("test")
-	add_file("test/gpu-test/compute.cpp")
+	add_file("test/gpu-test/triangle.cpp")
 ;
 
 @project("PWEngine", "shared")

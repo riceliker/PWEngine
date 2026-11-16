@@ -1,7 +1,7 @@
 #include "gpu.hpp"
-#include "_window.hpp"
+#include "_task.hpp"
 #include "gpu/instance/_instance.hpp"
-#include "gpu/window/_window.hpp"
+#include "gpu/window-task/_task.hpp"
 #include <memory>
 
 namespace PWEngine::GPU 

@@ -1,12 +1,12 @@
 #include "gpu.hpp"
-#include "gpu/task/_task.hpp"
+#include "_task.hpp"
 #include "gpu/binding/_binding.hpp"
 #include "gpu/pipeline/_pipeline.hpp"
 #include <vector>
 
 namespace PWEngine::GPU 
 {
-    void RecordCommand::bindPipeline(IPipeline *pipeline)
+    void WindowRecordCommand::bindPipeline(IPipeline *pipeline)
     {
         switch (pipeline->type) 
         {
@@ -17,10 +17,9 @@ namespace PWEngine::GPU
             vkCmdBindPipeline(this->p_task->self->command_buffers[this->p_task->flight_fences_index], VK_PIPELINE_BIND_POINT_COMPUTE, pipeline->self->pipeline);
         break;
         }
-        
     }
 
-    void RecordCommand::bindBinding(IPipeline* pipeline, std::vector<Binding*> bindings)
+    void WindowRecordCommand::bindBinding(IPipeline* pipeline, std::vector<Binding*> bindings)
     {
         std::vector<VkDescriptorSet> descriptor_sets_list;
         for (const auto& binding : bindings)
@@ -39,8 +38,7 @@ namespace PWEngine::GPU
         
     }
 
-
-    void RecordCommand::pushConstant(IPipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type)
+    void WindowRecordCommand::pushConstant(IPipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type)
     {
         VkShaderStageFlags stage;
         switch (type) 
@@ -68,5 +66,4 @@ namespace PWEngine::GPU
         }
         vkCmdPushConstants(this->p_task->self->command_buffers[this->p_task->flight_fences_index], pipeline->self->pipeline_layout, stage, offset, data_size, data);
     }
-
 }

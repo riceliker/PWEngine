@@ -135,7 +135,7 @@ public:
         });
         
         this->uniform_buffer->writeData(&mat, sizeof(mat));
-        this->recordCommand([this, delta](PWEngine::GPU::RecordCommand* cmd){
+        this->recordCommand([this, delta](PWEngine::GPU::WindowRecordCommand* cmd){
             cmd->setScissor();
             cmd->setViewPort();
             cmd->bindPipeline(this->render_pipeline.get());

@@ -2,6 +2,8 @@
 #include "math.hpp"
 #include "utils.hpp"
 #include <cstddef>
+#include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <vector>
@@ -41,11 +43,12 @@ struct MyVertex
 class MyTask : public PWEngine::GPU::WindowTask
 {
 private:
+    PWEngine::GPU::GPUInstance* instance;
     std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
     std::unique_ptr<PWEngine::GPU::GPULocalBuffer> vertex_buffer;
 public:
-    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
+    void createRender() 
     {
         PWEngine::GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),
@@ -65,16 +68,21 @@ public:
         };
         this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {{{0, -0.25}, {1, 0, 0}}, {{-0.5, 0.25}, {0, 1, 0}}, {{0.5, 0.25}, {0, 0, 1}}};
-        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(instance, PWEngine::GPU::BufferUsage::vertex, vertex.size(), vertex.data());
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(instance, PWEngine::GPU::BufferUsage::vertex, vertex.size() * sizeof(MyVertex), vertex.data());
+    }
+    MyTask(PWEngine::GPU::GPUInstance* instance, PWEngine::GPU::WindowInfo window_info) : PWEngine::GPU::WindowTask(instance, window_info)
+    {
+        this->instance = instance;
+        this->createRender();
     }
     bool process(double delta) override
     {
-        this->recordCommand([this](PWEngine::GPU::RecordCommand* cmd){
+        this->recordCommand([this](PWEngine::GPU::WindowRecordCommand* cmd){
             cmd->setScissor({0, 0}, this->m_window->getWindowSize());
             cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
             cmd->bindPipeline(this->render_pipeline.get());
-
-            cmd->Rendering({0, 0, 0, 1}, true, this, [this](PWEngine::GPU::RenderingCommand* rendering){
+            auto result = this->getResultImage();
+            cmd->Rendering(result.get(), {0, 0, 0, 1}, true, [this](PWEngine::GPU::RenderingCommand* rendering){
                 rendering->bindVertices({this->vertex_buffer.get()}, {0});
                 rendering->draw(3, 1, 0, 0);
             });
@@ -89,7 +97,7 @@ int main()
     PWEngine::LogSystem log(true);
 
     PWEngine::GPU::GPUInstanceInfo instance_info = {
-        true, "Viking Room", {1, 0, 0}
+        true, "Triangle", {1, 0, 0}
     };
     PWEngine::GPU::GPUInstance instance(&log, instance_info);
 

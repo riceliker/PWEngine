@@ -466,7 +466,7 @@ public:
         };
         this->scene_pipeline->ground->setData(ground_mats, ground_material);
 
-        this->recordCommand([&](PWEngine::GPU::RecordCommand* cmd){
+        this->recordCommand([&](PWEngine::GPU::WindowRecordCommand* cmd){
             cmd->setScissor({0, 0}, this->m_window->getWindowSize());
             cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
             cmd->bindPipeline(this->scene_pipeline->pipeline.get());

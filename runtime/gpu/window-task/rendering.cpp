@@ -1,12 +1,22 @@
 #include "gpu.hpp"
-#include "_command.hpp"
-#include "gpu/window/_window.hpp"
-#include "math.hpp"
+#include "_task.hpp"
+#include "gpu/memory/_memory.hpp"
 #include <cstdint>
+#include <vector>
 
 namespace PWEngine::GPU 
 {
-    void RecordCommand::setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area)
+    ResultImage::ResultImage(): self(std::make_unique<Impl>())
+    {
+
+    }
+
+    ResultImage::~ResultImage()
+    {
+
+    }
+
+    void WindowRecordCommand::setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area)
     {
         VkViewport viewport{};
         viewport.x = offset.x;
@@ -18,7 +28,7 @@ namespace PWEngine::GPU
         vkCmdSetViewport(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &viewport);
     }
 
-    void RecordCommand::setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size)
+    void WindowRecordCommand::setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size)
     {
         VkRect2D scissor{};
         scissor.offset = {offset.x, offset.y};
@@ -26,7 +36,7 @@ namespace PWEngine::GPU
         vkCmdSetScissor(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &scissor);            
     }
 
-    void RecordCommand::BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background)
+    void WindowRecordCommand::BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background)
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -97,7 +107,7 @@ namespace PWEngine::GPU
         vkCmdBeginRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index], &rendering_info);
     }
 
-    void RecordCommand::EndRendering(ResultImage* image)
+    void WindowRecordCommand::EndRendering(ResultImage* image)
     {
         vkCmdEndRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index]);
         VkImageMemoryBarrier present_barrier{};
@@ -122,5 +132,40 @@ namespace PWEngine::GPU
             0, nullptr,
             1, &present_barrier
         );
+    }
+
+    void RenderingCommand::bindVertices(std::vector<IGPUBuffer*> buffers, std::vector<uint64_t> offset)
+    {
+        std::vector<VkBuffer> vertex_buffers; 
+        for (const auto& buffer : buffers)
+        {
+            vertex_buffers.push_back(buffer->self->buffer);
+        }
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(this->p_command->p_task->self->command_buffers[this->p_command->p_task->flight_fences_index], 0, vertex_buffers.size(), vertex_buffers.data(), offsets);
+    }
+
+    void RenderingCommand::bindIndex(IGPUBuffer* buffer, InputUintType size)
+    {
+        VkBuffer index_buffer = buffer->self->buffer;
+        VkIndexType type;
+        switch (size) 
+        {
+        case InputUintType::u8:
+            type = VK_INDEX_TYPE_UINT8_KHR;
+        break;
+        case InputUintType::u16:
+            type = VK_INDEX_TYPE_UINT16;
+        break;
+        case InputUintType::u32:
+            type = VK_INDEX_TYPE_UINT32;
+        break;
+        }
+        vkCmdBindIndexBuffer(this->p_command->p_task->self->command_buffers[this->p_command->p_task->flight_fences_index], index_buffer, 0, VK_INDEX_TYPE_UINT32);
+    }
+
+    void RenderingCommand::draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset)
+    {
+        vkCmdDraw(this->p_command->p_task->self->command_buffers[this->p_command->p_task->flight_fences_index], vertex_count, instance_count, vertex_offset, instance_offset);
     }
 }

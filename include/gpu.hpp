@@ -41,7 +41,7 @@ namespace PWEngine::GPU
     /* task */
     class IGPUTask; class GPUTask; class WindowTask; 
     /* window */
-    class Window; class RenderingCommand; class RecordCommand;
+    class Window; class RenderingCommand; class WindowRecordCommand;
 }
 
 /*----------------------------------------------------------------------
@@ -390,14 +390,14 @@ namespace PWEngine::GPU
 
     struct RenderingCommand
     {
-        RenderingCommand(RecordCommand* command): p_command(command){}
-        RecordCommand* p_command;
+        RenderingCommand(WindowRecordCommand* command): p_command(command){}
+        WindowRecordCommand* p_command;
         void bindVertices(std::vector<IGPUBuffer*> buffers, std::vector<uint64_t> offset);
         void bindIndex(IGPUBuffer* buffer, InputUintType size);
         void draw(uint64_t vertex_count, uint64_t instance_count, uint64_t vertex_offset, uint64_t instance_offset);
     };
 
-    class RecordCommand
+    class WindowRecordCommand
     {
     private:
         void BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background);
@@ -405,7 +405,7 @@ namespace PWEngine::GPU
         void BeginRenderPass();
         void EndRenderingPass();
     public:
-        RecordCommand(WindowTask* task): p_task(task){};
+        WindowRecordCommand(WindowTask* task): p_task(task){};
         WindowTask* p_task;
         void bindPipeline(IPipeline* pipeline);
         void bindBinding(IPipeline* pipeline, std::vector<Binding*> binding);
@@ -420,6 +420,17 @@ namespace PWEngine::GPU
             func(&rendering);
             this->EndRendering(image);
         }
+    };
+
+    class GPURecordCommand
+    {
+    public:
+        GPURecordCommand(GPUTask* task) : p_task(task) {}
+        GPUTask* p_task;
+        void bindPipeline(ComputePipeline* pipeline);
+        void bindBinding(ComputePipeline* pipeline, std::vector<Binding*> binding);
+        void pushConstant(ComputePipeline* pipeline, size_t offset, size_t data_size, void* data, ShaderType type);
+        void Dispatch(Vec3<uint32_t> group_size);
     };
 
 /* ------ */
@@ -471,10 +482,10 @@ namespace PWEngine::GPU
         bool task_loop(double delta);
         virtual bool process(double delta) = 0;
 
-        template<std::invocable<RecordCommand*> F>
+        template<std::invocable<WindowRecordCommand*> F>
         void recordCommand(F&& func)
         {
-            RecordCommand command(this);
+            WindowRecordCommand command(this);
             this->beginCommandInProcess();
             func(&command);
             this->endCommandInProcess();
@@ -486,16 +497,25 @@ namespace PWEngine::GPU
 
 /* ---- */
 /* task */
-/* ---- */
+/* ---- */ 
     class GPUTask
     {
     private:
-        void waitFenceInProcess();
-        void submitCommandInProcess();
-        bool task(double delta);
+        void createSync();
+        void createCommandPool();
+
+        void beginCommandInProcess();
+        void endCommandInProcess();
     public:
+        GPUInstance* p_instance;
+        struct Impl;
+        std::unique_ptr<Impl> self;
+
+        virtual void process(GPURecordCommand* command) = 0;
+
         GPUTask(GPUInstance* instance);
-        ~GPUTask();
+        void run();
+        virtual ~GPUTask();
     };
 }
 
