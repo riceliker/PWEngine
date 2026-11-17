@@ -6,6 +6,7 @@
 #include <cstring>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 static const std::string vertex_shader_code = R"(
@@ -109,5 +110,7 @@ int main()
     
     auto main_task_id = instance.createWindowTask<MyTask>(&instance, window_info);
 
-    instance.run(main_task_id);
+    instance.run(main_task_id, [](){
+
+    });
 }

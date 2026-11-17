@@ -3,6 +3,7 @@
 #include "gpu/instance/_instance.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <mutex>
 #include <string>
 #define GLFW_INCLUDE_VULKAN
@@ -43,24 +44,13 @@ namespace PWEngine::GPU
         this->live_task.fetch_add(1);
     }
 
-    void GPUInstance::run(uint64_t main_task_id)
+    void GPUInstance::pollEvent()
     {
-        this->launchTask(main_task_id);
-        while (true) 
-        {
-            if (this->live_task.load() == 0)
-                break;
-            glfwPollEvents();
-
-            if (this->focused_window != nullptr)
-            {
-                this->updateInput();
-                if (this->input.key_list[static_cast<uint16_t>(Key::Escape)] && this->input.key_list[static_cast<uint16_t>(Key::LShift)])
-                    this->setMouseCursor(MouseInputMode::show);
-            }
-        }
-        if (is_debug) vkDeviceWaitIdle(this->self->device);
-        this->gpu_tasks.clear();
-        this->is_stop = true;
+        glfwPollEvents();
+    }
+    
+    void GPUInstance::waiteIdle()
+    {
+        vkDeviceWaitIdle(this->self->device);
     }
 }

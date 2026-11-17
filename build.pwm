@@ -37,4 +37,5 @@ $same($is_macos, "macos", __platform__)
 @project("test", "binary")
 	source_files("test")
 	add_library("./build/libPWEngine.dylib")
+    add_library(openal_soft_library)
 ;

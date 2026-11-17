@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: LGPL-3.0-or-later
 // Copyright (C) 2026 riceliker and all contributors
 #pragma once
-#include "file.hpp"
+#include "format.hpp"
 #include "math.hpp"
 #include "utils.hpp"
 
@@ -18,7 +18,6 @@
 #include <variant>
 
 #define flight_fences_index_counts 3
-
 
 /* -------------------------------------------------------------
  | ▒███████▓   ▓████████  ████████ ▒██  ███     ██  █████████ |
@@ -54,7 +53,6 @@ namespace PWEngine::GPU
 -----------------------------------------------------------------------*/
 namespace PWEngine::GPU 
 {
-    struct Format;
     enum class BufferFormat { i32, u32, f32, vec2, vec3, vec4, color };
     enum class ImageFormat { RGBA8_SRGB, RGB8_SRGB, RGBA8_UNORM, RGB8_UNORM, D_F32_S_U8 };
 }
@@ -200,12 +198,14 @@ namespace PWEngine::GPU
         void createCommandPool();
         void updateInput();
 
+        void pollEvent();
+        void waiteIdle();
+
         bool is_debug;
         std::unordered_map<size_t, WindowTask*> gpu_tasks;
-        mutable std::timed_mutex create_mtx;
-        mutable std::timed_mutex task_mtx;
-
-        mutable std::timed_mutex visit_mtx;
+        std::timed_mutex create_mtx;
+        std::timed_mutex task_mtx;
+        std::timed_mutex visit_mtx;
         
         std::atomic<bool> is_stop = false;
         std::atomic<bool> is_use_sumbit = false;
@@ -220,8 +220,27 @@ namespace PWEngine::GPU
         Input input;
         
         GPUInstance(LogSystem* log, GPUInstanceInfo info);
-        void run(uint64_t main_task_id);
         void launchTask(uint64_t task_id);
+        template<typename F>
+        void run(uint64_t main_task_id, F&& main_thread)
+        {
+            this->launchTask(main_task_id);
+            while (true) 
+            {
+                if (this->live_task.load() == 0)
+                    break;
+                this->pollEvent();
+                if (this->focused_window != nullptr)
+                {
+                    this->updateInput();
+                }
+                main_thread();
+            }
+            if (is_debug) this->waiteIdle();
+            this->gpu_tasks.clear();
+            this->is_stop = true;
+            exit(0);
+        }
 
         Window* focused_window = nullptr;
         void setMouseCursor(MouseInputMode mode);
@@ -302,7 +321,7 @@ namespace PWEngine::GPU
         GPUInstance* p_instance;
         struct Impl;
         std::unique_ptr<Impl> self;
-        GPUImage(GPUInstance* instance, File::ImageRGBA8* image, bool is_SRGB, bool is_use_mipmap);
+        GPUImage(GPUInstance* instance, Format::Image* image, bool is_SRGB, bool is_use_mipmap);
         GPUImage(GPUInstance* instance, ImageInfo image_info, bool is_use_mipmap);
         ~GPUImage();
     };
@@ -451,7 +470,6 @@ namespace PWEngine::GPU
         std::unique_ptr<Impl> self;
         Input* input;
         Window(GPUInstance* instance, WindowInfo info);
-        Format getFormat();
         Vec2<uint32_t> getWindowSize();
         bool checkIsHoverScreen();
         ~Window();

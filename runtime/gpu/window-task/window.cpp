@@ -1,7 +1,6 @@
 #include "gpu.hpp"
 #include "gpu/window-task/_task.hpp"
 #include "gpu/instance/_instance.hpp"
-#include "gpu/_format.hpp"
 #include <cstdint>
 #include <memory>
 
@@ -31,11 +30,6 @@ namespace PWEngine::GPU
         vkDestroySwapchainKHR(this->p_instance->self->device, this->self->swapchain, nullptr);
         vkDestroySurfaceKHR(this->p_instance->self->instance, this->self->surface, nullptr);
         glfwDestroyWindow(this->self->window);
-    }
-
-    Format Window::getFormat()
-    {
-        return {this->self->swapchain_image_format};
     }
 
     static void focus_callback(GLFWwindow* window, int focused)

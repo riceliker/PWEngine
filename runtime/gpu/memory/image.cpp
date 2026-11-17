@@ -3,7 +3,7 @@
 #include <memory>
 namespace PWEngine::GPU 
 {
-    GPUImage::GPUImage(GPUInstance* instance, File::ImageRGBA8* image, bool is_SRGB, bool is_use_mipmap)
+    GPUImage::GPUImage(GPUInstance* instance, Format::Image* image, bool is_SRGB, bool is_use_mipmap)
         : GPUImage(instance, {image->size, (is_SRGB)? ImageFormat::RGBA8_SRGB: ImageFormat::RGBA8_UNORM, image->depth, image->data.data()}, is_use_mipmap)
     {}
 
