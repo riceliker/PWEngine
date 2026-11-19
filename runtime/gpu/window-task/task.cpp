@@ -55,7 +55,7 @@ namespace PWEngine::GPU
                 vkCreateSemaphore(this->p_instance->self->device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
                 vkCreateFence(this->p_instance->self->device, &fence_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS) 
             {
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create synchronization objects for a frame!");
             }
         }
 
@@ -79,7 +79,7 @@ namespace PWEngine::GPU
         }   
         else if (swapchain_result != VK_SUCCESS && swapchain_result != VK_SUBOPTIMAL_KHR) 
         {
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to acquire swap chain image!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to acquire swap chain image!");
             return true;
         } 
         /* resset fence */
@@ -115,9 +115,9 @@ namespace PWEngine::GPU
         /* notice: the graphic queue is not thread safety. */
         this->p_instance->mutexVisit([this, submit_info, present_info](){
             if (vkQueueSubmit(this->p_instance->self->graphics_queue, 1, &submit_info, this->self->in_flight_fences[this->flight_fences_index]) != VK_SUCCESS)
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to submit draw command buffer!");
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to submit draw command buffer!");
             if (vkQueuePresentKHR(this->p_instance->self->graphics_queue, &present_info) != VK_SUCCESS)
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to Present swapchain image!");
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to Present swapchain image!");
         }); 
 
         this->flight_fences_index = (this->flight_fences_index + 1) % flight_fences_index_counts;

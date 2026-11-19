@@ -8,6 +8,7 @@ namespace PWEngine::GPU
     GPULocalBuffer::GPULocalBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data) : IGPUBuffer()
     {
         this->p_instance = instance;
+        this->self->size = size;
 
         /* create staging buffer */
         VkBuffer staging_buffer;
@@ -19,11 +20,11 @@ namespace PWEngine::GPU
         staging_buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         staging_buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         if (vkCreateBuffer(p_instance->self->device, &staging_buffer_info, nullptr, &staging_buffer) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         
         VkMemoryAllocateInfo staging_alloc_info = getBufferAllocatorInfo(p_instance, staging_buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         if (vkAllocateMemory(p_instance->self->device, &staging_alloc_info, nullptr, &staging_memory) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         vkBindBufferMemory(p_instance->self->device, staging_buffer, staging_memory, 0);
 
         /* copy data */
@@ -42,11 +43,11 @@ namespace PWEngine::GPU
         buffer_info.usage = getBufferUsage(usage) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         if (vkCreateBuffer(p_instance->self->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         
         VkMemoryAllocateInfo alloc_info = getBufferAllocatorInfo(p_instance, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         if (vkAllocateMemory(p_instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         vkBindBufferMemory(p_instance->self->device, buffer, memory, 0);
 
         copyBufferCommand(p_instance, staging_buffer, buffer, {0, 0, size});
@@ -57,6 +58,34 @@ namespace PWEngine::GPU
         this->self->buffer = buffer;
         this->self->memory = memory;
     } 
+
+    GPULocalBuffer::GPULocalBuffer(IGPUBuffer* local_buffer, BufferUsageMask usage)
+    {
+        this->p_instance = local_buffer->p_instance;
+        this->self->size = local_buffer->self->size;
+
+        /* create real buffer */
+        VkBuffer buffer;
+        VkDeviceMemory memory;
+
+        VkBufferCreateInfo buffer_info{};
+        buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.size = local_buffer->self->size;
+        buffer_info.usage = getBufferUsage(usage) | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        if (vkCreateBuffer(p_instance->self->device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) 
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
+        
+        VkMemoryAllocateInfo alloc_info = getBufferAllocatorInfo(p_instance, buffer, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        if (vkAllocateMemory(p_instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
+        vkBindBufferMemory(p_instance->self->device, buffer, memory, 0);
+
+        copyBufferCommand(p_instance, local_buffer->self->buffer, buffer, {0, 0, local_buffer->self->size});
+
+        this->self->buffer = buffer;
+        this->self->memory = memory;
+    }
     
     GPULocalBuffer::~GPULocalBuffer()
     {

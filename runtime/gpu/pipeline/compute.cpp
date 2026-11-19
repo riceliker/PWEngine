@@ -20,7 +20,7 @@ namespace PWEngine::GPU
         /* --- Shader Module --- */
         std::optional<VkShaderModule> compute_shader_module_maybe = createShaderModule(info.compute_shader_code, this->p_instance->self->device);
         if (!compute_shader_module_maybe.has_value()) 
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "Can not read Vertex Shader.");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "Can not read Vertex Shader.");
 
         VkPipelineShaderStageCreateInfo compute_shader_stage_info{};
         compute_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -49,16 +49,16 @@ namespace PWEngine::GPU
                 switch (range.type) 
                 {
                 case ShaderType::Vertex:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
                 break;
                 case ShaderType::Fragment:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
                 break;
                 case ShaderType::Compute:
                     stage = VK_SHADER_STAGE_COMPUTE_BIT;
                 break;
                 case ShaderType::VertexFragment:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "You can not registry graphic only binding in compute pipeline.");
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
                 break;
                 case ShaderType::VertexCompute:
                     stage = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT;
@@ -87,7 +87,7 @@ namespace PWEngine::GPU
 
         VkPipelineLayout pipeline_layout;
         if (vkCreatePipelineLayout(this->p_instance->self->device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create pipeline layout!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create pipeline layout!");
         }
         this->self->pipeline_layout = pipeline_layout;
         pipeline_info.layout = pipeline_layout;
@@ -95,7 +95,7 @@ namespace PWEngine::GPU
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         VkPipeline compute_pipeline;
         if (vkCreateComputePipelines(this->p_instance->self->device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &compute_pipeline) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create compute pipeline!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create compute pipeline!");
 
         vkDestroyShaderModule(this->p_instance->self->device, compute_shader_module_maybe.value(), nullptr);
 

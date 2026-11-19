@@ -22,7 +22,7 @@ namespace PWEngine::GPU
         auto result = this->gpu_tasks.find(task_id);
         if ( result == this->gpu_tasks.end())
         {
-            sendLog(this->log, LogType::Warn, LogFrom::VulkanRender, "Can not find this task id:"+std::to_string(task_id));
+            sendLog(this->log, LogType::Warn, LogFrom::Vulkan, "Can not find this task id:"+std::to_string(task_id));
             return;
         }
         WindowTask* task = result->second;

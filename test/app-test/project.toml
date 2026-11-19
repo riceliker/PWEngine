@@ -1,0 +1,8 @@
+[PWEngine_App_Toml]
+version = "1.2.5"
+type = "project"
+
+[Window]
+window_default_resolution = "1280x720"
+
+[Scene]

@@ -27,7 +27,7 @@ namespace PWEngine::GPU
                 return alloc_info;
             }
         }      
-        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type! memoryTypeBits="+std::to_string(mem_requirements.memoryTypeBits));
+        sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to find suitable memory type! memoryTypeBits="+std::to_string(mem_requirements.memoryTypeBits));
         return {};
     }
 
@@ -50,7 +50,7 @@ namespace PWEngine::GPU
                 return alloc_info;
             }
         }      
-        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type! memoryTypeBits="+std::to_string(mem_requirements.memoryTypeBits));
+        sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to find suitable memory type! memoryTypeBits="+std::to_string(mem_requirements.memoryTypeBits));
         return {};
     }
 

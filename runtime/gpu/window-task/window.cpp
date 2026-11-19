@@ -62,7 +62,7 @@ namespace PWEngine::GPU
 
         VkSurfaceKHR surface;
         if (glfwCreateWindowSurface(this->p_instance->self->instance, window, nullptr, &surface) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create window surface!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create window surface!");
 
         this->self->window = window;
         this->self->surface = surface;

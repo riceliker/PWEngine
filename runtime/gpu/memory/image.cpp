@@ -32,11 +32,11 @@ namespace PWEngine::GPU
         staging_buffer_info.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
         staging_buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         if (vkCreateBuffer(p_instance->self->device, &staging_buffer_info, nullptr, &staging_buffer) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         
         VkMemoryAllocateInfo staging_alloc_info = getBufferAllocatorInfo(p_instance, staging_buffer, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         if (vkAllocateMemory(p_instance->self->device, &staging_alloc_info, nullptr, &staging_memory) != VK_SUCCESS) 
-            sendLog(p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
         vkBindBufferMemory(p_instance->self->device, staging_buffer, staging_memory, 0);
 
         /* copy data */
@@ -80,7 +80,7 @@ namespace PWEngine::GPU
         image_create_info.flags = 0; // Optional
 
         if (vkCreateImage(instance->self->device, &image_create_info, nullptr, &image) != VK_SUCCESS) 
-            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
+            sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to create image!");
         
         VkMemoryRequirements mem_requirements;
         vkGetImageMemoryRequirements(instance->self->device, image, &mem_requirements);
@@ -88,7 +88,7 @@ namespace PWEngine::GPU
         VkMemoryAllocateInfo alloc_info = getImageAllocatorInfo(instance, image, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         
         if (vkAllocateMemory(instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
 
         vkBindImageMemory(instance->self->device, image, memory, 0);
 

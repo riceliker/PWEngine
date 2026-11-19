@@ -4,10 +4,12 @@ glfw_header=/opt/homebrew/opt/GLFW/include
 vulkan_header=/opt/homebrew/opt/vulkan-headers/include
 shaderc_header=/opt/homebrew/opt/shaderc/include
 openal_soft_header=/opt/homebrew/opt/openal-soft/include
+mujs_header=/opt/homebrew/opt/mujs/include
 # library
 glfw_library=/opt/homebrew/opt/GLFW/lib/libGLFW.dylib
 vulkan_library=/opt/homebrew/opt/vulkan-loader/lib/libvulkan.dylib
 shaderc_library=/opt/homebrew/opt/shaderc/lib/libshaderc_shared.dylib
 openal_soft_library=/opt/homebrew/opt/openal-soft/lib/libopenal.dylib
+mujs_library=/opt/homebrew/opt/mujs/lib/libmujs.a
 # if macos
 molten_vk_library=/opt/homebrew/opt/molten-vk/lib/libMoltenVK.dylib

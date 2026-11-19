@@ -83,7 +83,7 @@ namespace PWEngine::GPU
                 }
                 if (!layer_found)
                 {
-                    sendLog(this->log, LogType::Warn, LogFrom::VulkanRender, "validation layers requested, but not available!");
+                    sendLog(this->log, LogType::Warn, LogFrom::Vulkan, "validation layers requested, but not available!");
                     this->is_debug = false;
                 }
             }
@@ -106,7 +106,7 @@ namespace PWEngine::GPU
         }
         /* make instance */
         if (vkCreateInstance(&instance_create_info, nullptr, &instance) != VK_SUCCESS)
-            sendLog(this->log, LogType::Error, LogFrom::VulkanRender, "failed to create instance!");
+            sendLog(this->log, LogType::Error, LogFrom::Vulkan, "failed to create instance!");
 
         this->self->instance = instance;
     }

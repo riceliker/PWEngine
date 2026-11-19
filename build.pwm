@@ -9,6 +9,7 @@ $same($is_macos, "macos", __platform__)
     library_header(vulkan_header)
     library_header(shaderc_header)
     library_header(openal_soft_header)
+    library_header(mujs_header)
     compiler_debug()
     :if(is_macos)
         framework("Metal")
@@ -20,7 +21,7 @@ $same($is_macos, "macos", __platform__)
 ;
 
 @files("test")
-	add_file("test/gpu-test/triangle.cpp")
+	add_file("test/ascii-ocr/ascii_ocr.cpp")
 ;
 
 @project("PWEngine", "shared")
@@ -29,6 +30,7 @@ $same($is_macos, "macos", __platform__)
     add_library(vulkan_library)
     add_library(shaderc_library)
     add_library(openal_soft_library)
+    add_library(mujs_library)
     :if(is_macos)
         add_library(molten_vk_library)
     :fi
@@ -37,5 +39,4 @@ $same($is_macos, "macos", __platform__)
 @project("test", "binary")
 	source_files("test")
 	add_library("./build/libPWEngine.dylib")
-    add_library(openal_soft_library)
 ;

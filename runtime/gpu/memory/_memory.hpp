@@ -31,6 +31,7 @@ namespace PWEngine::GPU
     {
         VkBuffer buffer;
         VkDeviceMemory memory;
+        size_t size;
     };
 
     struct GPUImage::Impl
@@ -78,6 +79,8 @@ namespace PWEngine::GPU
         break;
         case ImageFormat::D_F32_S_U8:
             image_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        default:
+            return std::nullopt;
         }
         image_info.tiling = VK_IMAGE_TILING_OPTIMAL;
         image_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -87,7 +90,7 @@ namespace PWEngine::GPU
         image_info.flags = 0; // Optional
 
         if (vkCreateImage(instance->self->device, &image_info, nullptr, &image) != VK_SUCCESS) 
-            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image!");
+            sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to create image!");
         
         VkMemoryRequirements mem_requirements;
         vkGetImageMemoryRequirements(instance->self->device, image, &mem_requirements);
@@ -100,7 +103,7 @@ namespace PWEngine::GPU
             if ((mem_requirements.memoryTypeBits & (1 << index)) && (mem_properties.memoryTypes[index].propertyFlags & info.properties) == info.properties)
                 goto get_memory_type_index_success;
         }
-        sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to find suitable memory type!");
+        sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to find suitable memory type!");
         return std::nullopt;
         get_memory_type_index_success:
         VkMemoryAllocateInfo alloc_info{};
@@ -109,7 +112,7 @@ namespace PWEngine::GPU
         alloc_info.memoryTypeIndex = index;
         
         if (vkAllocateMemory(instance->self->device, &alloc_info, nullptr, &memory) != VK_SUCCESS) 
-            sendLog(instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate buffer memory!");
+            sendLog(instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate buffer memory!");
 
         vkBindImageMemory(instance->self->device, image, memory, 0);
         return std::make_tuple(image, memory);

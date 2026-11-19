@@ -45,7 +45,7 @@ namespace PWEngine::GPU
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, nullptr);
 
         if (adapter_count == 0)
-            sendLog(this->log, LogType::Error, LogFrom::VulkanRender, "failed to find GPUs with Vulkan support!");
+            sendLog(this->log, LogType::Error, LogFrom::Vulkan, "failed to find GPUs with Vulkan support!");
 
         std::vector<VkPhysicalDevice> adapters(adapter_count);
         vkEnumeratePhysicalDevices(this->self->instance, &adapter_count, adapters.data());
@@ -92,7 +92,7 @@ namespace PWEngine::GPU
         device_create_info.pNext = &dynamic_rendering_feature;
 
         if (vkCreateDevice(adapter, &device_create_info, nullptr, &device) != VK_SUCCESS)
-            sendLog(this->log, LogType::Error, LogFrom::VulkanRender, "failed to create logical device!");
+            sendLog(this->log, LogType::Error, LogFrom::Vulkan, "failed to create logical device!");
 
         vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
 

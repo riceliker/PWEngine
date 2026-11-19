@@ -34,7 +34,7 @@ namespace PWEngine::GPU
 
         if (vkCreateSemaphore(this->p_instance->self->device, &semaphore_info, nullptr, &this->self->compute_finished_semaphore) != VK_SUCCESS ||
             vkCreateFence(this->p_instance->self->device, &fence_info, nullptr, &this->self->in_flight_fence) != VK_SUCCESS) 
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create synchronization objects for a frame!");
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create synchronization objects for a frame!");
     }
 
     void GPUTask::run()
@@ -65,7 +65,7 @@ namespace PWEngine::GPU
         /* notice: the graphic queue is not thread safety. */
         this->p_instance->mutexVisit([this, submit_info, present_info](){
             if (vkQueueSubmit(this->p_instance->self->graphics_queue, 1, &submit_info, this->self->in_flight_fence) != VK_SUCCESS)
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to submit draw command buffer!");
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to submit draw command buffer!");
 
         }); 
 

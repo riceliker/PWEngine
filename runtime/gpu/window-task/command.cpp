@@ -20,7 +20,7 @@ namespace PWEngine::GPU
         pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
         if (vkCreateCommandPool(this->p_instance->self->device, &pool_info, nullptr, &command_pool) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create command pool!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create command pool!");
 
         VkCommandBufferAllocateInfo alloc_info{};
         alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -29,7 +29,7 @@ namespace PWEngine::GPU
         alloc_info.commandBufferCount = (uint32_t) command_buffers.size();
 
         if (vkAllocateCommandBuffers(this->p_instance->self->device, &alloc_info, command_buffers.data()) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate command buffers!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate command buffers!");
 
         this->self->command_pool = command_pool;
         this->self->command_buffers = std::move(command_buffers);
@@ -40,12 +40,12 @@ namespace PWEngine::GPU
         VkCommandBufferBeginInfo beginInfo{};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         if (vkBeginCommandBuffer(this->self->command_buffers[this->flight_fences_index], &beginInfo) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to begin recording command buffer!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to begin recording command buffer!");
     }
     
     void WindowTask::endCommandInProcess()
     {
         if (vkEndCommandBuffer(this->self->command_buffers[this->flight_fences_index]) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to record command buffer!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to record command buffer!");
     }
 }

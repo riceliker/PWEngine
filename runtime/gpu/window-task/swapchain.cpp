@@ -111,7 +111,7 @@ namespace PWEngine::GPU
         create_info.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(this->p_instance->self->device, &create_info, nullptr, &swapchain) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create swap chain!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create swap chain!");
 
         vkGetSwapchainImagesKHR(this->p_instance->self->device, swapchain, &image_count, nullptr);
         swapchain_images.resize(image_count);
@@ -147,7 +147,7 @@ namespace PWEngine::GPU
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
         if (vkCreateImageView(this->p_instance->self->device, &viewInfo, nullptr, &depth_image_view) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create depth image view!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create depth image view!");
 
         this->self->depth_image = depth_image;
         this->self->depth_image_memory = depth_image_memory;
@@ -178,7 +178,7 @@ namespace PWEngine::GPU
             create_info.subresourceRange.layerCount = 1;
 
             if (vkCreateImageView(this->p_instance->self->device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) 
-                sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create image views!");  
+                sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create image views!");  
         }
         this->self->swapchain_image_views = std::move(swapchain_image_views);
     }

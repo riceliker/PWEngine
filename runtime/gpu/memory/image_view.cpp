@@ -32,7 +32,7 @@ namespace PWEngine::GPU
         viewInfo.subresourceRange.baseArrayLayer = 0;
         viewInfo.subresourceRange.layerCount = 1;
         if (vkCreateImageView(this->p_image->p_instance->self->device, &viewInfo, nullptr, &texture_image_view) != VK_SUCCESS)
-            sendLog(this->p_image->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create texture image view!");
+            sendLog(this->p_image->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create texture image view!");
 
         this->self->view = texture_image_view;
     }
@@ -61,7 +61,7 @@ namespace PWEngine::GPU
         samplerInfo.minLod = 0.0f;
         samplerInfo.maxLod = VK_LOD_CLAMP_NONE;
         if (vkCreateSampler(this->p_image->p_instance->self->device, &samplerInfo, nullptr, &texture_sampler) != VK_SUCCESS)
-            sendLog(this->p_image->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create texture sampler!");
+            sendLog(this->p_image->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create texture sampler!");
 
         this->self->sampler = texture_sampler;
     }

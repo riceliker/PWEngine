@@ -13,7 +13,7 @@ namespace PWEngine::GPU
         poolInfo.queueFamilyIndex = queue_family_indices.graphics_family.value();
 
         if (vkCreateCommandPool(this->self->device, &poolInfo, nullptr, &command_pool) != VK_SUCCESS)
-            sendLog(this->log, LogType::Error, LogFrom::VulkanRender, "failed to create command pool!");
+            sendLog(this->log, LogType::Error, LogFrom::Vulkan, "failed to create command pool!");
 
         this->self->command_pool = command_pool;
     }

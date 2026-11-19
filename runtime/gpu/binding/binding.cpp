@@ -29,7 +29,7 @@ namespace PWEngine::GPU
 
         VkResult res = vkAllocateDescriptorSets(layout->p_instance->self->device, &alloc_info, descriptor_sets.data());
         if (res != VK_SUCCESS) 
-            sendLog(layout->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to allocate descriptor sets! vulkan return code:"+std::to_string(res));
+            sendLog(layout->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to allocate descriptor sets! vulkan return code:"+std::to_string(res));
 
         this->self->layout = std::move(descriptor_sets);
     }
@@ -39,7 +39,7 @@ namespace PWEngine::GPU
         
     }
 
-    void Binding::update(uint32_t start_offset, std::vector<std::variant<GPUBindingBuffer*, GPUImageView*>> objects)
+    void Binding::update(uint32_t start_offset, std::vector<std::variant<IGPUBuffer*, GPUImageView*>> objects)
     {
         for (size_t slot = 0; slot < flight_fences_index_counts; slot++)
         {
@@ -51,7 +51,7 @@ namespace PWEngine::GPU
                     VkWriteDescriptorSet descriptor_write{};
                     VkDescriptorBufferInfo buffer_info{};
                     VkDescriptorImageInfo image_info{};
-                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, GPUBindingBuffer*>) 
+                    if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, IGPUBuffer*>) 
                     {
                         buffer_info.buffer = arg->self->buffer;
                         buffer_info.offset = 0;

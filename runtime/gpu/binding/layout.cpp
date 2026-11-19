@@ -90,7 +90,7 @@ namespace PWEngine::GPU
         poolInfo.maxSets = 8;
 
         if (vkCreateDescriptorPool(this->p_instance->self->device, &poolInfo, nullptr, &descriptorPool) != VK_SUCCESS) 
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor pool!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create descriptor pool!");
 
         this->self->descriptor_pool = descriptorPool;
     }
@@ -160,7 +160,7 @@ namespace PWEngine::GPU
         descriptor_set.pBindings = layout_bindings.data();
 
         if (vkCreateDescriptorSetLayout(this->p_instance->self->device, &descriptor_set, nullptr, &descriptor_set_layout) != VK_SUCCESS)
-            sendLog(this->p_instance->log, LogType::Error, LogFrom::VulkanRender, "failed to create descriptor set layout!");
+            sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "failed to create descriptor set layout!");
         this->self->descriptor_set_layout = descriptor_set_layout;  
     }
 }

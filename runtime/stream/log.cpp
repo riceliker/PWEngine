@@ -61,8 +61,8 @@ namespace PWEngine
                 case LogFrom::FileIO:
                     from = "FileIO";
                     break;
-                case LogFrom::VulkanRender:
-                    from = "VulkanRender";
+                case LogFrom::Vulkan:
+                    from = "Vulkan";
                     break;
                 }
                 std::time_t now_time = std::time(nullptr);

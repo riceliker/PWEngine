@@ -288,31 +288,22 @@ namespace PWEngine::GPU
     {
         struct Impl;
         std::unique_ptr<Impl> self;
+        GPUInstance* p_instance;
         IGPUBuffer();
     };
 
     struct GPULocalBuffer : public IGPUBuffer
     {
-        GPUInstance* p_instance;
         GPULocalBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        GPULocalBuffer(IGPUBuffer* local_buffer, BufferUsageMask usage);
         ~GPULocalBuffer();
-    };
-
-    struct GPUStagingBuffer : public IGPUBuffer
-    {
-        GPUInstance* p_instance;
-        void* map_ptr;
-        GPUStagingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
-        void readData(void* data, size_t offset, size_t size);
-        void writeData(void* data, size_t offset, size_t size);
-        ~GPUStagingBuffer();
     };
 
     struct GPUBindingBuffer : public IGPUBuffer
     {
         void* map_pointer;
-        GPUInstance* p_instance;
         GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        GPUBindingBuffer(IGPUBuffer* local_buffer, BufferUsageMask usage);
         ~GPUBindingBuffer();
     };
 
@@ -393,7 +384,7 @@ namespace PWEngine::GPU
         BindingLayout* p_layout;
         Binding(BindingLayout* layout);
         ~Binding();
-        void update(uint32_t start_offset, std::vector<std::variant<GPUBindingBuffer*, GPUImageView*>> objects);
+        void update(uint32_t start_offset, std::vector<std::variant<IGPUBuffer*, GPUImageView*>> objects);
     };
 
 /* ------- */
