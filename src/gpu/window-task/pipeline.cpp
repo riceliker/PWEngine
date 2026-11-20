@@ -48,6 +48,7 @@ namespace PWEngine::GPU
         break;
         case ShaderType::Fragment:
             stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        break;
         case ShaderType::Compute:
             stage = VK_SHADER_STAGE_COMPUTE_BIT;
         break;

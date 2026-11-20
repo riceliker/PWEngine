@@ -1,138 +1,138 @@
-#include "file.hpp"
-#include "file/image/_bitreader.hpp"
-#include "utils.hpp"
-#include <array>
-#include <cstddef>
-#include <cstdint>
-#include <cstring>
-#include <memory>
-#include <optional>
-#include <string>
-#include <vector>
+// #include "math.hpp"
+// #include "bitstream.hpp"
+// #include "utils.hpp"
+// #include <array>
+// #include <cstddef>
+// #include <cstdint>
+// #include <cstring>
+// #include <memory>
+// #include <optional>
+// #include <string>
+// #include <vector>
 
-namespace PWEngine::File 
-{
-    struct PNGBlock
-    {
-        uint32_t len;
-        enum class BlockType { IHDR, IDAT, IEND } type;
-        std::vector<uint8_t> data;
-        uint32_t crc;
-    };
+// namespace PWEngine::Png
+// {
+//     struct PNGBlock
+//     {
+//         uint32_t len;
+//         enum class BlockType { IHDR, IDAT, IEND } type;
+//         std::vector<uint8_t> data;
+//         uint32_t crc;
+//     };
 
-    constexpr uint32_t char4tou32(std::array<char, 4> text) noexcept
-    {
-        uint32_t out = 0;
-        out |= text[0] << (8 * 3);
-        out |= text[1] << (8 * 2);
-        out |= text[2] << (8 * 1);
-        out |= text[3] << (8 * 0);
-        return out;
-    }
+//     constexpr uint32_t char4tou32(std::array<char, 4> text) noexcept
+//     {
+//         uint32_t out = 0;
+//         out |= text[0] << (8 * 3);
+//         out |= text[1] << (8 * 2);
+//         out |= text[2] << (8 * 1);
+//         out |= text[3] << (8 * 0);
+//         return out;
+//     }
 
-    std::optional<std::unique_ptr<PNGBlock>> readBlock(LogSystem log, uint8_t* ptr, const uint8_t* end_ptr)
-    {
-        if (ptr + 10 > end_ptr) 
-            return std::nullopt;
-        uint32_t data_len = get32be(ptr);
-        uint32_t type_name = get32be(ptr);
-        PNGBlock::BlockType type;
-        switch (type_name) 
-        {
-        case (char4tou32({'I', 'H', 'D', 'R'})):
-            type = PNGBlock::BlockType::IHDR;
-        break;
-        case (char4tou32({'I', 'E', 'N', 'D'})):
-            type = PNGBlock::BlockType::IEND;
-        break;
-        case (char4tou32({'I', 'D', 'A', 'T'})):
-            type = PNGBlock::BlockType::IDAT;
-        break;
-        default:
-            return std::nullopt;
-        }
-        if (ptr + data_len + 1 > end_ptr)
-            return std::nullopt;
-        std::vector<uint8_t> data;
-        data.resize(data_len);
-        memcpy(data.data(), ptr, data_len);
-        ptr += data_len;
-        uint32_t crc = get32be(ptr);
+//     std::optional<std::unique_ptr<PNGBlock>> readBlock(LogSystem log, uint8_t* ptr, const uint8_t* end_ptr)
+//     {
+//         if (ptr + 10 > end_ptr) 
+//             return std::nullopt;
+//         uint32_t data_len = BitStream::get32be(ptr);
+//         uint32_t type_name = BitStream::get32be(ptr);
+//         PNGBlock::BlockType type;
+//         switch (type_name) 
+//         {
+//         case (char4tou32({'I', 'H', 'D', 'R'})):
+//             type = PNGBlock::BlockType::IHDR;
+//         break;
+//         case (char4tou32({'I', 'E', 'N', 'D'})):
+//             type = PNGBlock::BlockType::IEND;
+//         break;
+//         case (char4tou32({'I', 'D', 'A', 'T'})):
+//             type = PNGBlock::BlockType::IDAT;
+//         break;
+//         default:
+//             return std::nullopt;
+//         }
+//         if (ptr + data_len + 1 > end_ptr)
+//             return std::nullopt;
+//         std::vector<uint8_t> data;
+//         data.resize(data_len);
+//         memcpy(data.data(), ptr, data_len);
+//         ptr += data_len;
+//         uint32_t crc = get32be(ptr);
 
-        auto obj = std::make_unique<PNGBlock>();
-        obj->len = data_len;
-        obj->type = type;
-        obj->data = std::move(data);
-        obj->crc = crc;
-        return obj;
-    }
+//         auto obj = std::make_unique<PNGBlock>();
+//         obj->len = data_len;
+//         obj->type = type;
+//         obj->data = std::move(data);
+//         obj->crc = crc;
+//         return obj;
+//     }
 
-    ImageRGBA8::ImageRGBA8(PNG, LogSystem* log, std::string path)
-    {
-        auto _file = readBinaryFile(log, path);
-        if (!_file.has_value()) {
-            sendLog(log, LogType::Warn, LogFrom::FileIO, "Can not open file! From:" + path);
-            return;
-        }
-        auto file = _file.value();
-        uint8_t* ptr = file.data();
-        const uint8_t* end_ptr = ptr + file.size();
+//     ImageRGBA8::ImageRGBA8(PNG, LogSystem* log, std::string path)
+//     {
+//         auto _file = readBinaryFile(log, path);
+//         if (!_file.has_value()) {
+//             sendLog(log, LogType::Warn, LogFrom::FileIO, "Can not open file! From:" + path);
+//             return;
+//         }
+//         auto file = _file.value();
+//         uint8_t* ptr = file.data();
+//         const uint8_t* end_ptr = ptr + file.size();
 
-        bool magic_number_is_png = false;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x89;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x50;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x4E;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x47;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x0D;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x0A;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x1A;
-        magic_number_is_png = magic_number_is_png || get8(ptr) == 0x89;
-        if (!magic_number_is_png) {
-            sendLog(log, LogType::Warn, LogFrom::FileIO, "The file is not PNG! From:" + path);
-            return;
-        }
+//         bool magic_number_is_png = false;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x89;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x50;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x4E;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x47;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x0D;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x0A;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x1A;
+//         magic_number_is_png = magic_number_is_png || get8(ptr) == 0x89;
+//         if (!magic_number_is_png) {
+//             sendLog(log, LogType::Warn, LogFrom::FileIO, "The file is not PNG! From:" + path);
+//             return;
+//         }
 
-        /* first IHDR */
-        auto _header = readBlock(log, ptr, end_ptr);
-        if (!_header.has_value()) {
-            sendLog(log, LogType::Warn, LogFrom::FileIO, "The PNG is broken! From:" + path);
-            return;
-        }  
-        auto header = std::move(_header.value());
+//         /* first IHDR */
+//         auto _header = readBlock(log, ptr, end_ptr);
+//         if (!_header.has_value()) {
+//             sendLog(log, LogType::Warn, LogFrom::FileIO, "The PNG is broken! From:" + path);
+//             return;
+//         }  
+//         auto header = std::move(_header.value());
 
-        uint8_t* header_data_ptr = header->data.data();
-        uint32_t width = get32be(header_data_ptr);
-        uint32_t height = get32be(header_data_ptr);
-        uint8_t bit_depth = get8(header_data_ptr);
-        uint8_t color_type = get8(header_data_ptr);
-        uint8_t compression = get8(header_data_ptr);
-        uint8_t filter_method = get8(header_data_ptr);  
-        uint8_t interlace = get8(header_data_ptr);
+//         uint8_t* header_data_ptr = header->data.data();
+//         uint32_t width = get32be(header_data_ptr);
+//         uint32_t height = get32be(header_data_ptr);
+//         uint8_t bit_depth = get8(header_data_ptr);
+//         uint8_t color_type = get8(header_data_ptr);
+//         uint8_t compression = get8(header_data_ptr);
+//         uint8_t filter_method = get8(header_data_ptr);  
+//         uint8_t interlace = get8(header_data_ptr);
 
-        /* second get zlib data*/
-        std::vector<uint8_t> zlib_data;
-        PNGBlock::BlockType type;
-        while (type != PNGBlock::BlockType::IEND) {
-            auto _block = readBlock(log, ptr, end_ptr);
-            if (!_block.has_value()) {
-                sendLog(log, LogType::Warn, LogFrom::FileIO, "The PNG is broken! From:" + path);
-                return;
-            }  
-            auto block = std::move(_block.value());
-            if (block->type != PNGBlock::BlockType::IDAT)
-                continue;
+//         /* second get zlib data*/
+//         std::vector<uint8_t> zlib_data;
+//         PNGBlock::BlockType type;
+//         while (type != PNGBlock::BlockType::IEND) {
+//             auto _block = readBlock(log, ptr, end_ptr);
+//             if (!_block.has_value()) {
+//                 sendLog(log, LogType::Warn, LogFrom::FileIO, "The PNG is broken! From:" + path);
+//                 return;
+//             }  
+//             auto block = std::move(_block.value());
+//             if (block->type != PNGBlock::BlockType::IDAT)
+//                 continue;
             
-            zlib_data.resize(zlib_data.size() + block->len);
-            memcpy(zlib_data.data() - block->len , block->data.data(), block->len);
-        } 
-        uint8_t* zlib_ptr = zlib_data.data();
-        uint8_t zlib_cmf = get8(zlib_ptr);
-        uint8_t zlib_flg = get8(zlib_ptr);
+//             zlib_data.resize(zlib_data.size() + block->len);
+//             memcpy(zlib_data.data() - block->len , block->data.data(), block->len);
+//         } 
+//         uint8_t* zlib_ptr = zlib_data.data();
+//         uint8_t zlib_cmf = get8(zlib_ptr);
+//         uint8_t zlib_flg = get8(zlib_ptr);
 
-        uint32_t zlib_scan_width = 1U << (((zlib_cmf >> 4) & 0x0F) + 8);
+//         uint32_t zlib_scan_width = 1U << (((zlib_cmf >> 4) & 0x0F) + 8);
 
-    }
-}
+//     }
+// }
 // zlib-from-memory implementation for PNG reading
 //    because PNG allows splitting the zlib stream arbitrarily,
 //    and it's annoying structurally to have PNG call ZLIB call PNG,

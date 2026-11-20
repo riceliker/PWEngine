@@ -5,7 +5,7 @@
 #include <memory>
 namespace PWEngine::GPU 
 {  
-    GPUBindingBuffer::GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data) : IGPUBuffer()
+    GPUBindingBuffer::GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size) : IGPUBuffer()
     {
         this->p_instance = instance;
         VkBuffer buffer;

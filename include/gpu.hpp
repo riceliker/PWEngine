@@ -32,7 +32,7 @@ namespace PWEngine::GPU
     /* instance */
     class GPUInstance; class Input; 
     /* allocator */
-    class GPUVertex; class GPUImage; class GPUBindingBuffer; class GPUImageView;
+    class GPUImage; class GPUBindingBuffer; class GPUImageView;
     /* pipeline */
     struct RenderPipeline; struct ComputePipeline;
     /* binding */
@@ -86,8 +86,6 @@ namespace PWEngine::GPU
     enum class BlendObject { zero, one, src_color, one_minus_src_color, dst_color, one_minus_dst_color, src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha, constant_color, one_minus_constant_color, constant_alpha, one_minus_constant_alpha, };
     struct ColorBlend { BlendOp color_op; BlendObject color_src; BlendObject color_dst; BlendOp alpha_op; BlendObject alpha_src; BlendObject alpha_dst; Vec4<bool> write_mask;};
     struct DepthStencilInfo { };
-    struct RenderingInfo { };
-    struct RenderPassInfo { };
     struct RenderPipelineInfo {
         std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
         std::variant<std::vector<char>, std::vector<uint32_t>> fragment_shader_code;
@@ -99,7 +97,6 @@ namespace PWEngine::GPU
         enum class CullMode {Front, Back, None} cull_mode;
         std::optional<std::tuple<std::vector<ColorBlend>, Vec4<float>>> color_blend;
         std::optional<DepthStencilInfo> depth_stencil;
-        std::variant<RenderingInfo, RenderPassInfo> render_mode;
     };
     struct ComputePipelineInfo {
         std::variant<std::vector<char>, std::vector<uint32_t>> compute_shader_code;
@@ -302,7 +299,7 @@ namespace PWEngine::GPU
     struct GPUBindingBuffer : public IGPUBuffer
     {
         void* map_pointer;
-        GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size, void* data);
+        GPUBindingBuffer(GPUInstance* instance, BufferUsageMask usage, size_t size);
         GPUBindingBuffer(IGPUBuffer* local_buffer, BufferUsageMask usage);
         ~GPUBindingBuffer();
     };

@@ -7,7 +7,8 @@ We should not destroy this program again. So we reject all contribute from comme
 
 ## Pull Requests
 If you want to do actual development on PWEngine, pull requests are the best place to start. 
-Notice: If you use agent to developing your program. Read `AGENT.md` firstly.
+In the first, your code will store a EXT module. If we think it is useful, it will be store in core.
+Notice: If some code write by agent is allow. But we reject vibe coding.
 
 ### The C++ Style
 Namespace/Class Style: PascalCase

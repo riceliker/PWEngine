@@ -79,6 +79,7 @@ namespace PWEngine::GPU
         break;
         case ImageFormat::D_F32_S_U8:
             image_info.format = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        break;
         default:
             return std::nullopt;
         }

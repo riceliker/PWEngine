@@ -1,11 +1,14 @@
+#include "file/tga.hpp"
 #include "gpu.hpp"
 #include "math.hpp"
 #include "utils.hpp"
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 static const std::string vertex_shader_code = R"(
@@ -60,7 +63,7 @@ private:
     float rotation = 0;
     std::unique_ptr<PWEngine::GPU::RenderPipeline> render_pipeline;
 
-    std::unique_ptr<PWEngine::GPU::GPUVertex> vertex_buffer;
+    std::unique_ptr<PWEngine::GPU::GPULocalBuffer> vertex_buffer;
 
     std::unique_ptr<PWEngine::GPU::BindingLayout> uniform_binding_layout;
     std::unique_ptr<PWEngine::GPU::BindingLayout> sampler_binding_layout;
@@ -101,27 +104,27 @@ public:
             PWEngine::GPU::RenderPipelineInfo::CullMode::None,
             std::nullopt,
             std::nullopt,
-            PWEngine::GPU::RenderingInfo{},
         };
         this->render_pipeline = std::make_unique<PWEngine::GPU::RenderPipeline>(instance, pipeline_info);
         std::vector<MyVertex> vertex = {
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{-0.5, 0.5}, {1, 1, 1}, {0, 1}},
             {{0.5, 0.5}, {1, 1, 1}, {1, 1}}, {{-0.5, -0.5}, {1, 1, 1}, {0, 0}}, {{0.5, -0.5}, {1, 1, 1}, {1, 0}}
         };
-        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPUVertex>(instance, PWEngine::GPU::GPUVertexDataType::vertex, vertex);
+        this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(instance, PWEngine::GPU::BufferUsage::vertex, sizeof(MyVertex) * vertex.size(), vertex.data());
 
         this->uniform_binding = this->uniform_binding_layout->createBinding();
-        this->uniform_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(instance, PWEngine::GPU::GPUBindingDataType::uniform, sizeof(PWEngine::Mat4));
+        this->uniform_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(instance, PWEngine::GPU::BufferUsage::uniform, sizeof(PWEngine::Mat4));
         this->uniform_binding->update(0, {uniform_buffer.get()});
 
-        auto image = std::make_unique<PWEngine::File::ImageRGBA8>(PWEngine::File::TGA{}, instance->log, "./assets/icon.tga");
-        this->image = std::make_unique<PWEngine::GPU::GPUImage>(instance, image.get());
+        auto [image, image_err] = PWEngine::Tga::TgaFile("./assets/icon.tga");
+        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Debug, PWEngine::LogFrom::Debug, std::to_string(static_cast<uint8_t>(image_err)));
+        this->image = std::make_unique<PWEngine::GPU::GPUImage>(instance, image.get(), true, true);
         this->image_view = std::make_unique<PWEngine::GPU::GPUImageView>(this->image.get());
 
         this->image_binding = this->sampler_binding_layout->createBinding();
         this->image_binding->update(0, {this->image_view.get()});
     } 
-    bool loop(double delta) override
+    bool process(double delta) override
     {  
         rotation += delta;
         float c = cos(rotation);
@@ -133,17 +136,18 @@ public:
             0.0f,  0.0f, 0.0f, 1.0f
         });
         
-        this->uniform_buffer->writeData(&mat, sizeof(mat));
+        memcpy(this->uniform_buffer->map_pointer, &mat, sizeof(mat));
         this->recordCommand([this, delta](PWEngine::GPU::WindowRecordCommand* cmd){
-            cmd->setScissor();
-            cmd->setViewPort();
+            auto window_result = this->getResultImage();
+            cmd->setScissor({0, 0}, this->m_window->getWindowSize());
+            cmd->setViewPort({0, 0}, this->m_window->getWindowSize(), {0, 1});
             cmd->bindPipeline(this->render_pipeline.get());
             cmd->bindBinding(this->render_pipeline.get(), {this->uniform_binding.get(), this->image_binding.get()});
             value = (value + 1) % 100;
             float weight = value / 100.0; 
             cmd->pushConstant(this->render_pipeline.get(), 0, sizeof(float), &weight, PWEngine::GPU::ShaderType::Fragment);
 
-            cmd->Rendering({0, 0, 0, 1},true, [this, delta](PWEngine::GPU::RenderingCommand* rendering){
+            cmd->Rendering(window_result.get(), {0, 0, 0, 1}, true, [this, delta](PWEngine::GPU::RenderingCommand* rendering){
                 rendering->bindVertices({this->vertex_buffer.get()}, {0});
                 rendering->draw(6, 1, 0, 0);
             });
@@ -168,7 +172,9 @@ int main()
         true
     };
     
-    auto main_task_id = instance.createGPUTask<MyTask>(&instance, window_info);
+    auto main_task_id = instance.createWindowTask<MyTask>(&instance, window_info);
 
-    instance.run(main_task_id);
+    instance.run(main_task_id, [](){
+
+    });
 }

@@ -187,16 +187,16 @@ namespace PWEngine::GPU
                 switch (range.type) 
                 {
                 case ShaderType::Vertex:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
+                    stage = VK_SHADER_STAGE_VERTEX_BIT;
                 break;
                 case ShaderType::Fragment:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
+                    stage = VK_SHADER_STAGE_FRAGMENT_BIT;
                 break;
                 case ShaderType::Compute:
-                    stage = VK_SHADER_STAGE_COMPUTE_BIT;
+                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry compute only binding in graphic pipeline.");
                 break;
                 case ShaderType::VertexFragment:
-                    sendLog(this->p_instance->log, LogType::Error, LogFrom::Vulkan, "You can not registry graphic only binding in compute pipeline.");
+                    stage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
                 break;
                 case ShaderType::VertexCompute:
                     stage = VK_SHADER_STAGE_COMPUTE_BIT | VK_SHADER_STAGE_VERTEX_BIT;
@@ -387,26 +387,17 @@ namespace PWEngine::GPU
         /* render mode */
         VkPipelineRenderingCreateInfo rendering{};
         VkFormat format = VK_FORMAT_B8G8R8A8_SRGB;
-        std::visit([&](auto& arg) {
-            if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, RenderingInfo>) 
-            {
-                /* --- Rendering --- */
-                rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-                rendering.colorAttachmentCount = 1;
-                rendering.pColorAttachmentFormats = &format;
-                rendering.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
-                rendering.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
 
-                pipeline_info.pNext = &rendering;
-                pipeline_info.renderPass = VK_NULL_HANDLE;
-                pipeline_info.subpass = 0;
-            } 
-            else if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, RenderPassInfo>) 
-            {
-            
-                
-            }
-        }, info.render_mode);
+        /* --- Rendering --- */
+        rendering.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        rendering.colorAttachmentCount = 1;
+        rendering.pColorAttachmentFormats = &format;
+        rendering.depthAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+        rendering.stencilAttachmentFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
+
+        pipeline_info.pNext = &rendering;
+        pipeline_info.renderPass = VK_NULL_HANDLE;
+        pipeline_info.subpass = 0;
         
         pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
         VkPipeline graphics_pipeline;

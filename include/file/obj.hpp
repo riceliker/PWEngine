@@ -36,7 +36,7 @@ SOFTWARE.
 #include <utility>
 #include <vector>
 
-namespace PWEngine::File 
+namespace PWEngine::Obj
 { 
     static inline std::vector<std::string> spiltBy(std::string_view str, char sym)
     {

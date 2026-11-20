@@ -1,8 +1,8 @@
 # PWEngine
-The game engine for game Physic World.
-Welcome to use PWEngine. It is Lite, Easy, Editable.
-PWEngine support 2D(Main) and 3D Game Developing.
-PWEngine will support common GPU compute.
+Welcome to use PWEngine. It is Lite, No-black-box and freedom.  
+PWEngine is a libraries group(Like LLVM). and the core is game engine.  
+PWEngine support 2D(Main) and 3D Game Developing.  
+PWEngine will support common GPU compute and machine learning.  
 
 ## Different
 What the different of other game engine:
@@ -10,17 +10,22 @@ What the different of other game engine:
 2. PWEngine is modularization.
 3. PWEngine is self-select. Choose just you want.
 
+## How to start
+Read PWEngine Document for help.
+
 ## Platform
 No DRM Prison:
 1. PWEngine is **never** support for mobile device.  
 Such as Android and iOS.  
+Android is not open! see [https://keepandroidopen.org](https://keepandroidopen.org).  
 2. PWEngine is **never** support for Game Terminal.  
 Such as Xbox, PlayStation and Switch.  
 
-| platform | Windows | macOS | Linux |
-|:---:|:---:|:---:|:---:|
-| API | Vulkan | Vulkan(MoltenVK) | Vulkan |
-| Arch | amd64,arm64 | arm64 | amd64,arm64 |
+| platform | Windows | macOS | Linux | FreeBSD |
+|:---:|:---:|:---:|:---:|:---: |
+| API | Vulkan | Vulkan(MoltenVK) | Vulkan | Planning |
+| Arch | amd64,arm64 | arm64 | amd64,arm64 | Planning |
+| ENV | MinGW | Native | Native | Planning |
 
 ## License
 Simply Mean:
