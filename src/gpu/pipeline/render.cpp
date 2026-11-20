@@ -300,11 +300,12 @@ namespace PWEngine::GPU
         pipeline_info.pMultisampleState = &multisampling;
 
         /* --- Color Blending --- */
+        std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
         if (info.color_blend.has_value())
         {
-            std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments;
-            auto [color_blend, color_blend_constant] = info.color_blend.value();
-            for (const auto& level : color_blend)
+            auto color_blend = info.color_blend.value();
+            
+            for (const auto& level : color_blend.op)
             {
                 VkPipelineColorBlendAttachmentState color_blend_attachment{};
                 color_blend_attachment.blendEnable = VK_TRUE;
@@ -332,10 +333,10 @@ namespace PWEngine::GPU
             color_blending.logicOp = VK_LOGIC_OP_COPY;
             color_blending.attachmentCount = color_blend_attachments.size();
             color_blending.pAttachments = color_blend_attachments.data();
-            color_blending.blendConstants[0] = color_blend_constant.x;
-            color_blending.blendConstants[1] = color_blend_constant.y;
-            color_blending.blendConstants[2] = color_blend_constant.z;
-            color_blending.blendConstants[3] = color_blend_constant.w;
+            color_blending.blendConstants[0] = color_blend.constant.x;
+            color_blending.blendConstants[1] = color_blend.constant.y;
+            color_blending.blendConstants[2] = color_blend.constant.z;
+            color_blending.blendConstants[3] = color_blend.constant.w;
 
             pipeline_info.pColorBlendState = &color_blending;
         }

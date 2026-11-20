@@ -36,7 +36,7 @@ namespace PWEngine::GPU
         vkCmdSetScissor(this->p_task->self->command_buffers[this->p_task->flight_fences_index], 0, 1, &scissor);            
     }
 
-    void WindowRecordCommand::BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background)
+    void WindowRecordCommand::BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background, bool is_use_depth)
     {
         // Swapchain Color Image barrier
         VkImageMemoryBarrier color_barrier{};
@@ -101,7 +101,7 @@ namespace PWEngine::GPU
         rendering_info.layerCount = 1;
         rendering_info.colorAttachmentCount = 1;
         rendering_info.pColorAttachments = &color_attachment_info;
-        rendering_info.pDepthAttachment = &depth_attachment_info;
+        rendering_info.pDepthAttachment = (is_use_depth)? &depth_attachment_info: nullptr;
         rendering_info.pStencilAttachment = VK_NULL_HANDLE;
         
         vkCmdBeginRendering(this->p_task->self->command_buffers[this->p_task->flight_fences_index], &rendering_info);

@@ -17,11 +17,12 @@ $same($is_macos, "macos", __platform__)
 ;
 
 @files("PWEngine")
-    recursion_folder("runtime", ".cpp")
+    recursion_folder("src", ".cpp")
 ;
 
 @files("test")
-	add_file("test/gpu-test/viking_room.cpp")
+	add_file("test/viking_room/main.cpp")
+    #add_file("test/audio-test/test.cpp")
 ;
 
 @project("PWEngine", "shared")

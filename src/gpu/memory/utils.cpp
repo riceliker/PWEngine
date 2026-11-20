@@ -134,7 +134,7 @@ namespace PWEngine::GPU
             barrier.image = image;
             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = mip_level;
+            barrier.subresourceRange.levelCount = (mip_level==0)?1:mip_level;
             barrier.subresourceRange.baseArrayLayer = 0;
             barrier.subresourceRange.layerCount = 1;
             barrier.srcAccessMask = 0; // TODO

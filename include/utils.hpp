@@ -53,7 +53,7 @@ namespace PWEngine
     };
     enum class LogFrom
     {
-        Debug, Vulkan, AssetManager, FileIO, App, Tensor
+        Debug, Vulkan, App, Tensor, Audio, File
     };
     struct LogInfo
     {

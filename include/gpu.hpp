@@ -84,7 +84,8 @@ namespace PWEngine::GPU
     struct VertexInput { uint32_t binding; uint32_t location; uint32_t offset; enum class Type { u8, i32, f32 } type; enum class Length { vec2, vec3, vec4 } len; };
     enum class BlendOp { add, src_minus_dst, dst_minus_src, min, max };
     enum class BlendObject { zero, one, src_color, one_minus_src_color, dst_color, one_minus_dst_color, src_alpha, one_minus_src_alpha, dst_alpha, one_minus_dst_alpha, constant_color, one_minus_constant_color, constant_alpha, one_minus_constant_alpha, };
-    struct ColorBlend { BlendOp color_op; BlendObject color_src; BlendObject color_dst; BlendOp alpha_op; BlendObject alpha_src; BlendObject alpha_dst; Vec4<bool> write_mask;};
+    struct ColorBlendOp { BlendOp color_op; BlendObject color_src; BlendObject color_dst; BlendOp alpha_op; BlendObject alpha_src; BlendObject alpha_dst; Vec4<bool> write_mask;};
+    struct ColorBlend {std::vector<ColorBlendOp> op; Vec4<float> constant; };
     struct DepthStencilInfo { };
     struct RenderPipelineInfo {
         std::variant<std::vector<char>, std::vector<uint32_t>> vertex_shader_code;
@@ -95,7 +96,7 @@ namespace PWEngine::GPU
         std::vector<PushConstant> push_constant_layout;
         enum class VertexTopology {Triangle_List, Triangle_Strip} topology;
         enum class CullMode {Front, Back, None} cull_mode;
-        std::optional<std::tuple<std::vector<ColorBlend>, Vec4<float>>> color_blend;
+        std::optional<ColorBlend> color_blend;
         std::optional<DepthStencilInfo> depth_stencil;
     };
     struct ComputePipelineInfo {
@@ -407,10 +408,8 @@ namespace PWEngine::GPU
     class WindowRecordCommand
     {
     private:
-        void BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background);
+        void BeginRendering(ResultImage* image, Vec4<float> color, bool is_clear_background, bool is_use_depth);
         void EndRendering(ResultImage* image);
-        void BeginRenderPass();
-        void EndRenderingPass();
     public:
         WindowRecordCommand(WindowTask* task): p_task(task){};
         WindowTask* p_task;
@@ -420,10 +419,12 @@ namespace PWEngine::GPU
         void setViewPort(Vec2<int32_t> offset, Vec2<uint32_t> window_size, Vec2<float> depth_area);
         void setScissor(Vec2<int32_t> offset, Vec2<uint32_t> window_size);
         void Dispatch(Vec3<uint32_t> group_size);
-        template<std::invocable<RenderingCommand*> F> void Rendering(ResultImage* image, Vec4<float> color, bool is_clear_background, F&& func)
+
+        void renderingImageBarrier(ResultImage* image);
+        template<std::invocable<RenderingCommand*> F> void Rendering(ResultImage* image, Vec4<float> color, bool is_clear_background, bool is_use_depth, F&& func)
         {
             RenderingCommand rendering(this);
-            this->BeginRendering(image, color, is_clear_background);
+            this->BeginRendering(image, color, is_clear_background, is_use_depth);
             func(&rendering);
             this->EndRendering(image);
         }

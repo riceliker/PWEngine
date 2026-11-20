@@ -86,13 +86,13 @@ struct Mesh3D
         this->layout = std::make_unique<PWEngine::GPU::BindingLayout>(this->p_instance, layout_binding_info);
 
         auto [model, model_err] = PWEngine::Obj::ObjFile(model_path);
-        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Info, PWEngine::LogFrom::FileIO, std::format("Open obj file: Path:{}, Result: {}", model_path, static_cast<uint8_t>(model_err)));
+        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Debug, PWEngine::LogFrom::File, std::format("Open obj file: Path:{}, Result: {}", model_path, static_cast<uint8_t>(model_err)));
         this->vertex_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(p_instance, PWEngine::GPU::BufferUsage::vertex, sizeof(PWEngine::Format::Vertex3D) * model->vertices.size(), model->vertices.data());
         this->index_buffer = std::make_unique<PWEngine::GPU::GPULocalBuffer>(p_instance, PWEngine::GPU::BufferUsage::index,sizeof(uint32_t) * model->indices.size(), model->indices.data());
         this->vertex_count = model->vertices.size();
 
         auto [image, image_err] = PWEngine::Tga::TgaFile(texture_path);
-                PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Info, PWEngine::LogFrom::FileIO, std::format("Open tga file: Path:{}, Result: {}", texture_path, static_cast<uint8_t>(image_err)));
+        PWEngine::sendLog(this->p_instance->log, PWEngine::LogType::Debug, PWEngine::LogFrom::File, std::format("Open tga file: Path:{}, Result: {}", texture_path, static_cast<uint8_t>(image_err)));
         this->image = std::make_unique<PWEngine::GPU::GPUImage>(p_instance, image.get(), true, true);
 
         this->storage_model_buffer = std::make_unique<PWEngine::GPU::GPUBindingBuffer>(p_instance, PWEngine::GPU::BufferUsage::storage, sizeof(PWEngine::Mat4));
@@ -127,11 +127,12 @@ struct Camera
     bool is_in_screen = false;
     PWEngine::Vec2<float> last_mouse = {0 , 0};
     PWEngine::Vec2<float> look_degree = {0, 0};
-    PWEngine::Vec3<float> position = {0, 0, 0};
+    PWEngine::Vec3<float> position = {0, 0, 0.4};
     CameraData camera_data = {PWEngine::Mat4(1), PWEngine::Mat4(1)};
 
-    Camera()
+    Camera(PWEngine::GPU::GPUInstance* instance)
     {
+        this->p_instance = instance;
         std::vector<PWEngine::GPU::BindingInfo> binding_info = {
             {0, 1, PWEngine::GPU::ShaderType::Vertex, PWEngine::GPU::BindingType::uniform},
         };
@@ -231,6 +232,7 @@ struct ScenePipeline
         this->p_instance = instance;
         this->model_mesh = std::make_unique<Mesh3D>(instance, "./assets/viking_room.obj", "./assets/viking_room.tga");
         this->ground = std::make_unique<Mesh3D>(instance, "./assets/box.obj", "./assets/ground.tga");
+        this->camera = std::make_unique<Camera>(instance);
 
         PWEngine::GPU::RenderPipelineInfo pipeline_info = {
             PWEngine::GPU::compilerShader(scene_vertex_shader_code, PWEngine::GPU::ShaderType::Vertex, "main").value(),

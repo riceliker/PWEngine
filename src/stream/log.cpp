@@ -4,7 +4,6 @@
 #include <ctime>
 #include <fstream>
 #include <mutex>
-#include <stdexcept>
 #include <string>
 #include <thread>
 
@@ -52,14 +51,20 @@ namespace PWEngine
                 }
                 switch (message.from)
                 {
-                case LogFrom::AssetManager:
-                    from = "AssetManager";
+                case LogFrom::App:
+                    from = "App";
+                    break;
+                case LogFrom::Audio:
+                    from = "Audio";
                     break;
                 case LogFrom::Debug:
                     from = "Debug";
                     break;
-                case LogFrom::FileIO:
+                case LogFrom::File:
                     from = "FileIO";
+                    break;
+                case PWEngine::LogFrom::Tensor:
+                    from = "Tensor";
                     break;
                 case LogFrom::Vulkan:
                     from = "Vulkan";
